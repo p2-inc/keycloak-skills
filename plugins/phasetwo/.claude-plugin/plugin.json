@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "phasetwo",
+  "version": "0.1.0",
+  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors, starting with passwordless login by magic link.",
+  "author": {
+    "name": "Phase Two",
+    "email": "support@phasetwo.io",
+    "url": "https://phasetwo.io"
+  },
+  "homepage": "https://phasetwo.io",
+  "repository": "https://github.com/p2-inc/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "keycloak",
+    "phasetwo",
+    "authentication",
+    "authorization",
+    "sso",
+    "passwordless",
+    "magic-link"
+  ]
+}

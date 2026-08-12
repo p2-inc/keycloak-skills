@@ -1,0 +1,93 @@
+# skillsaw configuration
+# See https://github.com/stbenjam/skillsaw for more information
+
+# Pin to the skillsaw version this config targets so rules added in later
+# versions are enabled.
+version: "0.16.0"
+
+# Enable/disable rules with configurable severity levels
+rules:
+  # Plugin Structure
+  plugin-json-required:
+    enabled: true
+    severity: error
+
+  plugin-json-valid:
+    enabled: true
+    severity: error
+
+  plugin-naming:
+    enabled: true
+    severity: warning
+
+  plugin-readme:
+    enabled: true
+    severity: warning
+
+  # Marketplace (auto on marketplace repos)
+  marketplace-json-valid:
+    enabled: auto
+    severity: error
+
+  marketplace-registration:
+    enabled: auto
+    severity: error
+
+  # Skills
+  skill-frontmatter:
+    enabled: true
+    severity: warning
+
+  # Custom: Enforce Agent Skills specification directory structure
+  skill-directory-structure:
+    enabled: true
+    severity: error
+
+  # Custom: Enforce that all skills are documented in plugin README.md
+  skill-readme-documentation:
+    enabled: true
+    severity: error
+
+  # Custom: Enforce kebab-case naming for markdown files in skills/
+  skill-markdown-naming:
+    enabled: true
+    severity: error
+
+  # Custom: Enforce license and metadata.author in SKILL.md frontmatter
+  skill-required-metadata:
+    enabled: true
+    severity: error
+
+  # Only the Claude plugin surface is in scope right now (no .cursor-plugin/
+  # .codex-plugin), so the openclaw cross-platform packaging block isn't
+  # required yet. Revisit if/when this repo adds non-Claude platform support.
+  skill-openclaw-metadata:
+    enabled: false
+
+  openclaw-metadata:
+    enabled: false
+
+# Custom rules for marketplace-specific validation
+custom-rules:
+  - ./.skillsaw/rules.py
+
+# Exclusions
+exclude:
+- "**/node_modules/**"
+- "**/.git/**"
+- "**/dist/**"
+- "**/build/**"
+- "**/.venv/**"
+- "**/__pycache__/**"
+- "**/*.min.*"
+- "**/*.lock"
+- "**/.DS_Store"
+- "**/.idea/**"
+- "**/.vscode/**"
+- "**/coverage/**"
+- "**/tmp/**"
+- "**/tests/fixtures/**"    # allow test data to be messy
+- "**/examples/**"          # sample code often incomplete
+
+# Strict mode
+strict: true
