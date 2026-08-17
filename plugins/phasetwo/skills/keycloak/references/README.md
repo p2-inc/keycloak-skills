@@ -5,7 +5,8 @@ for a specific intent + tooling, never all at once.
 
 ## How the router reaches each file
 
-- **Step 1** picks an **intent** (today, `admin:passwordless-magic-link` or `admin:passwordless-passkey`).
+- **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:passwordless-passkey`,
+  `admin:cluster-setup`, `admin:cluster-create-deployment`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
 - **Step 3** maps the intent + tooling to the `Read:` list below.
 
@@ -17,6 +18,14 @@ for a specific intent + tooling, never all at once.
 | `admin-passwordless-magic-link-mcp.md` | `admin:passwordless-magic-link` (tooling=`mcp`) — same outcome, driven end-to-end through Keycloak MCP server tools (`setSmtpSettings`, `listFlowExecutions`, `setExecutionAuthenticatorConfig`, `bindRealmAuthenticationFlow`/`bindClientAuthenticationFlow`) | ✅ done |
 | `admin-passwordless-passkey-mcp.md` | `admin:passwordless-passkey` (tooling=`mcp`) — passkey-only WebAuthn login: the realm's WebAuthn PASSWORDLESS policy (`setWebAuthnPasswordlessPolicy`), authoring and binding a passkey-only flow (no MCP tool authors flows — documented REST recipe), and the credential-bootstrap problem for a zero-credential user (`sendRequiredActionEmail`) | ✅ done |
 | `admin-passwordless-passkey.md` | `admin:passwordless-passkey` (tooling=`rest`) — same outcome via raw Admin REST: realm-representation PUT for the WebAuthn PASSWORDLESS policy and SMTP, authoring/binding the flow, and `execute-actions-email` for credential bootstrap | ✅ done |
+| `cluster-setup-mcp.md` | `admin:cluster-setup` (tooling=`mcp` only) — provisioning a dedicated Phase Two cluster: org/region/tier/billing selection, Stripe checkout handoff (never completes payment), polling to `ACTIVE`, optional first deployment and custom domain | ✅ done |
+| `cluster-create-deployment-mcp.md` | `admin:cluster-create-deployment` (tooling=`mcp` only) — creating a new deployment (realm) in an existing `ACTIVE` cluster, including recognizing "isolate/secure this app" as a request for a new realm | ✅ done |
+
+`admin:cluster-setup` and `admin:cluster-create-deployment` have **no `rest` reference file by
+design** — they're Phase Two SaaS control-plane capabilities (cluster/deployment lifecycle) with
+no self-managed-Keycloak equivalent to document, unlike the passwordless intents above where
+`rest` is a genuine second tooling path to the same outcome. `SKILL.md`'s Step 3 says so plainly
+rather than treating it as a gap.
 
 ## Authoring conventions
 

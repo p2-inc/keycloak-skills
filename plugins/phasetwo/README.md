@@ -4,7 +4,7 @@ Agent skills for Keycloak: configuring behaviors from real p2-inc extensions, fo
 
 ## Skills
 
-- [`keycloak`](./skills/keycloak/) — unified entry point for Keycloak work. Detects intent, then loads the matching reference doc. Today that's turning on passwordless login by magic link (the p2-inc `keycloak-magic-link` provider) via either raw Admin REST or the Keycloak MCP server, and turning on passkey-only WebAuthn login via the Keycloak MCP server.
+- [`keycloak`](./skills/keycloak/) — unified entry point for Keycloak work. Detects intent, then loads the matching reference doc. Today that's turning on passwordless login by magic link (the p2-inc `keycloak-magic-link` provider) via either raw Admin REST or the Keycloak MCP server, turning on passkey-only WebAuthn login via either tooling, and provisioning Phase Two clusters/deployments via the Keycloak MCP server (Phase Two SaaS-only, no self-managed equivalent).
 
 ## Dependency
 

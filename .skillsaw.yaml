@@ -3,7 +3,7 @@
 
 # Pin to the skillsaw version this config targets so rules added in later
 # versions are enabled.
-version: "0.16.0"
+version: "0.18.0"
 
 # Enable/disable rules with configurable severity levels
 rules:
@@ -34,9 +34,10 @@ rules:
     severity: error
 
   # Skills
-  skill-frontmatter:
-    enabled: true
-    severity: warning
+  # NOTE: skill-frontmatter is deprecated since skillsaw 0.18.0 in favor of
+  # agentskill-valid (auto-enabled by default for this repo type, same checks,
+  # no config needed) - intentionally not re-enabled here to avoid duplicate
+  # reporting of the same violations.
 
   # Custom: Enforce Agent Skills specification directory structure
   skill-directory-structure:

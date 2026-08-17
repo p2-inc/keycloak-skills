@@ -1,26 +1,20 @@
 ---
 name: keycloak
 description: >-
-  Use when turning on passwordless login in Keycloak or Phase Two hosted Keycloak, either by
-  emailed magic link (the real p2-inc `keycloak-magic-link` provider) or by passkey-only WebAuthn
-  (no password field ever shown, no fallback). Use this whenever someone wants "passwordless
-  login", "log in with a magic link", "email people a login link instead of a password", "sign in
-  with a passkey/security key/Face ID/Touch ID and nothing else", or "remove password login
-  entirely in favor of WebAuthn" — even if they only say "passwordless" or "passkeys". Covers the
-  built-in "magic link" flow the provider auto-creates on every realm (no custom flow authoring
-  needed, only binding it), the realm SMTP settings it depends on, the anti-enumeration behavior
-  that makes registered and unregistered addresses look identical from the login page, and the
-  create-user-if-none-exists setting that silently provisions an account for anyone's email unless
-  turned off; and separately, the realm's WebAuthn PASSWORDLESS policy, authoring and binding a
-  passkey-only flow (no MCP tool authors flows — documented REST recipe), and the credential-
-  bootstrap problem for a user with zero credentials — driven via either raw Admin REST or the
-  Keycloak MCP server. Not WebAuthn as a second factor alongside a password (a different, simpler
-  policy — not covered here) and not a one-time code typed in (a sibling authenticator, not covered
-  here). Not general Keycloak/Phase Two administration or plugin development — those aren't
-  covered by this skill yet.
+  Use when working with Keycloak or Phase Two hosted Keycloak: passwordless login by emailed magic
+  link (p2-inc `keycloak-magic-link`, built-in flow — just bind it, plus its SMTP dependency and
+  create-user-if-none-exists trap) or passkey-only WebAuthn (no password ever — a custom flow
+  authored/bound since Keycloak ships none, plus the zero-credential bootstrap problem). Also use
+  when provisioning Phase Two clusters/deployments — spinning up a cluster, or a new
+  deployment/realm, including requests phrased as "isolate this app" or "give it its own security
+  context" (a realm is Keycloak's isolation unit). Triggers: "passwordless login", "magic link",
+  "passkey login", "no more passwords", "spin up a cluster", "new deployment", "isolate/secure this
+  app" — even bare "passwordless"/"passkeys". Magic-link/passkey: raw Admin REST or Keycloak MCP
+  server. Cluster/deployment: Keycloak-MCP-only, no self-managed equivalent. Not WebAuthn as a
+  second factor, one-time-code login, or general realm/plugin administration.
 license: Apache-2.0
 metadata:
-  version: '0.5.0'
+  version: '0.6.2'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -40,6 +34,8 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 |---|---|
 | Turn on passwordless login by emailed link — "passwordless login", "log in with a magic link", "email people a login link instead of a password", "let users sign in without a password" (even just "passwordless" alone). Not WebAuthn/passkey passwordless (a different mechanism, see below) and not a one-time code typed in (a sibling authenticator, not covered here). | **admin:passwordless-magic-link** |
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
+| Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
+| Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
 
 ### No intent matches
 
@@ -95,3 +91,19 @@ Read: references/admin-passwordless-passkey-{tooling}.md
   tooling=mcp  → references/admin-passwordless-passkey-mcp.md
   tooling=rest → references/admin-passwordless-passkey.md
 ```
+
+### admin:cluster-setup
+```
+Read: references/cluster-setup-mcp.md   (tooling=mcp only)
+```
+If tooling=rest (self-managed Keycloak), say plainly that cluster provisioning is a Phase Two
+SaaS control-plane capability with no self-managed equivalent — there is no cluster/deployment
+concept to provision outside Phase Two's hosted platform. Don't offer a REST workaround; this
+isn't a missing reference doc, it's a capability that doesn't exist for that tooling.
+
+### admin:cluster-create-deployment
+```
+Read: references/cluster-create-deployment-mcp.md   (tooling=mcp only)
+```
+Same tooling=rest handling as `admin:cluster-setup` immediately above — say plainly this doesn't
+apply to self-managed Keycloak, don't improvise a REST equivalent.
