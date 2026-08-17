@@ -2,14 +2,14 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "phasetwo",
   "version": "0.4.0",
-  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link, passkey-only WebAuthn login, and Phase Two cluster/deployment provisioning.",
+  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak and Phase Two extension behaviors: passwordless login by magic link, passkey-only WebAuthn login, and Phase Two cluster/deployment provisioning.",
   "author": {
     "name": "Phase Two",
     "email": "support@phasetwo.io",
     "url": "https://phasetwo.io"
   },
   "homepage": "https://phasetwo.io",
-  "repository": "https://github.com/p2-inc/agent-skills",
+  "repository": "https://github.com/p2-inc/keycloak-skills",
   "license": "Apache-2.0",
   "keywords": [
     "keycloak",
