@@ -1,21 +1,26 @@
 ---
 name: keycloak
 description: >-
-  Use when turning on passwordless login by emailed magic link in Keycloak or Phase Two hosted
-  Keycloak, using the real p2-inc `keycloak-magic-link` provider. Use this whenever someone wants
-  "passwordless login", "log in with a magic link", "email people a login link instead of a
-  password", or "let users sign in without a password" — even if they only say "passwordless".
-  Covers the built-in "magic link" flow the provider auto-creates on every realm (no custom flow
-  authoring needed, only binding it), the realm SMTP settings it depends on, the anti-enumeration
-  behavior that makes registered and unregistered addresses look identical from the login page, and
-  the create-user-if-none-exists setting that silently provisions an account for anyone's email
-  unless turned off — driven via either raw Admin REST or the Keycloak MCP server. Not
-  WebAuthn/passkey passwordless (a different mechanism) and not a one-time code typed in (a sibling
-  authenticator, not covered here). Not general Keycloak/Phase Two administration or plugin
-  development — those aren't covered by this skill yet.
+  Use when turning on passwordless login in Keycloak or Phase Two hosted Keycloak, either by
+  emailed magic link (the real p2-inc `keycloak-magic-link` provider) or by passkey-only WebAuthn
+  (no password field ever shown, no fallback). Use this whenever someone wants "passwordless
+  login", "log in with a magic link", "email people a login link instead of a password", "sign in
+  with a passkey/security key/Face ID/Touch ID and nothing else", or "remove password login
+  entirely in favor of WebAuthn" — even if they only say "passwordless" or "passkeys". Covers the
+  built-in "magic link" flow the provider auto-creates on every realm (no custom flow authoring
+  needed, only binding it), the realm SMTP settings it depends on, the anti-enumeration behavior
+  that makes registered and unregistered addresses look identical from the login page, and the
+  create-user-if-none-exists setting that silently provisions an account for anyone's email unless
+  turned off; and separately, the realm's WebAuthn PASSWORDLESS policy, authoring and binding a
+  passkey-only flow (no MCP tool authors flows — documented REST recipe), and the credential-
+  bootstrap problem for a user with zero credentials — driven via either raw Admin REST or the
+  Keycloak MCP server. Not WebAuthn as a second factor alongside a password (a different, simpler
+  policy — not covered here) and not a one-time code typed in (a sibling authenticator, not covered
+  here). Not general Keycloak/Phase Two administration or plugin development — those aren't
+  covered by this skill yet.
 license: Apache-2.0
 metadata:
-  version: '0.3.0'
+  version: '0.5.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -33,7 +38,8 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 
 | What the developer wants (plain language) | Intent |
 |---|---|
-| Turn on passwordless login by emailed link — "passwordless login", "log in with a magic link", "email people a login link instead of a password", "let users sign in without a password" (even just "passwordless" alone). Not WebAuthn/passkey passwordless (a different mechanism) and not a one-time code typed in (a sibling authenticator, not covered here). | **admin:passwordless-magic-link** |
+| Turn on passwordless login by emailed link — "passwordless login", "log in with a magic link", "email people a login link instead of a password", "let users sign in without a password" (even just "passwordless" alone). Not WebAuthn/passkey passwordless (a different mechanism, see below) and not a one-time code typed in (a sibling authenticator, not covered here). | **admin:passwordless-magic-link** |
+| Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
 
 ### No intent matches
 
@@ -81,4 +87,11 @@ If the answer is ambiguous, ask — don't guess and don't default to either side
 Read: references/admin-passwordless-magic-link-{tooling}.md
   tooling=mcp  → references/admin-passwordless-magic-link-mcp.md
   tooling=rest → references/admin-passwordless-magic-link.md
+```
+
+### admin:passwordless-passkey
+```
+Read: references/admin-passwordless-passkey-{tooling}.md
+  tooling=mcp  → references/admin-passwordless-passkey-mcp.md
+  tooling=rest → references/admin-passwordless-passkey.md
 ```

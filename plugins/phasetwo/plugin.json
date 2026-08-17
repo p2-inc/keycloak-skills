@@ -1,7 +1,7 @@
 {
   "name": "phasetwo",
-  "version": "0.1.0",
-  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors, starting with passwordless login by magic link.",
+  "version": "0.3.0",
+  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link and passkey-only WebAuthn login.",
   "author": {
     "name": "Phase Two",
     "email": "support@phasetwo.io"

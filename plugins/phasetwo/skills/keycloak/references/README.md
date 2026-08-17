@@ -5,7 +5,7 @@ for a specific intent + tooling, never all at once.
 
 ## How the router reaches each file
 
-- **Step 1** picks an **intent** (today, only `admin:passwordless-magic-link`).
+- **Step 1** picks an **intent** (today, `admin:passwordless-magic-link` or `admin:passwordless-passkey`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
 - **Step 3** maps the intent + tooling to the `Read:` list below.
 
@@ -15,6 +15,8 @@ for a specific intent + tooling, never all at once.
 |---|---|---|
 | `admin-passwordless-magic-link.md` | `admin:passwordless-magic-link` (tooling=`rest`) — turning on the p2-inc `keycloak-magic-link` provider's built-in flow via raw Admin REST: binding, realm SMTP config, the anti-enumeration behavior, and the create-user-if-none-exists trap | ✅ done |
 | `admin-passwordless-magic-link-mcp.md` | `admin:passwordless-magic-link` (tooling=`mcp`) — same outcome, driven end-to-end through Keycloak MCP server tools (`setSmtpSettings`, `listFlowExecutions`, `setExecutionAuthenticatorConfig`, `bindRealmAuthenticationFlow`/`bindClientAuthenticationFlow`) | ✅ done |
+| `admin-passwordless-passkey-mcp.md` | `admin:passwordless-passkey` (tooling=`mcp`) — passkey-only WebAuthn login: the realm's WebAuthn PASSWORDLESS policy (`setWebAuthnPasswordlessPolicy`), authoring and binding a passkey-only flow (no MCP tool authors flows — documented REST recipe), and the credential-bootstrap problem for a zero-credential user (`sendRequiredActionEmail`) | ✅ done |
+| `admin-passwordless-passkey.md` | `admin:passwordless-passkey` (tooling=`rest`) — same outcome via raw Admin REST: realm-representation PUT for the WebAuthn PASSWORDLESS policy and SMTP, authoring/binding the flow, and `execute-actions-email` for credential bootstrap | ✅ done |
 
 ## Authoring conventions
 

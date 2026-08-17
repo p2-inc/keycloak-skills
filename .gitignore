@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+
+# Editor / IDE
+.idea/
+.vscode/
+
+# Local Claude Code settings (personal, not shared)
+.claude/settings.local.json
+
+# bench/benchflow tool cache (cloned agent manifests, datasets)
+.cache/
+
+# Local skillsbench eval run output (not part of task definitions)
+benchmarks/**/jobs-local*/

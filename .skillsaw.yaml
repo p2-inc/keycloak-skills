@@ -88,6 +88,7 @@ exclude:
 - "**/tmp/**"
 - "**/tests/fixtures/**"    # allow test data to be messy
 - "**/examples/**"          # sample code often incomplete
+- "benchmarks/**"           # external skillsbench task defs, not plugin content
 
 # Strict mode
 strict: true

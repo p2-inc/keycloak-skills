@@ -1,0 +1,19 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm lets existing staff log in by emailed link instead of a password, and
+does not extend that to unregistered addresses. All of: submitting priya@acme.example or
+marcus@acme.example shows no password field and produces captured mail containing an
+action-token link; opening that link with nothing else entered returns to
+http://localhost:9999/callback with an authorization code and the original state value
+preserved; an unregistered address gets the identical page response as a registered one
+(no enumeration); behind that identical response, the unregistered address produces no
+captured mail and no new account; priya and marcus both still exist and are enabled; and
+only the master and acme realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"
