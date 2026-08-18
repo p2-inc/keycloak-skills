@@ -13,3 +13,6 @@
 
 # Local skillsbench eval run output (not part of task definitions)
 benchmarks/**/jobs-local*/
+
+# Python bytecode cache (e.g. from running skillsaw's custom rules.py)
+__pycache__/

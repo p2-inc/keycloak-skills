@@ -1,20 +1,19 @@
 ---
 name: keycloak
 description: >-
-  Use when working with Keycloak or Phase Two hosted Keycloak: passwordless login by emailed magic
-  link (p2-inc `keycloak-magic-link`, built-in flow — just bind it, plus its SMTP dependency and
-  create-user-if-none-exists trap) or passkey-only WebAuthn (no password ever — a custom flow
-  authored/bound since Keycloak ships none, plus the zero-credential bootstrap problem). Also use
-  when provisioning Phase Two clusters/deployments — spinning up a cluster, or a new
-  deployment/realm, including requests phrased as "isolate this app" or "give it its own security
-  context" (a realm is Keycloak's isolation unit). Triggers: "passwordless login", "magic link",
-  "passkey login", "no more passwords", "spin up a cluster", "new deployment", "isolate/secure this
-  app" — even bare "passwordless"/"passkeys". Magic-link/passkey: raw Admin REST or Keycloak MCP
-  server. Cluster/deployment: Keycloak-MCP-only, no self-managed equivalent. Not WebAuthn as a
-  second factor, one-time-code login, or general realm/plugin administration.
+  Use when doing Keycloak/Phase Two hosted Keycloak admin work: passwordless login (magic link or
+  passkey-only WebAuthn), corporate/enterprise SSO by email domain, and Phase Two cluster/
+  deployment provisioning — including "isolate/secure this app" meaning "new deployment".
+  Triggers: "passwordless login", "magic link", "passkey login", "no more passwords", "corporate
+  SSO", "enterprise SSO", "home realm discovery", "spin up a cluster", "new deployment",
+  "isolate/secure this app" — even bare "passwordless"/"passkeys". Magic-link, passkey, corporate
+  SSO: raw Admin REST or Keycloak MCP server. Cluster/deployment: Keycloak-MCP-only. Also
+  restricting login to one organization's members (account_hint/prompt=select_account gated,
+  MCP-only so far). Not WebAuthn as a second factor, one-time-code login, or general
+  administration.
 license: Apache-2.0
 metadata:
-  version: '0.6.2'
+  version: '0.8.1'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -36,6 +35,8 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
 | Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
 | Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
+| Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone (that's identity brokering generally, not domain-routed — not covered here) and not restricting login to organization members (a different mechanism — see the next row). | **admin:corporate-sso** |
+| Restrict login so only members of a specific organization can complete it — "only let members of this org log in", "gate login by organization membership", "restrict access to org X". Not domain-based auto-routing (that's `admin:corporate-sso` — a user can be routed to an IdP without any membership restriction at all) and not a login that "just works" once bound — it only activates when the request carries `account_hint` or `prompt=select_account`. | **admin:org-restrict-login** |
 
 ### No intent matches
 
@@ -107,3 +108,21 @@ Read: references/cluster-create-deployment-mcp.md   (tooling=mcp only)
 ```
 Same tooling=rest handling as `admin:cluster-setup` immediately above — say plainly this doesn't
 apply to self-managed Keycloak, don't improvise a REST equivalent.
+
+### admin:corporate-sso
+```
+Read: references/admin-corporate-sso-{tooling}.md
+  tooling=mcp  → references/admin-corporate-sso-mcp.md
+  tooling=rest → references/admin-corporate-sso.md
+```
+
+### admin:org-restrict-login
+```
+Read: references/admin-org-restrict-login-mcp.md   (tooling=mcp only)
+```
+No `tooling=rest` reference exists yet for this intent. The mechanism itself (the
+`ext-select-org` authenticator, configured and bound) is reachable over plain Admin REST, so this
+is a real gap rather than an impossible one — but note Keycloak's `partialImport` endpoint is
+**not** the way to author the flow (it silently ignores authentication flows entirely). If
+tooling=rest, say so plainly and offer to file a gap issue (Step 1's "No intent matches") rather
+than guessing the REST equivalent.

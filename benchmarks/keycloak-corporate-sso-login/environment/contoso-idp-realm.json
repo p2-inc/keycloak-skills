@@ -1,0 +1,61 @@
+{
+  "realm": "contoso-idp",
+  "enabled": true,
+  "displayName": "Contoso Ltd (customer-operated IdP)",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "bruteForceProtected": false,
+  "clients": [
+    {
+      "clientId": "acme-broker",
+      "name": "Acme federation client",
+      "description": "The OIDC client Contoso issued to Acme so Acme can broker their staff logins.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "broker-secret-8f2a1c",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/auth/realms/acme/broker/*"
+      ],
+      "webOrigins": ["+"],
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "jvega",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "jvega@contoso.example",
+      "firstName": "Julia",
+      "lastName": "Vega",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "C0nt0so!Pass",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "rkhan",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "rkhan@contoso.example",
+      "firstName": "Rana",
+      "lastName": "Khan",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "C0nt0so!Rk26",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm restricts login through `acme-portal` to members of one organization,
+created via the real p2-inc keycloak-orgs extension (not Keycloak's native Organizations
+feature). Since the application always sends the literal account_hint value
+"engineering" and never a server-generated organization ID, the only valid solution is an
+organization named exactly "engineering" with match_by_org_name=true. All of: that
+organization exists; the seeded user `priya` was added to it as a member (the seeded user
+`morgan` was not); the browser flow in effect for `acme-portal` (whether bound via a
+client-level override or realm-wide, and whether newly authored or the built-in
+`Org Browser Flow`) contains an `ext-select-org` execution configured to match by name;
+`priya` logging in
+with account_hint=engineering completes with an authorization code; `priya` logging in
+with an account_hint matching no real organization is rejected; `morgan` logging in with
+account_hint=engineering is rejected (she is not a member); and exactly the `master` and
+`acme` realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"

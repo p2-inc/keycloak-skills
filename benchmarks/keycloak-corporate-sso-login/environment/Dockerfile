@@ -1,9 +1,10 @@
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
 # registry rather than vendored in git - pinned by digest, not :latest, so this
-# stays reproducible even if the tag moves.
+# stays reproducible even if the tag moves. Requires `docker login quay.io`
+# with Phase Two Quay credentials before building.
 FROM quay.io/phasetwo/phasetwo-mcp@sha256:31650ad9c5b285dbc29511577628b683185e252802666cb77ab0e42b7addb208 AS mcp-app
 
-# Pinned to bookworm for Playwright/Chromium apt dependency compatibility.
+# Pinned to bookworm: trixie (the current python:3.12-slim) has no openjdk-17.
 FROM python:3.12-slim-bookworm
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -11,9 +12,10 @@ RUN apt-get update -qq && apt-get install -y -qq \
     curl jq ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Java 21 for Keycloak itself (not for any custom provider this time - pure
-# WebAuthn passwordless is a built-in Keycloak feature, no extra jar needed).
-# TARGETARCH is set automatically by buildx; map it to Adoptium's names.
+# Java 21 for both Keycloak (26.x supports 17 and 21) and the MCP server jar
+# (requires 21). One JVM install, not two. Bookworm's apt has no openjdk-21
+# package, so this is a Temurin tarball - same pattern as the Keycloak install
+# below. TARGETARCH is set automatically by buildx; map it to Adoptium's names.
 ARG TARGETARCH
 RUN case "${TARGETARCH}" in \
       arm64) T21_ARCH=aarch64 ;; \
@@ -35,14 +37,14 @@ RUN curl -fsSL "https://github.com/keycloak/keycloak/releases/download/${KEYCLOA
     rm /tmp/keycloak.tar.gz
 
 # pytest is baked in because the sandbox runs with no network at verify time.
-# aiosmtpd backs the local outgoing-mail capture server. playwright drives a
-# real Chromium instance with a CDP virtual WebAuthn authenticator - both the
-# oracle and the verifier need this to perform an actual passkey registration
-# and login ceremony (the crypto exchange can't be faked with a curl call the
-# way magic-link's plain redirect-following could).
-RUN pip install --no-cache-dir requests==2.32.3 aiosmtpd==1.4.6 \
-    pytest==8.4.1 pytest-json-ctrf==0.3.5 playwright==1.48.0 && \
-    playwright install --with-deps chromium
+RUN pip install --no-cache-dir requests==2.32.3 \
+    pytest==8.4.1 pytest-json-ctrf==0.3.5
+
+# The real Keycloak MCP server (Quarkus), pulled from the mcp-app build stage
+# above rather than vendored. Present in BOTH the with-skill and no-skill arms:
+# it is environment, not skill, so the comparison measures skill effect on top
+# of identical tool access, not tool access itself.
+COPY --from=mcp-app /deployments /opt/mcp-app
 
 WORKDIR /app
 
@@ -50,49 +52,38 @@ WORKDIR /app
 # bench's skill-injection symlinks land in /home/agent/.claude/ etc.; pre-create with permissive
 # ownership so the sandbox `agent` user can write session-env there.
 RUN mkdir -p /app /home/agent/.claude /home/agent/.codex /home/agent/.opencode /home/agent/.agents \
-    /logs/verifier /logs/agent /logs/artifacts /var/mail-capture && \
-    chmod -R 777 /home/agent /var/mail-capture
+    /logs/verifier /logs/agent /logs/artifacts && \
+    chmod -R 777 /home/agent
 
-# The realm the agent configures, imported on first start. Frozen fixture: two
-# staff accounts with NO credentials and NO required actions set, a public
-# browser client, and no outgoing-mail configuration. Includes the same fixed
-# RSA signing key and mcp-operator user as the other MCP-wired tasks, for the
-# MCP server's crafted token validation.
+# Two realms, imported on first start. Frozen fixtures.
+#   acme        - the realm under configuration: a browser client and one internal
+#                 staff account with a password. No identity provider.
+#   contoso-idp - stands in for the customer's own identity provider, which they
+#                 operate. Holds the federation client and the customer's staff.
 COPY acme-realm.json /opt/keycloak/data/import/acme-realm.json
+COPY contoso-idp-realm.json /opt/keycloak/data/import/contoso-idp-realm.json
 
-# Admin credentials, and connection details for the local mail-capture server.
+# Admin credentials, and the federation details the customer's IT team handed over.
 COPY admin_credentials.txt /root/admin_credentials.txt
-COPY mail_server_details.txt /root/mail_server_details.txt
-
-# The mail capture server itself - fixed infrastructure, not something to configure.
-COPY mail_capture_server.py /opt/mail/mail_capture_server.py
-
-# The real Keycloak MCP server (Quarkus), pulled from the mcp-app build stage
-# above. Present in BOTH the with-skill and no-skill arms: it is environment,
-# not skill.
-COPY --from=mcp-app /deployments /opt/mcp-app
-
-# The deployment-token proxy this task needs for the same reason as
-# keycloak-magic-link-login: bindingAuthenticationFlow's tools assume a
-# separate, remotely-hosted "deployment" that this sandbox doesn't have.
-RUN mkdir -p /opt/mcp
-COPY deployment_token_proxy.py /opt/mcp/deployment_token_proxy.py
-RUN chmod +x /opt/mcp/deployment_token_proxy.py
+COPY corporate_idp_details.txt /root/corporate_idp_details.txt
 
 ENV KC_BOOTSTRAP_ADMIN_USERNAME=admin
 ENV KC_BOOTSTRAP_ADMIN_PASSWORD=admin_change_me
 ENV KC_HOSTNAME=http://localhost:8080/auth
 ENV KC_HOSTNAME_BACKCHANNEL_DYNAMIC=false
 
-ENV KEYCLOAK_URL=http://localhost:8091/auth
+# The MCP server, in-container, pointed at the co-located Keycloak. Bearer
+# tokens the agent presents are forwarded verbatim to KEYCLOAK_URL - see
+# mcp-bearer-token.txt for why the token itself has to be a fixed artifact
+# rather than minted at boot.
+ENV KEYCLOAK_URL=http://localhost:8080/auth
 ENV OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/acme
 ENV OIDC_DISCOVERY_ENABLED=false
 ENV OIDC_JWKS_PATH=http://localhost:8080/auth/realms/acme/protocol/openid-connect/certs
 ENV OIDC_TOKEN_ISSUER=http://localhost:8080/auth/realms/acme
 ENV PORT=8090
 
-# Starts Keycloak, the mail capture server, the deployment-token proxy, and the
-# MCP server in the background. Readiness is a separate, idempotent gate any
+# Starts Keycloak in the background. Readiness is a separate, idempotent gate any
 # consumer can block on.
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY wait_for_services.sh /usr/local/bin/wait-for-services

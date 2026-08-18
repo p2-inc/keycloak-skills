@@ -1,7 +1,7 @@
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
 # registry rather than vendored in git - pinned by digest, not :latest, so this
 # stays reproducible even if the tag moves.
-FROM quay.io/phasetwo/phasetwo-mcp@sha256:81dac19771962fd92b72c6b22c236db6070c0b024a5b2dc0bd514eb3a173d537 AS mcp-app
+FROM quay.io/phasetwo/phasetwo-mcp@sha256:31650ad9c5b285dbc29511577628b683185e252802666cb77ab0e42b7addb208 AS mcp-app
 
 # Pinned to bookworm: trixie (the current python:3.12-slim) has no openjdk-17.
 FROM python:3.12-slim-bookworm
