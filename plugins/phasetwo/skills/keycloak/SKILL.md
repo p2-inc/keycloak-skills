@@ -8,12 +8,12 @@ description: >-
   SSO", "enterprise SSO", "home realm discovery", "spin up a cluster", "new deployment",
   "isolate/secure this app" — even bare "passwordless"/"passkeys". Magic-link, passkey, corporate
   SSO: raw Admin REST or Keycloak MCP server. Cluster/deployment: Keycloak-MCP-only. Also
-  restricting login to one organization's members (account_hint/prompt=select_account gated,
-  MCP-only so far). Not WebAuthn as a second factor, one-time-code login, or general
-  administration.
+  restricting login to one organization's members (account_hint/prompt=select_account gated;
+  either tooling, needs the keycloak-orgs extension). Not WebAuthn as a second factor,
+  one-time-code login, or general administration.
 license: Apache-2.0
 metadata:
-  version: '0.8.1'
+  version: '0.9.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -118,11 +118,9 @@ Read: references/admin-corporate-sso-{tooling}.md
 
 ### admin:org-restrict-login
 ```
-Read: references/admin-org-restrict-login-mcp.md   (tooling=mcp only)
+Read: references/admin-org-restrict-login-{tooling}.md
+  tooling=mcp  → references/admin-org-restrict-login-mcp.md
+  tooling=rest → references/admin-org-restrict-login.md
 ```
-No `tooling=rest` reference exists yet for this intent. The mechanism itself (the
-`ext-select-org` authenticator, configured and bound) is reachable over plain Admin REST, so this
-is a real gap rather than an impossible one — but note Keycloak's `partialImport` endpoint is
-**not** the way to author the flow (it silently ignores authentication flows entirely). If
-tooling=rest, say so plainly and offer to file a gap issue (Step 1's "No intent matches") rather
-than guessing the REST equivalent.
+Both paths require the p2-inc `keycloak-orgs` extension on the target Keycloak — the reference
+files say so up front, because nothing in this intent works without it.

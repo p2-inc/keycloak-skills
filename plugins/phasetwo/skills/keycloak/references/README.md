@@ -23,7 +23,8 @@ for a specific intent + tooling, never all at once.
 | `cluster-create-deployment-mcp.md` | `admin:cluster-create-deployment` (tooling=`mcp` only) — creating a new deployment (realm) in an existing `ACTIVE` cluster, including recognizing "isolate/secure this app" as a request for a new realm | ✅ done |
 | `admin-corporate-sso-mcp.md` | `admin:corporate-sso` (tooling=`mcp`) — routing by email domain via organizations (`linkIdentityProviderToOrganization`), the `homeIdp`/`homeIdp with orgs-check` custom flows and `forwardToLinkedIdp`, why an IdP-redirector execution is the wrong answer | ✅ done |
 | `admin-corporate-sso.md` | `admin:corporate-sso` (tooling=`rest`) — same outcome via raw Admin REST: `organizationsEnabled`, creating the IdP and the verified-domain organization, linking them, and when the built-in `browser` flow already routes without any custom flow at all | ✅ done |
-| `admin-org-restrict-login-mcp.md` | `admin:org-restrict-login` (tooling=`mcp` only, so far) — restricting login to one organization's members via `ext-select-org` (`match_by_org_name`), authored+bound in one call with `importAuthenticationFlow` (needs the keycloak-atomic-auth-flows extension; offers it, falls back to a manual REST sequence); explicit about the `account_hint`/`prompt=select_account` trigger requirement | ✅ done |
+| `admin-org-restrict-login-mcp.md` | `admin:org-restrict-login` (tooling=`mcp`) — restricting login to one organization's members via `ext-select-org` (`match_by_org_name`), authored+bound in one call with `importAuthenticationFlow` (needs the keycloak-atomic-auth-flows extension; offers it, falls back to a manual REST sequence); explicit about the `account_hint`/`prompt=select_account` trigger requirement | ✅ done |
+| `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
 
 Both `admin-corporate-sso*.md` files reference shared assets/scripts at the skill root:
 `assets/home-idp.partial-import.json`, `assets/home-idp-with-orgs-check.partial-import.json`, and
@@ -45,9 +46,9 @@ to avoid churning every reference that links them.
 design** — they're Phase Two SaaS control-plane capabilities (cluster/deployment lifecycle) with
 no self-managed-Keycloak equivalent to document, unlike the passwordless intents above where
 `rest` is a genuine second tooling path to the same outcome. `SKILL.md`'s Step 3 says so plainly
-rather than treating it as a gap. `admin:org-restrict-login` is different again: a `rest` path is
-genuinely possible (the manual create-flow/add-execution REST sequence needs nothing beyond stock
-Admin REST) but simply hasn't been written yet — a real gap, not a by-design omission.
+rather than treating it as a gap. `admin:org-restrict-login` now has both tooling paths; note
+both still require the p2-inc `keycloak-orgs` extension, which is a *deployment* prerequisite
+rather than a tooling choice.
 
 ## Authoring conventions
 
