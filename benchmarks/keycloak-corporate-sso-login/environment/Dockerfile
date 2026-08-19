@@ -2,7 +2,7 @@
 # registry rather than vendored in git - pinned by digest, not :latest, so this
 # stays reproducible even if the tag moves. Requires `docker login quay.io`
 # with Phase Two Quay credentials before building.
-FROM quay.io/phasetwo/phasetwo-mcp@sha256:31650ad9c5b285dbc29511577628b683185e252802666cb77ab0e42b7addb208 AS mcp-app
+FROM quay.io/phasetwo/phasetwo-mcp@sha256:0dd572971918aa628a3260e96d1a668775906e6baa0b30428b95261ddaf9375b AS mcp-app
 
 # Pinned to bookworm: trixie (the current python:3.12-slim) has no openjdk-17.
 FROM python:3.12-slim-bookworm

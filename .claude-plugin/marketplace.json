@@ -15,8 +15,8 @@
         "url": "https://github.com/p2-inc/agent-skills.git",
         "path": "plugins/phasetwo"
       },
-      "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link, passkey-only WebAuthn login, corporate/enterprise SSO by email domain, organization-membership login restriction, and Phase Two cluster/deployment provisioning.",
-      "version": "0.7.0",
+      "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link, passkey-only WebAuthn login, corporate/enterprise SSO by email domain, organization-membership login restriction for both local and federated logins, and Phase Two cluster/deployment provisioning.",
+      "version": "0.8.0",
       "repository": "https://github.com/p2-inc/agent-skills.git",
       "license": "Apache-2.0",
       "author": {

@@ -1,0 +1,23 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm gates FEDERATED login through an external identity provider on organization
+membership, using the real p2-inc keycloak-orgs extension (not Keycloak's native Organizations
+feature). All of: at least two organizations exist on the keycloak-orgs surface
+(/realms/acme/orgs); exactly one identity provider brokers the partner realm and is LINKED to
+one of those organizations (making it organization-owned, which is what lets the post-broker
+authenticators act at all); a post-broker login flow containing an `ext-select-org` execution is
+bound as that identity provider's postBrokerLoginFlowAlias (Keycloak's stock post-broker flow
+contains none, so binding it would gate nothing); `jordan` authenticating at the partner
+provider with account_hint naming the owning organization completes with an authorization code;
+the same login with account_hint naming a different real organization he is not a member of is
+rejected; the same with a nonexistent organization is rejected; realm `partner-idp` is unchanged
+(same single account, acme-broker still confidential, no identity providers added); and exactly
+the `master`, `acme` and `partner-idp` realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"

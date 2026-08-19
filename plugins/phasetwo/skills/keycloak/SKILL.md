@@ -8,12 +8,13 @@ description: >-
   SSO", "enterprise SSO", "home realm discovery", "spin up a cluster", "new deployment",
   "isolate/secure this app" — even bare "passwordless"/"passkeys". Magic-link, passkey, corporate
   SSO: raw Admin REST or Keycloak MCP server. Cluster/deployment: Keycloak-MCP-only. Also
-  restricting login to one organization's members (account_hint/prompt=select_account gated;
-  either tooling, needs the keycloak-orgs extension). Not WebAuthn as a second factor,
-  one-time-code login, or general administration.
+  restricting login to one organization's members — either for local password logins or for
+  federated/SSO logins through an external IdP ("corporate organization restriction",
+  post-broker org check); both account_hint-gated, either tooling, need the keycloak-orgs
+  extension. Not WebAuthn as a second factor, one-time-code login, or general administration.
 license: Apache-2.0
 metadata:
-  version: '0.9.0'
+  version: '0.10.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -35,8 +36,9 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
 | Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
 | Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
-| Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone (that's identity brokering generally, not domain-routed — not covered here) and not restricting login to organization members (a different mechanism — see the next row). | **admin:corporate-sso** |
-| Restrict login so only members of a specific organization can complete it — "only let members of this org log in", "gate login by organization membership", "restrict access to org X". Not domain-based auto-routing (that's `admin:corporate-sso` — a user can be routed to an IdP without any membership restriction at all) and not a login that "just works" once bound — it only activates when the request carries `account_hint` or `prompt=select_account`. | **admin:org-restrict-login** |
+| Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone (that's identity brokering generally, not domain-routed — not covered here) and not restricting login to organization members (a different mechanism — see the next two rows). | **admin:corporate-sso** |
+| Restrict login so only members of a specific organization can complete it — "only let members of this org log in", "gate login by organization membership", "restrict access to org X". Not domain-based auto-routing (that's `admin:corporate-sso` — a user can be routed to an IdP without any membership restriction at all) and not a login that "just works" once bound — it only activates when the request carries `account_hint` or `prompt=select_account`. This row is for **local password** logins; if the user authenticates at an external IdP, see the next row. | **admin:org-restrict-login** |
+| Restrict **federated/SSO** login so only members of a specific organization get in — "corporate organization restriction", "restrict SSO login to a team/tenant", "only let this customer's staff into their own org", "organization-restricted corporate login", "gate IdP login by org membership", "post-broker organization check". The user signs in at an external identity provider and the membership check runs *afterwards*, bound to the IdP's post-broker login flow. Not domain-based routing (`admin:corporate-sso` sends users to their IdP but restricts nobody) and not the local-password gate (`admin:org-restrict-login`). | **admin:idp-org-restrict-login** |
 
 ### No intent matches
 
@@ -115,6 +117,17 @@ Read: references/admin-corporate-sso-{tooling}.md
   tooling=mcp  → references/admin-corporate-sso-mcp.md
   tooling=rest → references/admin-corporate-sso.md
 ```
+
+### admin:idp-org-restrict-login
+```
+Read: references/admin-idp-org-restrict-login-{tooling}.md
+  tooling=mcp  → references/admin-idp-org-restrict-login-mcp.md
+  tooling=rest → references/admin-idp-org-restrict-login.md
+```
+Both paths require the p2-inc `keycloak-orgs` extension. Note this binds to the identity
+provider's **post-broker login flow** — a different surface from the realm/client browser flow
+the other org intent uses; Keycloak's stock post-broker flow contains no `ext-select-org`, so
+binding that one gates nothing.
 
 ### admin:org-restrict-login
 ```

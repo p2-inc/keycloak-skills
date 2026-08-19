@@ -7,7 +7,7 @@ for a specific intent + tooling, never all at once.
 
 - **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:passwordless-passkey`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
-  `admin:org-restrict-login`).
+  `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
 - **Step 3** maps the intent + tooling to the `Read:` list below.
 
@@ -25,6 +25,8 @@ for a specific intent + tooling, never all at once.
 | `admin-corporate-sso.md` | `admin:corporate-sso` (tooling=`rest`) — same outcome via raw Admin REST: `organizationsEnabled`, creating the IdP and the verified-domain organization, linking them, and when the built-in `browser` flow already routes without any custom flow at all | ✅ done |
 | `admin-org-restrict-login-mcp.md` | `admin:org-restrict-login` (tooling=`mcp`) — restricting login to one organization's members via `ext-select-org` (`match_by_org_name`), authored+bound in one call with `importAuthenticationFlow` (needs the keycloak-atomic-auth-flows extension; offers it, falls back to a manual REST sequence); explicit about the `account_hint`/`prompt=select_account` trigger requirement | ✅ done |
 | `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
+| `admin-idp-org-restrict-login-mcp.md` | `admin:idp-org-restrict-login` (tooling=`mcp`) — gating FEDERATED login on organization membership: the org-owned IdP link that makes the gate work at all, a post-broker flow containing `ext-select-org` bound as the IdP's `postBrokerLoginFlowAlias` (the stock post-broker flow has none, so binding it gates nothing) | ✅ done |
+| `admin-idp-org-restrict-login.md` | `admin:idp-org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST, including the atomic-flows payload details (`postLoginFlowBinding`, stripped `ifResourceExists`, hash-prefixed aliases) | ✅ done |
 
 Both `admin-corporate-sso*.md` files reference shared assets/scripts at the skill root:
 `assets/home-idp.partial-import.json`, `assets/home-idp-with-orgs-check.partial-import.json`, and
@@ -48,7 +50,8 @@ no self-managed-Keycloak equivalent to document, unlike the passwordless intents
 `rest` is a genuine second tooling path to the same outcome. `SKILL.md`'s Step 3 says so plainly
 rather than treating it as a gap. `admin:org-restrict-login` now has both tooling paths; note
 both still require the p2-inc `keycloak-orgs` extension, which is a *deployment* prerequisite
-rather than a tooling choice.
+rather than a tooling choice. The same holds for `admin:idp-org-restrict-login`, which additionally
+binds to the identity provider's post-broker login flow rather than the realm/client browser flow.
 
 ## Authoring conventions
 

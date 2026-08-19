@@ -1,6 +1,13 @@
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
 # registry - pinned by digest, not :latest, so this stays reproducible even if the
 # tag moves. Requires `docker login quay.io` with Phase Two Quay credentials.
+#
+# NOTE: this digest predates two efficiency fixes in keycloak-MCP-server (commit
+# 9d1788c): the MicroProfile default response exception mapper is still enabled, so
+# 4xx bodies are replaced by an opaque "status code 400", and importAuthenticationFlow
+# does not yet strip `ifResourceExists`. The task passes on this image, but an agent
+# using the MCP tools burns ~2x the calls and ~5x the cost working around the opaque
+# error. Re-pin to a newer digest once those fixes ship to quay.
 FROM quay.io/phasetwo/phasetwo-mcp@sha256:0dd572971918aa628a3260e96d1a668775906e6baa0b30428b95261ddaf9375b AS mcp-app
 
 # Phase Two's own Keycloak distribution - includes the REAL p2-inc keycloak-orgs
@@ -61,15 +68,18 @@ RUN mkdir -p /app /home/agent/.claude /home/agent/.codex /home/agent/.opencode /
     chown -R agent:agent /home/agent && \
     chmod -R 777 /home/agent /logs
 
-# The realm the agent configures, imported on first start. Frozen fixture: two
-# staff accounts with passwords and no organization membership yet (`priya` and
-# `morgan`), a public browser client, and no organization created. Includes the
-# same fixed RSA signing key and mcp-operator user as the other MCP-wired tasks,
-# for the MCP server's crafted token validation.
+# The realm the agent configures, imported on first start. Frozen fixture: a public
+# browser client, no organizations, and no identity provider - the agent creates all
+# of those. Includes the same fixed RSA signing key and mcp-operator user as the other
+# MCP-wired tasks, for the MCP server's crafted token validation.
 COPY acme-realm.json /opt/keycloak/data/import/acme-realm.json
+# Stands in for the customer's own identity provider, which they operate.
+COPY partner-idp-realm.json /opt/keycloak/data/import/partner-idp-realm.json
 
 # Admin credentials.
 COPY admin_credentials.txt /root/admin_credentials.txt
+# The federation details the partner's IT team handed over.
+COPY partner_idp_details.txt /root/partner_idp_details.txt
 
 # The real Keycloak MCP server (Quarkus), pulled from the mcp-app build stage
 # above. Present in BOTH the with-skill and no-skill arms: it is environment,

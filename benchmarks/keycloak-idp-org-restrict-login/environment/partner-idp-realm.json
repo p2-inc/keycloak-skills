@@ -1,0 +1,48 @@
+{
+  "realm": "partner-idp",
+  "enabled": true,
+  "displayName": "Partner Identity Provider",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "bruteForceProtected": false,
+  "clients": [
+    {
+      "clientId": "acme-broker",
+      "name": "Acme federation client",
+      "description": "The OIDC client Contoso issued to Acme so Acme can broker their staff logins.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "broker-secret-8f2a1c",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/auth/realms/acme/broker/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "jordan",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "jordan@partner.example",
+      "firstName": "Jordan",
+      "lastName": "Reyes",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "P4rtner!Pass",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
