@@ -171,9 +171,12 @@ Nothing here reports whether the gate is actually active — behavior only shows
 
 - **Bound the flow, but plain logins are unaffected either way** — expected if the client never
   sends `account_hint`/`prompt=select_account`; this is not a bug, see the trap at the top.
-- **Importing the "by ID" asset after "by name" (or vice versa) has no effect** — same flow alias,
-  `ifResourceExists: SKIP` no-ops on an existing alias. Use `setExecutionAuthenticatorConfig` to
-  flip the mode, or re-import with `OVERWRITE`.
+- **Importing the "by ID" asset after "by name" (or vice versa) creates a second, separate
+  flow** rather than switching the mode of the first — `importAuthenticationFlow` hashes the
+  payload's content into the alias it creates, so differing config produces a different hash,
+  not a match against the existing one. The original flow stays bound. Use
+  `setExecutionAuthenticatorConfig` on the existing `ext-select-org` execution to flip the mode
+  in place instead of importing the other asset.
 - **`account_hint` set to a name but `match_by_org_name` is `"false"` (or vice versa)** — the
   mismatch between what the client sends and how the authenticator interprets it is silent; check
   both explicitly with `listFlowExecutions` rather than assuming they agree.
