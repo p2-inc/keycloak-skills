@@ -1,0 +1,83 @@
+{
+    "results": {
+        "tool": {
+            "name": "pytest",
+            "version": "8.4.1"
+        },
+        "summary": {
+            "tests": 7,
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "pending": 0,
+            "other": 0,
+            "start": 1787235362.6409745,
+            "stop": 1787235362.9548554
+        },
+        "tests": [
+            {
+                "name": "::test_github_is_a_builtin_social_provider_and_enabled",
+                "status": "passed",
+                "duration": 0.06986899998446461,
+                "start": 1787235362.811154,
+                "stop": 1787235362.8815198,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_client_secret_is_never_returned_in_plaintext",
+                "status": "passed",
+                "duration": 0.0064929590007523075,
+                "start": 1787235362.8818452,
+                "stop": 1787235362.8887544,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_kc_idp_hint_redirects_to_github_with_the_right_client_id",
+                "status": "passed",
+                "duration": 0.014372167002875358,
+                "start": 1787235362.889032,
+                "stop": 1787235362.903842,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_redirect_uri_is_discoverable_and_correct",
+                "status": "passed",
+                "duration": 0.00882895897666458,
+                "start": 1787235362.9043102,
+                "stop": 1787235362.9135537,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_username_is_mapped_from_githubs_login_field_not_an_oidc_standard_claim",
+                "status": "passed",
+                "duration": 0.009178501000860706,
+                "start": 1787235362.9138427,
+                "stop": 1787235362.9234989,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_firstname_is_mapped_from_githubs_name_field_with_githubs_own_mapper_type",
+                "status": "passed",
+                "duration": 0.015563041990390047,
+                "start": 1787235362.9237676,
+                "stop": 1787235362.9397812,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_only_master_and_acme_realms_exist",
+                "status": "passed",
+                "duration": 0.014229666005121544,
+                "start": 1787235362.9400916,
+                "stop": 1787235362.9547503,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            }
+        ]
+    }
+}

@@ -1,0 +1,1 @@
+{"type": "oracle", "command": "oracle/solve.sh", "return_code": 0, "stdout": "keycloak ready on :8080/auth (acme), proxy ready on :8091, mcp server ready on :8090\noracle self-check passed: kc_idp_hint=github redirects to https://github.com/login/oauth/authorize?scope=user%3Aemail&state=Ql63nGqYXamGEtycQUOnBKGyayYG8Mok7auoA9diroY.tixf03bteB...\n"}

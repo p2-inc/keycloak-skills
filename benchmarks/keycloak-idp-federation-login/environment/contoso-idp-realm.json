@@ -1,0 +1,63 @@
+{
+  "realm": "contoso-idp",
+  "enabled": true,
+  "displayName": "Contoso Identity Provider",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "bruteForceProtected": false,
+  "clients": [
+    {
+      "clientId": "acme-app",
+      "name": "Acme's app",
+      "description": "The OIDC client Contoso's IT team registered on Acme's behalf so Acme can broker Contoso staff logins. The redirect URI is a wildcard under the acme realm's broker path so it stays valid whichever identity-provider alias gets chosen on the acme side.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "fed-secret-6c19a0",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/auth/realms/acme/broker/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "taylor",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "taylor@contoso.example",
+      "firstName": "Taylor",
+      "lastName": "Nguyen",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "C0nt0soT4ylor!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "morgan",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "morgan@contoso.example",
+      "firstName": "Morgan",
+      "lastName": "Alvarez",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "C0nt0soM0rgan!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

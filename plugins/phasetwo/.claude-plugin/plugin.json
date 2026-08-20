@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "phasetwo",
-  "version": "0.8.0",
-  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link, passkey-only WebAuthn login, corporate/enterprise SSO by email domain, organization-membership login restriction for both local and federated logins, and Phase Two cluster/deployment provisioning.",
+  "version": "0.9.0",
+  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link, passkey-only WebAuthn login, corporate/enterprise SSO by email domain, social login and enterprise identity-provider federation (Entra ID, Okta, Auth0, and more), organization-membership login restriction for both local and federated logins, and Phase Two cluster/deployment provisioning.",
   "author": {
     "name": "Phase Two",
     "email": "support@phasetwo.io",
@@ -22,6 +22,10 @@
     "passkey",
     "webauthn",
     "cluster",
-    "deployment"
+    "deployment",
+    "identity-provider",
+    "social-login",
+    "saml",
+    "oidc"
   ]
 }
