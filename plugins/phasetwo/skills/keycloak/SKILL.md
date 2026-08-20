@@ -11,10 +11,15 @@ description: >-
   restricting login to one organization's members — either for local password logins or for
   federated/SSO logins through an external IdP ("corporate organization restriction",
   post-broker org check); both account_hint-gated, either tooling, need the keycloak-orgs
-  extension. Not WebAuthn as a second factor, one-time-code login, or general administration.
+  extension. Also magic-link login itself restricted to one organization's members — "magic
+  link but only for members of org X", "passwordless login gated by organization", "only send
+  the login link to people in this team" — a custom flow combining the magic-link authenticator
+  with the same account_hint-gated org check, distinct from plain magic-link (no restriction)
+  and from the password-only org gate above. Not WebAuthn as a second factor, one-time-code
+  login, or general administration.
 license: Apache-2.0
 metadata:
-  version: '0.10.0'
+  version: '0.11.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -32,7 +37,8 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 
 | What the developer wants (plain language) | Intent |
 |---|---|
-| Turn on passwordless login by emailed link — "passwordless login", "log in with a magic link", "email people a login link instead of a password", "let users sign in without a password" (even just "passwordless" alone). Not WebAuthn/passkey passwordless (a different mechanism, see below) and not a one-time code typed in (a sibling authenticator, not covered here). | **admin:passwordless-magic-link** |
+| Turn on passwordless login by emailed link — "passwordless login", "log in with a magic link", "email people a login link instead of a password", "let users sign in without a password" (even just "passwordless" alone). Not WebAuthn/passkey passwordless (a different mechanism, see below) and not a one-time code typed in (a sibling authenticator, not covered here). Not restricted to any organization's members — if it should be, see the next row. | **admin:passwordless-magic-link** |
+| Magic-link login, but only for members of a specific organization — "magic link restricted to org X", "passwordless login gated by organization membership", "only email the link to people on this team", "a user logs in with magic link and account_hint decides if they get in". This is the combination of the row above with the account_hint-gated org check `admin:org-restrict-login` uses for password logins — neither the plain `magic link` flow nor `Org Browser Flow` alone covers this; it needs a custom flow that runs the org check *before* the email goes out. Needs the keycloak-orgs extension, same as the org-restrict rows below. | **admin:passwordless-magic-link-org-restrict** |
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
 | Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
 | Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
@@ -87,6 +93,18 @@ Read: references/admin-passwordless-magic-link-{tooling}.md
   tooling=mcp  → references/admin-passwordless-magic-link-mcp.md
   tooling=rest → references/admin-passwordless-magic-link.md
 ```
+
+### admin:passwordless-magic-link-org-restrict
+```
+Read: references/admin-passwordless-magic-link-org-restrict-{tooling}.md
+  tooling=mcp  → references/admin-passwordless-magic-link-org-restrict-mcp.md
+  tooling=rest → references/admin-passwordless-magic-link-org-restrict.md
+```
+Requires the p2-inc `keycloak-orgs` extension, same as `admin:org-restrict-login` below. The
+custom flow's execution order is load-bearing: the org check has to run *before* the magic-link
+send step, or a non-member would still receive the email. Don't drop to plain
+`admin:passwordless-magic-link` guidance just because the request mentions "magic link" — check
+for an organization-restriction requirement first.
 
 ### admin:passwordless-passkey
 ```

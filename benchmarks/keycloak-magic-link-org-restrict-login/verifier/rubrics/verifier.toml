@@ -1,0 +1,25 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm lets staff log in via emailed magic link instead of a password, but only
+ever sends that link to members of one organization, created via the real p2-inc
+keycloak-orgs extension (not Keycloak's native Organizations feature). Since the application
+always sends the literal account_hint value "engineering" and never a server-generated
+organization ID, the only valid solution is an organization named exactly "engineering" with
+match_by_org_name=true. All of: that organization exists; the seeded user `priya` was added
+to it as a member (the seeded user `morgan` was not); the flow actually in effect for
+`acme-portal` (client override or realm-wide) contains ext-auth-username-auth-note,
+ext-select-org, and ext-magic-form as REQUIRED sibling executions in that exact order (the
+org check must run BEFORE the magic-link send, not after); `priya` submitting her email with
+account_hint=engineering receives a real captured email and completing its link returns an
+authorization code; `morgan` submitting his email with account_hint=engineering receives NO
+captured mail at all (not merely a login that fails); `priya` submitting her email with an
+account_hint matching no real organization also receives no mail; and exactly the `master`
+and `acme` realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"

@@ -5,7 +5,8 @@ for a specific intent + tooling, never all at once.
 
 ## How the router reaches each file
 
-- **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:passwordless-passkey`,
+- **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`,
+  `admin:passwordless-magic-link-org-restrict`, `admin:passwordless-passkey`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
   `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
@@ -17,6 +18,8 @@ for a specific intent + tooling, never all at once.
 |---|---|---|
 | `admin-passwordless-magic-link.md` | `admin:passwordless-magic-link` (tooling=`rest`) — turning on the p2-inc `keycloak-magic-link` provider's built-in flow via raw Admin REST: binding, realm SMTP config, the anti-enumeration behavior, and the create-user-if-none-exists trap | ✅ done |
 | `admin-passwordless-magic-link-mcp.md` | `admin:passwordless-magic-link` (tooling=`mcp`) — same outcome, driven end-to-end through Keycloak MCP server tools (`setSmtpSettings`, `listFlowExecutions`, `setExecutionAuthenticatorConfig`, `bindRealmAuthenticationFlow`/`bindClientAuthenticationFlow`) | ✅ done |
+| `admin-passwordless-magic-link-org-restrict.md` | `admin:passwordless-magic-link-org-restrict` (tooling=`rest`) — magic-link login gated on organization membership: a custom flow (`ext-auth-username-auth-note` → `ext-select-org` → `ext-magic-form`, in that order — the org check must run *before* the send) authored via `authentication-flow/import` (or the manual sequence), why the ordering is load-bearing, and reusing the `ext-magic-create-nonexistent-user=false` trap from plain magic-link | ✅ done |
+| `admin-passwordless-magic-link-org-restrict-mcp.md` | `admin:passwordless-magic-link-org-restrict` (tooling=`mcp`) — same outcome via `importAuthenticationFlow` plus the org-restrict-login tool set (`createOrganization`, membership, `setSmtpSettings`) | ✅ done |
 | `admin-passwordless-passkey-mcp.md` | `admin:passwordless-passkey` (tooling=`mcp`) — passkey-only WebAuthn login: the realm's WebAuthn PASSWORDLESS policy (`setWebAuthnPasswordlessPolicy`), authoring and binding a passkey-only flow (`importAuthenticationFlow` when the keycloak-atomic-auth-flows extension is present, documented manual REST sequence otherwise), and the credential-bootstrap problem for a zero-credential user (`sendRequiredActionEmail`) | ✅ done |
 | `admin-passwordless-passkey.md` | `admin:passwordless-passkey` (tooling=`rest`) — same outcome via raw Admin REST: realm-representation PUT for the WebAuthn PASSWORDLESS policy and SMTP, authoring/binding the flow, and `execute-actions-email` for credential bootstrap | ✅ done |
 | `cluster-setup-mcp.md` | `admin:cluster-setup` (tooling=`mcp` only) — provisioning a dedicated Phase Two cluster: org/region/tier/billing selection, Stripe checkout handoff (never completes payment), polling to `ACTIVE`, optional first deployment and custom domain | ✅ done |
@@ -27,6 +30,12 @@ for a specific intent + tooling, never all at once.
 | `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
 | `admin-idp-org-restrict-login-mcp.md` | `admin:idp-org-restrict-login` (tooling=`mcp`) — gating FEDERATED login on organization membership: the org-owned IdP link that makes the gate work at all, a post-broker flow containing `ext-select-org` bound as the IdP's `postBrokerLoginFlowAlias` (the stock post-broker flow has none, so binding it gates nothing) | ✅ done |
 | `admin-idp-org-restrict-login.md` | `admin:idp-org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST, including the atomic-flows payload details (`postLoginFlowBinding`, stripped `ifResourceExists`, hash-prefixed aliases) | ✅ done |
+
+Both `admin-passwordless-magic-link-org-restrict*.md` files reference the shared asset
+[`assets/select-organization-magic-link.partial-import.json`](../assets/select-organization-magic-link.partial-import.json)
+— note its `ext-magic-form` config carries a real, verified value
+(`ext-magic-create-nonexistent-user=false`), not a placeholder; the same key the plain
+magic-link references already document.
 
 Both `admin-corporate-sso*.md` files reference shared assets/scripts at the skill root:
 `assets/home-idp.partial-import.json`, `assets/home-idp-with-orgs-check.partial-import.json`, and

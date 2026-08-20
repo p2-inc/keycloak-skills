@@ -1,0 +1,88 @@
+{
+  "ifResourceExists": "SKIP",
+  "authenticationFlows": [
+    {
+      "alias": "Select organization magic link",
+      "description": "Magic-link authentication flow gated on organization membership.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 0,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 0,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 1,
+          "flowAlias": "Select organization magic link magic link forms",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "Select organization magic link magic link forms",
+      "description": "Forms for the org-gated magic-link authentication flow.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "ext-auth-username-auth-note",
+          "authenticatorConfig": "set-context",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "ext-select-org",
+          "authenticatorConfig": "match-by-name",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "ext-magic-form",
+          "authenticatorConfig": "magic-link-existing-accounts-only",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 2,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "set-context",
+      "config": {
+        "setUserInContext": "true"
+      }
+    },
+    {
+      "alias": "match-by-name",
+      "config": {
+        "match_by_org_name": "true"
+      }
+    },
+    {
+      "alias": "magic-link-existing-accounts-only",
+      "config": {
+        "ext-magic-create-nonexistent-user": "false"
+      }
+    }
+  ]
+}
