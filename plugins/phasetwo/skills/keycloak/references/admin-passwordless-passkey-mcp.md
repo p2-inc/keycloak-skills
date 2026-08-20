@@ -54,13 +54,18 @@ authenticator present itself without the user typing anything first.
 `userVerificationRequirement="preferred"` or `"required"` is the usual choice (a PIN or
 biometric check on the authenticator itself, not just presence).
 
-## Stage 3 — Author the flow (no MCP tool does this — raw REST)
+## Stage 3 — Author the flow
 
 Confirm with `listAuthenticationFlows` that no existing flow already does this (there is
-no built-in one). Authoring a flow is not covered by any current MCP tool — same
-situation `bindingAuthenticationFlow` already documents for ITS custom flows ("no MCP
-tool performs [this] itself — applying/authoring is a manual step"). The steps, against
-the deployment's Keycloak Admin REST API directly:
+no built-in one).
+
+**If the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+extension is installed**, `importAuthenticationFlow` authors the whole flow — and binds it —
+in a single call; prefer that over the manual sequence below, and offer installing the
+extension if it 404s. (Keycloak's own `partialImport` endpoint is *not* an alternative: it has
+no handler for authentication flows and silently ignores them — HTTP 200, nothing created.)
+
+Otherwise, the manual sequence against the deployment's Keycloak Admin REST API directly:
 
 ```bash
 BASE=<deployment base_url>/auth   # adjust if the deployment has no /auth relative path

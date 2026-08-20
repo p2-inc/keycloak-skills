@@ -58,8 +58,22 @@ the usual choice (a PIN or biometric check on the authenticator itself, not just
 
 ## Author the flow — Keycloak ships no built-in one
 
-Unlike magic-link, there is no auto-created flow to bind here. Confirm none already exists,
-then build one from an empty shell:
+Unlike magic-link, there is no auto-created flow to bind here — one has to be authored. Two
+paths do that, and a third that looks obvious does not work at all:
+
+| Path | Cost | Requires |
+|---|---|---|
+| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow **and** applies bindings (`browserFlowBinding`, `clientFlowBinding`) in one call | **One call** | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed on the target Keycloak |
+| The manual sequence below — create flow → add each execution → set each requirement → attach config → bind | Many calls, easy to get subtly wrong | Nothing beyond stock Admin REST |
+| ~~`POST /admin/realms/{realm}/partialImport`~~ | — | **Does not work.** It has no handler for authentication flows and silently ignores them: HTTP 200, `added: 0`, no error, nothing created. The admin console's "Partial import" action and `kcadm.sh create partialImport` fail the same way. |
+
+**Offer the extension when it isn't installed** (it 404s clearly) — one jar collapses the whole
+sequence into a single call that also binds. The manual path below is perfectly legitimate if the
+user can't add it; just say upfront that it's substantially more calls. Note the extension
+hash-prefixes the alias it creates, so read the real name back rather than assuming the one you
+supplied.
+
+If taking the manual path, confirm none already exists, then build one from an empty shell:
 
 ```bash
 # 1. Confirm no existing flow already does this.

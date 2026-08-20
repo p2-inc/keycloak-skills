@@ -1,0 +1,20 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm routes the customer's staff to the customer's own identity provider by
+email domain, while internal staff keep password login. All of: submitting either
+contoso.example address on acme's login page yields no password field; the route reaches
+the contoso-idp authorization endpoint; authenticating there returns the browser to
+http://localhost:9999/callback with an authorization code and the original state value;
+both corporate addresses then exist in acme with a non-empty federated identity and no
+local password credential; dana@acme-internal.example is still offered a password field
+and still completes a login to a code; the contoso-idp realm is untouched (same two
+accounts, acme-broker still confidential with the same redirect URIs and client secret, no
+identity providers added); and exactly the master, acme and contoso-idp realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"

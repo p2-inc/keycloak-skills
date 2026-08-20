@@ -1,0 +1,11 @@
+Federation details supplied by the partner's IT team for their OIDC provider.
+
+issuer=http://localhost:8080/auth/realms/partner-idp
+authorization_endpoint=http://localhost:8080/auth/realms/partner-idp/protocol/openid-connect/auth
+token_endpoint=http://localhost:8080/auth/realms/partner-idp/protocol/openid-connect/token
+userinfo_endpoint=http://localhost:8080/auth/realms/partner-idp/protocol/openid-connect/userinfo
+jwks_uri=http://localhost:8080/auth/realms/partner-idp/protocol/openid-connect/certs
+client_id=acme-broker
+client_secret=broker-secret-8f2a1c
+client_authentication=client_secret_post
+scopes=openid profile email

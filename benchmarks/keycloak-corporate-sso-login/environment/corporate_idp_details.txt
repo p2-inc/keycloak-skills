@@ -1,0 +1,22 @@
+Federation details supplied by Contoso Ltd's IT team.
+
+Contoso runs their own identity provider and operates it themselves. They have
+registered Acme as a relying party and issued the client credentials below.
+
+email_domain=contoso.example
+issuer=http://localhost:8080/auth/realms/contoso-idp
+authorization_endpoint=http://localhost:8080/auth/realms/contoso-idp/protocol/openid-connect/auth
+token_endpoint=http://localhost:8080/auth/realms/contoso-idp/protocol/openid-connect/token
+userinfo_endpoint=http://localhost:8080/auth/realms/contoso-idp/protocol/openid-connect/userinfo
+jwks_uri=http://localhost:8080/auth/realms/contoso-idp/protocol/openid-connect/certs
+client_id=acme-broker
+client_secret=broker-secret-8f2a1c
+client_authentication=client_secret_post
+scopes=openid profile email
+
+Every Contoso member of staff has an email address at contoso.example, and their
+accounts live only in Contoso's directory - Acme holds no passwords for them.
+
+The redirect URI Contoso has whitelisted for Acme is
+http://localhost:8080/auth/realms/acme/broker/*, so any broker alias under the
+acme realm will be accepted.

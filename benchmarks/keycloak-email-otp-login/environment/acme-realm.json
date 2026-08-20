@@ -1,0 +1,122 @@
+{
+  "realm": "acme",
+  "enabled": true,
+  "displayName": "Acme Portal",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": false,
+  "clients": [
+    {
+      "clientId": "acme-portal",
+      "name": "Acme customer portal",
+      "description": "The browser application staff sign in to.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:9999/callback"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "mcp-bench-cli",
+      "name": "MCP benchmark client",
+      "description": "Exists only to give the crafted static bearer token a plausible azp; not used for interactive login.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "priya",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "priya@acme-internal.example",
+      "firstName": "Priya",
+      "lastName": "Nair",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Priya!Pass1",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "morgan",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "morgan@acme-internal.example",
+      "firstName": "Morgan",
+      "lastName": "Blake",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Morgan!Pass1",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "774c31ec-1601-53e9-9f1d-fb10d61e7ca7",
+      "username": "mcp-operator",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "mcp-operator@acme.example",
+      "firstName": "MCP",
+      "lastName": "Operator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Op3r8tor!Fixed",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ]
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "fixed-rsa",
+        "providerId": "rsa",
+        "subComponents": {},
+        "config": {
+          "priority": [
+            "200"
+          ],
+          "active": [
+            "true"
+          ],
+          "enabled": [
+            "true"
+          ],
+          "privateKey": [
+            "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCO79bB9WHaVSKj\nUDHgAIDVykFE6VjdXMr0f2H/E6HCvueIJul+8m+TdBSLIMUrhfkyOnwAgcLT5FYp\nGOp5woVZa4vrnhsNcJ9nChAstJO5iJexgUrG8TrZhxnHU7vkOJm6gjU3gYsNKZIg\ng/jRFIrBWWYlikOk1TAJlgrcwfNDNRNGKdaU7RnxznhnAP8rRiyaaDZClQftYK9G\n8EmP37A1aKNcmXa2zP/Pg8n55ZU9sdgOYWZ55vClWc4UrT+D8lrKxjaWkW/TSX5W\nI4rHO2PVhv0G3bb6yvLP4de2fSXAN2WAFfmVM+s84gmuotwaSYhKdK6WFp/wv5qZ\nN9zxLB95AgMBAAECggEACWE/OEw1IMhGDrrxAvBvHYusjwXT6vbinkfYgCfJwKD/\n5AuCdoeyf1X2d486qsACDRdEbIR90TzibWD95htrRJja19pXKSGGYsZVlTFzOxFc\nVW3IIL6gBe1bnJznyOXwxKOamjfG9O6qioK092qzLlWcO+nTK/dBGnS9TFfxi3i2\nwli821TW6XagIuPOff7KPUOzfaIAJQGX7K4446qWH2i7ykOAjXhBb0uMp2qPYD2n\nFhNuF6HyWJFj/LJW0OL81g+lCv4G7gQGiTJHG55IU+FleQcJpZh4ZXHJuD9y4cpm\nx4/tUnUbgWgmOluGZHIs100jSXuFjgQlgOR5NMKb1wKBgQDD7W5UNoao5SkuUSHv\nkosXAW87QQw5DMqYrLXNoE+HNAv5ZeoLvPJSuHw4fkgtq1lmlilu/aCbE8FsX7sS\nUxsz7OJ7ACTgIFBW5ZsWVtTuFzEGgzkUubZ2+W9UQgYJ3ThzkS+utDTXfDfUaArJ\nBhevNXuE/84eZsjVA7eQNBICowKBgQC6wx22tgoRXMtKURELmK2kOoP+Ci2QM+tW\npCYFanXVNL2i7xEDsIZOCwY20nSQlyW//liEWqJ+EBcN0BHwPEZnLkqZFy3I5PKD\nkL9LjrFz90UsdeLecbF2zQyaQD7lw5jqKU+uyvhmkC2n0FB3/NtYw85VszAp+Bp0\nvAuMEMaTMwKBgCLzeQoGzBDXCHiduosNPki1Vc1hNjf7Iy0HKktrPKSm0TgFSTIc\n27GL/YTqah/TgFg/k1acYgkoBgo6LZoAP0sNB/3fMbTVrt9BiF/8z3FFq9Y4lHcx\nBe7FYmnKeV9LGmXrUXE97ms+WotGoB3qO1FjHgzEwVVFCrCNQDK2Rzw3AoGAcaE5\nOOt1IK82uNat6kJQk7VOjYgfxLbyHtrsjysA2mGmZ7XQwk/qxx0KANz3Munje/cC\nYDTM3KppfGv2HhZuN2UA2jgyESLLMqUk3pHJAeeWXMC08eZ2tPN5EXi5TA4/wWi1\nJII1tCFQxeOGshpUUqN/rMDDMyXS4udulx+10eUCgYAjaYtIRZ5Og+Vb8bDeGoKh\n+UxcUn44cmZJ14JJngZNlDvO0tP6zi34p4/UR4fgq9/E1ooyJ3LqwNgoamP5Ese6\n56O3UvVCHJtZHUvOLgEL6fqBRgNw6hc3KORzmZ6+8s/L6bf8eloLXPvldBR0L0B5\nIPcG0nJ/Uy2cHDs8GBtmDQ==\n-----END PRIVATE KEY-----\n"
+          ],
+          "certificate": [
+            "-----BEGIN CERTIFICATE-----\nMIICrDCCAZSgAwIBAgIUTpMQk+73PUg38Z/ROZX86O+nnJgwDQYJKoZIhvcNAQEL\nBQAwDzENMAsGA1UEAwwEYWNtZTAgFw0yMDAxMDEwMDAwMDBaGA8yMTI0MDEwMTAw\nMDAwMFowDzENMAsGA1UEAwwEYWNtZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC\nAQoCggEBAI7v1sH1YdpVIqNQMeAAgNXKQUTpWN1cyvR/Yf8TocK+54gm6X7yb5N0\nFIsgxSuF+TI6fACBwtPkVikY6nnChVlri+ueGw1wn2cKECy0k7mIl7GBSsbxOtmH\nGcdTu+Q4mbqCNTeBiw0pkiCD+NEUisFZZiWKQ6TVMAmWCtzB80M1E0Yp1pTtGfHO\neGcA/ytGLJpoNkKVB+1gr0bwSY/fsDVoo1yZdrbM/8+DyfnllT2x2A5hZnnm8KVZ\nzhStP4PyWsrGNpaRb9NJflYjisc7Y9WG/QbdtvrK8s/h17Z9JcA3ZYAV+ZUz6zzi\nCa6i3BpJiEp0rpYWn/C/mpk33PEsH3kCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEA\nald4oelocfc1FfrgUS+H+sz8lBBF9tLbyu9sjXEswNydoTW9foLaJY2N2xZ8iWL1\n3/nISD/axfHhEBC2rY7cEYoak1ntJ+JH+6JfzXr/79Sw5i+iJcFTnkou+5zrfTmH\ncNphcRCX4y+//m8U6TgspMYoihdPyP8DKWnMGz8S54BvXRuR2y35ql6qw3l43Q/4\nTg0UgokTAcA+mH/mInprhUm/QTjqPh3gi6vUlN9dRoxld5bXnjJ6/QZajewuMEb0\ncblEfah7NExVYXwq3sE1+AJm2IsT0ZmJ65/WCXpHuF92qHOcWKfko1PnHBWNJlWC\nhwRLCPeqeC1p+ZG2k093kA==\n-----END CERTIFICATE-----\n"
+          ]
+        }
+      }
+    ]
+  }
+}

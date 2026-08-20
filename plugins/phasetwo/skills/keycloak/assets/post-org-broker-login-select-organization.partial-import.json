@@ -1,0 +1,58 @@
+{
+  "ifResourceExists": "SKIP",
+  "authenticationFlows": [
+    {
+      "alias": "post org broker login select organization",
+      "description": "Post broker login flow used for organization IdPs. Also enables select organization",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "ext-auth-org-note",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "ext-auth-org-id-verifier",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 0,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "ext-auth-validate-idp",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "ext-auth-org-add-user",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "ext-select-org",
+          "authenticatorConfig": "match-by-org-name",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 3,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "match-by-org-name",
+      "config": {
+        "match_by_org_name": "true"
+      }
+    }
+  ]
+}
