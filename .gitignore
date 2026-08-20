@@ -16,3 +16,6 @@ benchmarks/**/jobs-local*/
 
 # Python bytecode cache (e.g. from running skillsaw's custom rules.py)
 __pycache__/
+
+# Local API keys for bench agent runs - never commit
+.env
