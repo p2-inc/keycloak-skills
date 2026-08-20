@@ -5,7 +5,7 @@ for a specific intent + tooling, never all at once.
 
 ## How the router reaches each file
 
-- **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`,
+- **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:email-otp-login`, `admin:password-email-otp-mfa`,
   `admin:passwordless-magic-link-org-restrict`, `admin:passwordless-passkey`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
   `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
@@ -18,6 +18,10 @@ for a specific intent + tooling, never all at once.
 |---|---|---|
 | `admin-passwordless-magic-link.md` | `admin:passwordless-magic-link` (tooling=`rest`) — turning on the p2-inc `keycloak-magic-link` provider's built-in flow via raw Admin REST: binding, realm SMTP config, the anti-enumeration behavior, and the create-user-if-none-exists trap | ✅ done |
 | `admin-passwordless-magic-link-mcp.md` | `admin:passwordless-magic-link` (tooling=`mcp`) — same outcome, driven end-to-end through Keycloak MCP server tools (`setSmtpSettings`, `listFlowExecutions`, `setExecutionAuthenticatorConfig`, `bindRealmAuthenticationFlow`/`bindClientAuthenticationFlow`) | ✅ done |
+| `admin-email-otp-login.md` | `admin:email-otp-login` (tooling=`rest`) — passwordless login by an emailed 6-digit code via `ext-email-otp` (p2-inc keycloak-magic-link, same jar as magic-link): authoring the flow since none ships auto-created, the load-bearing `ext-auth-username-auth-note` → `ext-email-otp` order (NOT stock `auth-username-form`, which was verified live to leak account existence via an "Invalid username or email" error before `ext-email-otp` ever runs), the single `ext-magic-create-nonexistent-user` option (default `false` here, unlike magic-link's `true`), realm SMTP, and why brute-force protection matters for a 6-digit code | ✅ done |
+| `admin-email-otp-login-mcp.md` | `admin:email-otp-login` (tooling=`mcp`) — same outcome through `importAuthenticationFlow`, `setSmtpSettings`, `setBruteForceProtection`, `listFlowExecutions`/`setExecutionAuthenticatorConfig` (all confirmed present on the server) | ✅ done |
+| `admin-password-email-otp-mfa.md` | `admin:password-email-otp-mfa` (tooling=`rest`) — password login hardened with `ext-email-otp` as a second factor: `auth-username-password-form` (stock Keycloak, the gate) then `ext-email-otp`, verified live that a wrong password never reaches the OTP step and never sends mail, and why this is the one place `auth-username-password-form` is the *right* identifier step (the opposite of the passwordless intent above) | ✅ done |
+| `admin-password-email-otp-mfa-mcp.md` | `admin:password-email-otp-mfa` (tooling=`mcp`) — same outcome through `importAuthenticationFlow`, `setSmtpSettings`, `listFlowExecutions`/`setExecutionAuthenticatorConfig` | ✅ done |
 | `admin-passwordless-magic-link-org-restrict.md` | `admin:passwordless-magic-link-org-restrict` (tooling=`rest`) — magic-link login gated on organization membership: a custom flow (`ext-auth-username-auth-note` → `ext-select-org` → `ext-magic-form`, in that order — the org check must run *before* the send) authored via `authentication-flow/import` (or the manual sequence), why the ordering is load-bearing, and reusing the `ext-magic-create-nonexistent-user=false` trap from plain magic-link | ✅ done |
 | `admin-passwordless-magic-link-org-restrict-mcp.md` | `admin:passwordless-magic-link-org-restrict` (tooling=`mcp`) — same outcome via `importAuthenticationFlow` plus the org-restrict-login tool set (`createOrganization`, membership, `setSmtpSettings`) | ✅ done |
 | `admin-passwordless-passkey-mcp.md` | `admin:passwordless-passkey` (tooling=`mcp`) — passkey-only WebAuthn login: the realm's WebAuthn PASSWORDLESS policy (`setWebAuthnPasswordlessPolicy`), authoring and binding a passkey-only flow (`importAuthenticationFlow` when the keycloak-atomic-auth-flows extension is present, documented manual REST sequence otherwise), and the credential-bootstrap problem for a zero-credential user (`sendRequiredActionEmail`) | ✅ done |
@@ -30,6 +34,20 @@ for a specific intent + tooling, never all at once.
 | `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
 | `admin-idp-org-restrict-login-mcp.md` | `admin:idp-org-restrict-login` (tooling=`mcp`) — gating FEDERATED login on organization membership: the org-owned IdP link that makes the gate work at all, a post-broker flow containing `ext-select-org` bound as the IdP's `postBrokerLoginFlowAlias` (the stock post-broker flow has none, so binding it gates nothing) | ✅ done |
 | `admin-idp-org-restrict-login.md` | `admin:idp-org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST, including the atomic-flows payload details (`postLoginFlowBinding`, stripped `ifResourceExists`, hash-prefixed aliases) | ✅ done |
+
+Both `admin-password-email-otp-mfa*.md` files reference
+[`assets/username-password-email-otp-flow.partial-import.json`](../assets/username-password-email-otp-flow.partial-import.json)
+— structurally almost identical to the plain email-OTP asset, but with `auth-username-password-form`
+in place of `ext-auth-username-auth-note` as the first execution. That single substitution is the
+entire difference between "passwordless" and "password + second factor"; verified live (correct
+password → OTP sent; wrong password → rejected before `ext-email-otp` runs, no mail sent).
+
+Both `admin-email-otp-login*.md` files reference
+[`assets/email-otp-flow.partial-import.json`](../assets/email-otp-flow.partial-import.json). Its
+`ext-magic-create-nonexistent-user: "false"` is verified-correct rather than a magic-link
+copy-paste: `ext-email-otp` genuinely shares that config key (a single constant in the extension)
+and it is that authenticator's ONLY option. Setting it explicitly is documentation — the runtime
+default is already `false` for email OTP, unlike `ext-magic-form`'s `true`.
 
 Both `admin-passwordless-magic-link-org-restrict*.md` files reference the shared asset
 [`assets/select-organization-magic-link.partial-import.json`](../assets/select-organization-magic-link.partial-import.json)

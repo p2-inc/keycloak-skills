@@ -1,25 +1,20 @@
 ---
 name: keycloak
 description: >-
-  Use when doing Keycloak/Phase Two hosted Keycloak admin work: passwordless login (magic link or
-  passkey-only WebAuthn), corporate/enterprise SSO by email domain, and Phase Two cluster/
-  deployment provisioning — including "isolate/secure this app" meaning "new deployment".
-  Triggers: "passwordless login", "magic link", "passkey login", "no more passwords", "corporate
-  SSO", "enterprise SSO", "home realm discovery", "spin up a cluster", "new deployment",
-  "isolate/secure this app" — even bare "passwordless"/"passkeys". Magic-link, passkey, corporate
-  SSO: raw Admin REST or Keycloak MCP server. Cluster/deployment: Keycloak-MCP-only. Also
-  restricting login to one organization's members — either for local password logins or for
-  federated/SSO logins through an external IdP ("corporate organization restriction",
-  post-broker org check); both account_hint-gated, either tooling, need the keycloak-orgs
-  extension. Also magic-link login itself restricted to one organization's members — "magic
-  link but only for members of org X", "passwordless login gated by organization", "only send
-  the login link to people in this team" — a custom flow combining the magic-link authenticator
-  with the same account_hint-gated org check, distinct from plain magic-link (no restriction)
-  and from the password-only org gate above. Not WebAuthn as a second factor, one-time-code
-  login, or general administration.
+  Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login: magic link
+  (emailed link), email OTP (emailed 6-digit code, `ext-email-otp`), or passkey-only WebAuthn.
+  Also email OTP as a SECOND factor on a required password ("2FA/MFA by email") — password-gated,
+  not passwordless. Corporate/enterprise SSO by email domain. Phase Two cluster/deployment
+  provisioning — "isolate/secure this app" means "new deployment". Restricting login to one
+  organization's members — password, federated/SSO, or magic-link; account_hint-gated, needing
+  keycloak-orgs. Triggers: "passwordless login", "magic link", "email OTP", "2FA/MFA by email",
+  "passkey login", "no more passwords", "corporate SSO", "restrict login to org X", "spin up a
+  cluster", "new deployment" — even bare "passwordless"/"passkeys". Cluster/deployment is
+  MCP-only; the rest works via Admin REST or the Keycloak MCP server. Not WebAuthn as a second
+  factor, not TOTP/HOTP authenticator apps.
 license: Apache-2.0
 metadata:
-  version: '0.11.0'
+  version: '0.12.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -38,6 +33,8 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 | What the developer wants (plain language) | Intent |
 |---|---|
 | Turn on passwordless login by emailed link — "passwordless login", "log in with a magic link", "email people a login link instead of a password", "let users sign in without a password" (even just "passwordless" alone). Not WebAuthn/passkey passwordless (a different mechanism, see below) and not a one-time code typed in (a sibling authenticator, not covered here). Not restricted to any organization's members — if it should be, see the next row. | **admin:passwordless-magic-link** |
+| Passwordless login by a one-time CODE emailed to the user — "email OTP", "email a one-time code", "6-digit code to their email", "login code by email", "OTP by email instead of an authenticator app". The code-you-type sibling of magic-link's link-you-click: same extension, different authenticator (`ext-email-otp`), and unlike magic-link **no built-in flow exists** so one must be authored. Not Keycloak's TOTP/HOTP (an authenticator app needing device enrollment) and not magic link (row above). | **admin:email-otp-login** |
+| Password login, hardened with an emailed one-time code as a SECOND factor — "email OTP as MFA", "password plus a code emailed to me", "2FA by email", "require a login code after the password", "email-based two-factor". NOT passwordless — the password is still required and gates the OTP (a wrong password never even sends the email). Uses the same `ext-email-otp` authenticator as the row above but a different, load-bearing first step (`auth-username-password-form`, not an identifier-only step). Not the passwordless row above, and not WebAuthn/TOTP as a second factor. | **admin:password-email-otp-mfa** |
 | Magic-link login, but only for members of a specific organization — "magic link restricted to org X", "passwordless login gated by organization membership", "only email the link to people on this team", "a user logs in with magic link and account_hint decides if they get in". This is the combination of the row above with the account_hint-gated org check `admin:org-restrict-login` uses for password logins — neither the plain `magic link` flow nor `Org Browser Flow` alone covers this; it needs a custom flow that runs the org check *before* the email goes out. Needs the keycloak-orgs extension, same as the org-restrict rows below. | **admin:passwordless-magic-link-org-restrict** |
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
 | Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
@@ -93,6 +90,32 @@ Read: references/admin-passwordless-magic-link-{tooling}.md
   tooling=mcp  → references/admin-passwordless-magic-link-mcp.md
   tooling=rest → references/admin-passwordless-magic-link.md
 ```
+
+### admin:email-otp-login
+```
+Read: references/admin-email-otp-login-{tooling}.md
+  tooling=mcp  → references/admin-email-otp-login-mcp.md
+  tooling=rest → references/admin-email-otp-login.md
+```
+Requires the p2-inc `keycloak-magic-link` extension (same jar as magic-link) for the
+`ext-email-otp` authenticator. Unlike magic-link there is **no auto-created flow** — one has to
+be authored, and its execution order AND identifier-step choice are load-bearing: an identifier
+step (`ext-auth-username-auth-note`, NOT stock `auth-username-form` — the latter leaks account
+existence via an "Invalid username or email" error) must run BEFORE `ext-email-otp`, which reads
+the attempted username off the auth session rather than collecting an address itself.
+
+### admin:password-email-otp-mfa
+```
+Read: references/admin-password-email-otp-mfa-{tooling}.md
+  tooling=mcp  → references/admin-password-email-otp-mfa-mcp.md
+  tooling=rest → references/admin-password-email-otp-mfa.md
+```
+Requires the p2-inc `keycloak-magic-link` extension, same as `admin:email-otp-login`. The first
+step is deliberately `auth-username-password-form` (stock Keycloak) — the opposite choice from
+`admin:email-otp-login`'s identifier-only step, and correct here specifically: the password must
+gate the OTP, verified live to mean a wrong password never reaches `ext-email-otp` and never
+sends mail. Don't route a "2FA" or "second factor" request here to the passwordless intent just
+because both use `ext-email-otp` — check whether a password is supposed to remain required.
 
 ### admin:passwordless-magic-link-org-restrict
 ```

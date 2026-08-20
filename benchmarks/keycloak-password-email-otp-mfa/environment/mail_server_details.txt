@@ -1,0 +1,13 @@
+Details for the local outgoing-mail capture server used by this sandbox.
+
+host=localhost
+port=1025
+requires_auth=false
+requires_starttls=false
+requires_ssl=false
+suggested_from_address=noreply@acme.example
+
+This process accepts any mail sent to it and writes each message to
+/var/mail-capture/ as one JSON file per message - it does not actually
+deliver anything anywhere. It exists so a realm's outgoing mail can be
+inspected without needing a real mail provider.

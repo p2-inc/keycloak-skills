@@ -1,0 +1,5 @@
+services:
+  main:
+    # Docker Desktop doesn't grant NET_ADMIN, so bench's egress firewall for
+    # no-network tasks fails with "iptables ... Permission denied" without this.
+    privileged: true

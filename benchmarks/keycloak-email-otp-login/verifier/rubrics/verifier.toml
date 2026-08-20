@@ -1,0 +1,17 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm lets staff sign in with a one-time code emailed to them, with no password
+requested at any point, and does not reveal which addresses have accounts. All of: the browser
+flow in effect for `acme-portal` has a REQUIRED ext-email-otp with an identifier step before it;
+a registered address reaches the code form with no password field; a real email is captured
+containing a numeric code and that code completes login with the original state preserved; an
+unregistered address reaches the identical form with no mail sent and no account created; the
+seeded users still exist and are enabled; and exactly the master and acme realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"

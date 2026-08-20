@@ -1,0 +1,17 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm keeps password login and adds an emailed one-time code as a second factor,
+with the password genuinely gating the code. All of: the browser flow in effect for
+`acme-portal` has a REQUIRED password step running before a REQUIRED ext-email-otp; a correct
+password reaches the code step and a real email is captured whose code completes login with the
+original state preserved; a WRONG password produces no mail at all; an unknown username produces
+no mail; the seeded users still exist and are enabled; and exactly the master and acme realms
+exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"
