@@ -27,6 +27,7 @@
     "social-login",
     "saml",
     "oidc",
+    "zero-password",
     "idp-initiated-sso"
   ]
 }

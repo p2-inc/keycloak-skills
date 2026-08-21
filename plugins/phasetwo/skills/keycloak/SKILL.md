@@ -1,27 +1,19 @@
 ---
 name: keycloak
 description: >-
-  Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
+  Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login (magic link, email 
   OTP, passkey WebAuthn, or passkey-or-magic-link "0 password required"); email OTP as a 2FA second
   factor; org-membership login restriction (password, federated, or magic-link); cluster/deployment
-  provisioning. Also identity brokering: domain-routed corporate SSO ("route by email domain");
-  social login buttons ("log in with Google/GitHub/Microsoft/Facebook"); and enterprise IdP
+  provisioning. Also identity brokering: domain-routed corporate SSO ("route by email domain"); 
+  social login buttons ("log in with Google/GitHub/Microsoft/Facebook"); enterprise IdP
   federation — Entra ID, Okta, Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Oracle, Duo,
-  CyberArk, JumpCloud, LastPass, Salesforce, or Cloudflare Access as a login button. Triggers:
-  "passwordless", "magic link", "email OTP", "2FA by email", "passkeys", "0 password required",
-  "restrict login to org X", "spin up a cluster", "corporate SSO", "connect Okta/Entra ID",
-  "add an identity provider", "SAML/OIDC SSO". Cluster/deployment is MCP-only. Not WebAuthn/TOTP as
-  a second factor, not LDAP/AD user federation.
-  OTP, or passkey WebAuthn); email OTP as a 2FA second factor; org-membership login restriction
-  (password, federated, or magic-link); cluster/deployment provisioning. Also identity brokering:
-  domain-routed corporate SSO; social login buttons ("log in with Google/GitHub/Microsoft/Facebook");
-  enterprise IdP federation — Entra ID, Okta, Auth0, ADFS, AWS, PingOne, OneLogin, Oracle, Duo,
-  CyberArk, JumpCloud, LastPass, Salesforce, Cloudflare — as a plain login button; and IdP-initiated
-  SSO tiles into one app. Triggers: "passwordless", "magic link", "email OTP", "2FA by email",
-  "passkeys", "restrict login to org X", "spin up a cluster", "corporate SSO", "log in with
-  Google/GitHub", "connect Okta/Entra ID/Auth0", "SAML/OIDC SSO", "IdP-initiated SSO",
-  "Okta/Entra tile". Cluster/deployment is MCP-only. Not WebAuthn/TOTP as a second factor, not
-  LDAP/AD user federation.
+  CyberArk, JumpCloud, LastPass, Salesforce, or Cloudflare Access as a login button; and IdP-initiated 
+  SSO tiles into one app. Triggers: "passwordless", "magic link", "email OTP", "2FA by email", 
+  "passkeys", "0 password required", "restrict login to org X", "spin up a cluster", "corporate SSO", 
+  "log in with Google/GitHub", "connect Okta/Entra ID/Auth0", "add an identity provider",
+  "SAML/OIDC SSO", "IdP-initiated SSO", "Okta/Entra tile". Cluster/deployment is MCP-only. 
+  Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
+  
 license: Apache-2.0
 metadata:
   version: '0.14.0'
