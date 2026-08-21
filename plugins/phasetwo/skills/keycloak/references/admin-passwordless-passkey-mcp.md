@@ -65,13 +65,13 @@ in a single call; prefer that over the manual sequence below, and offer installi
 extension if it 404s. (Keycloak's own `partialImport` endpoint is *not* an alternative: it has
 no handler for authentication flows and silently ignores them — HTTP 200, nothing created.)
 
-Otherwise, the manual sequence — **still entirely through MCP tools**, no raw REST and no
+Otherwise, the component path — **still entirely through MCP tools**, no raw REST and no
 credentials needed from the user:
 
-1. `createAuthenticationFlow(alias="Passkey Only")` — a bare top-level flow; leaf authenticators
+1. `addFlow(alias="Passkey Only")` — a bare top-level flow; leaf authenticators
    work fine on it directly, no sub-flow needed.
-2. `addAuthenticationExecution(flowAlias="Passkey Only", provider="auth-cookie", priority=0)`
-3. `addAuthenticationExecution(flowAlias="Passkey Only", provider="webauthn-authenticator-passwordless", priority=1)`
+2. `addAuthenticator(flowAlias="Passkey Only", provider="auth-cookie", priority=0)`
+3. `addAuthenticator(flowAlias="Passkey Only", provider="webauthn-authenticator-passwordless", priority=1)`
 
    **Pass `priority` explicitly on both** — the call appends when it's omitted, at
    `(last sibling's priority + 1)`, so call order alone decides the outcome. `priority` in the

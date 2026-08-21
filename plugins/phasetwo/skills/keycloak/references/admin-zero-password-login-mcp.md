@@ -92,12 +92,13 @@ Two mechanical notes:
 ### If the atomic-flows extension isn't installed
 
 `importAuthenticationFlow` needs the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
-extension and 404s without it. Offer installing it first — one jar, one call instead of many. If
-declined, the fallback **stays inside MCP — no raw REST, no credentials from the user**:
+extension and 404s without it. Offer installing it as the one-shot — one jar, one call instead of
+many. **The component path below is the default and always available — no raw REST, no credentials
+from the user**:
 
-1. `createAuthenticationFlow(alias="Passwordless-or-magic-link")`
-2. `addAuthenticationSubFlow(parentFlowAlias="Passwordless-or-magic-link", alias="Passwordless-or-magic-link forms", priority=3)`
-3. `addAuthenticationExecution` four times on the top-level flow (`auth-cookie` priority 0,
+1. `addFlow(alias="Passwordless-or-magic-link")`
+2. `addSubFlow(parentFlowAlias="Passwordless-or-magic-link", alias="Passwordless-or-magic-link forms", priority=3)`
+3. `addAuthenticator` four times on the top-level flow (`auth-cookie` priority 0,
    `auth-spnego` priority 1, `identity-provider-redirector` priority 2), and twice on the forms
    sub-flow (`ext-magic-form` priority 2, `webauthn-authenticator-passwordless` priority 3) —
    **matching the table above exactly**, and passing `priority` explicitly on every call, since

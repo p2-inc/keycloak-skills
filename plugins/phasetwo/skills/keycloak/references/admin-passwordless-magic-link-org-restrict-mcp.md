@@ -73,9 +73,9 @@ than assuming a successful add call means it did.
 
 Confirm with `listAuthenticationFlows` that no flow already does this. `importAuthenticationFlow`
 authors and binds it in one call, but needs the atomic-flows extension — 404 if it's missing.
-**That is not a dead end.** Fall back to the manual sequence, still entirely through MCP tools,
-no raw REST and no credentials needed from the user: `createAuthenticationFlow` for the top
-level, `addAuthenticationSubFlow` for the forms sub-flow, `addAuthenticationExecution` for each
+**That is not a dead end — component authoring is the default path.** Build it through MCP tools,
+no raw REST and no credentials needed from the user: `addFlow` for the top
+level, `addSubFlow` for the forms sub-flow, `addAuthenticator` for each
 leaf step below — **in the order the table below gives**, passing `priority` explicitly on every
 call since both append when it's omitted — then `setExecutionRequirement` on each and
 `setExecutionAuthenticatorConfig` for the two that need config.

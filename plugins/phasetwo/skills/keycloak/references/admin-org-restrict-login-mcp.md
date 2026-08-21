@@ -90,15 +90,16 @@ The two paths that do work:
 | Path | Cost | Requires |
 |---|---|---|
 | **`importAuthenticationFlow`** — authors the whole flow *and* applies bindings in one call | One call | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed on the target Keycloak |
-| **The manual sequence, through MCP tools** — `createAuthenticationFlow` → `addAuthenticationSubFlow` for each sub-flow → `addAuthenticationExecution` for each leaf step → `setExecutionRequirement` on each → `setExecutionAuthenticatorConfig` where needed → bind | Many calls, easy to get the order wrong | Nothing beyond stock Admin REST — no extension |
+| **The component path, through MCP tools** — `addFlow` → `addSubFlow` per sub-flow → `addAuthenticator` per leaf step (passing `priority` **and** `requirement`) → `addConditional` for the conditional-OTP sub-flow → `addAuthenticatorConfig` on each `ext-select-org` step → bind | Many calls, order matters | Nothing beyond stock Admin REST — no extension |
 
 **Both paths are MCP tool calls. Neither requires dropping to raw REST or asking the user for
-credentials** — if `importAuthenticationFlow` 404s (extension missing), its own error message
-names the manual-sequence tools; use them rather than reporting a dead end. Offer the extension
+credentials** — component authoring is the default, and `importAuthenticationFlow` is the one-shot
+for deployments that have the extension. If it 404s, build the flow from components rather than
+reporting a dead end. Offer the extension
 as a real choice first — installing one jar collapses the whole sequence into a single call — but
-proceed with the manual tools when the user prefers that or can't install it.
+proceed with the component tools when the user prefers that or can't install it.
 
-**Order is load-bearing on the manual path, and `addAuthenticationSubFlow`/`addAuthenticationExecution`
+**Order is load-bearing on the component path, and `addSubFlow`/`addAuthenticator`
 APPEND.** With no `priority` argument, each call lands at `(last sibling's priority + 1)` — so
 creating a sub-flow before its parent's other steps exist puts it first, ahead of `auth-cookie`.
 Pass `priority` explicitly on every call. It's honoured only from Keycloak 25 onward (added
@@ -106,6 +107,23 @@ Pass `priority` explicitly on every call. It's honoured only from Keycloak 25 on
 `raiseExecutionPriority`/`lowerExecutionPriority`, which each swap one adjacent sibling per call.
 Read the order back with `listFlowExecutions` before declaring the flow done — nothing errors on
 a wrong order, so it has to be checked, not assumed.
+
+**This flow is the one with a CONDITIONAL sub-flow, so it needs `addConditional`.** A conditional
+is not a single step: it's a sub-flow whose *execution* is `CONDITIONAL`, whose **first** child is
+a condition authenticator, followed by the steps being gated. For the OTP branch that means
+`addConditional(parentFlowAlias="<Forms Sub-Flow>", alias="<Conditional OTP>",
+conditionProvider="conditional-user-configured", priority=20)`, then
+`addAuthenticator(flowAlias="<Conditional OTP>", provider="auth-otp-form", priority=1,
+requirement="REQUIRED")` for the gated step. `conditional-user-configured` takes no config; every
+other condition (`conditional-user-role`, `conditional-user-attribute`, `conditional-client-scope`,
+…) does — read its real key names with `getAuthenticatorConfigDescription` rather than guessing,
+because they aren't uniform (`negate` vs `not` vs `included` for the same idea).
+
+**Config aliases are unique per realm, not per execution.** This asset attaches
+`match-by-org-name` to `ext-select-org` in *three* sub-flows. The atomic import turns that into one
+shared config, but `addAuthenticatorConfig` creates one per execution and the second attach with a
+repeated alias returns **409** — so give each a distinct alias (`match-by-org-name-cookies`,
+`-idp`, `-forms`). Same values, different aliases.
 
 **The atomic import hash-prefixes every alias.** The flow it creates is *not* named what the
 asset says — it gets a generated prefix like `8esLlLB3D3YqVg-Org Browser Flow by Org Name`. Read

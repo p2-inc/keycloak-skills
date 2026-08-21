@@ -3,6 +3,45 @@
 The [`../SKILL.md`](../SKILL.md) router dispatches to the files below. Each is loaded **on demand**
 for a specific intent + tooling, never all at once.
 
+## Authoring flows: components first
+
+Custom authentication flows are built **component by component** through MCP tools, on stock
+Keycloak Admin REST with no extension required. That is the default path, not a fallback:
+
+| Step | Tool |
+|---|---|
+| The flow itself | `addFlow` (or `copyFlow` to start from a built-in like `browser`) |
+| One authenticator | `addAuthenticator` |
+| A nested flow | `addSubFlow` |
+| A conditional sub-flow + its condition | `addConditional` |
+| Per-step config | `addAuthenticatorConfig` |
+| Undo | `deleteExecution`, `deleteAuthenticatorConfig`, `deleteFlow` |
+| Discover what exists | `listAuthenticatorProviders`, `getAuthenticatorConfigDescription` |
+
+`importAuthenticationFlow` is the one-shot alternative: it authors a whole flow *and* its bindings
+in a single call, and is the only way to import a flow **completely** at once — but it needs the
+[p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+extension and 404s without it. Paired with `deleteFlow` it also gives a clean re-import cycle.
+Keycloak's own `partialImport` is not a substitute for either path: it has no authentication-flow
+handler and ignores flows silently (HTTP 200, nothing created).
+
+Offer the extension when it's missing — one jar collapses many calls into one — but never report a
+dead end: the component tools always work.
+
+Three things that are load-bearing on the component path:
+
+- **Order.** `addAuthenticator` / `addSubFlow` **append** when `priority` is omitted (the server
+  assigns `last sibling + 1`), so call order alone decides the result — and a sub-flow created
+  before its parent's other steps lands *first*. Pass `priority` on every call, and read the order
+  back with `listFlowExecutions`: nothing errors on a wrong order. `priority` is honoured only from
+  **Keycloak 25** onward; older servers need `raiseExecutionPriority` / `lowerExecutionPriority`.
+- **Requirement.** New executions are created `DISABLED`. Pass `requirement` on the add call, or
+  the step exists and does nothing.
+- **Config aliases are unique per realm, not per execution.** The bundled assets deliberately reuse
+  one alias across several executions (`match-by-org-name` on three `ext-select-org` steps). The
+  atomic import turns that into one shared config; `addAuthenticatorConfig` cannot, so give each
+  execution a distinct alias or the second attach returns 409.
+
 ## Organizations always mean the deployment's realm
 
 Every intent in this router that touches organizations means **deployment-realm organizations** —

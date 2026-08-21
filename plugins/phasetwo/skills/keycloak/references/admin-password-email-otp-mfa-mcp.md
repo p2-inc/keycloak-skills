@@ -75,9 +75,10 @@ worthless without the password, since the code is never sent until the password 
 
 The extension hash-prefixes the created alias — read it back from the response rather than
 assuming. A 404 means the atomic-flows extension isn't installed; offer installing it first.
-**If declined, the fallback stays inside MCP — no raw REST, no credentials from the user**:
-`createAuthenticationFlow` → `addAuthenticationSubFlow` for the forms sub-flow →
-`addAuthenticationExecution` for `auth-cookie`, `identity-provider-redirector`,
+**The component path below is the default and always available — no extension, no raw REST, no
+credentials from the user**:
+`addFlow` → `addSubFlow` for the forms sub-flow →
+`addAuthenticator` for `auth-cookie`, `identity-provider-redirector`,
 `auth-username-password-form`, `ext-email-otp` (**in that order** — the password form must
 come before `ext-email-otp`, that's the whole point of this intent — with `priority` passed
 explicitly on every call, since both add calls append when it's omitted) →
