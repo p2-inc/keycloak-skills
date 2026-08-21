@@ -7,6 +7,7 @@ for a specific intent + tooling, never all at once.
 
 - **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:email-otp-login`, `admin:password-email-otp-mfa`,
   `admin:passwordless-magic-link-org-restrict`, `admin:passwordless-passkey`,
+  `admin:zero-password-login`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
   `admin:social-login`, `admin:idp-federation`,
   `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
@@ -27,6 +28,8 @@ for a specific intent + tooling, never all at once.
 | `admin-passwordless-magic-link-org-restrict-mcp.md` | `admin:passwordless-magic-link-org-restrict` (tooling=`mcp`) — same outcome via `importAuthenticationFlow` plus the org-restrict-login tool set (`createOrganization`, membership, `setSmtpSettings`) | ✅ done |
 | `admin-passwordless-passkey-mcp.md` | `admin:passwordless-passkey` (tooling=`mcp`) — passkey-only WebAuthn login: the realm's WebAuthn PASSWORDLESS policy (`setWebAuthnPasswordlessPolicy`), authoring and binding a passkey-only flow (`importAuthenticationFlow` when the keycloak-atomic-auth-flows extension is present, documented manual REST sequence otherwise), and the credential-bootstrap problem for a zero-credential user (`sendRequiredActionEmail`) | ✅ done |
 | `admin-passwordless-passkey.md` | `admin:passwordless-passkey` (tooling=`rest`) — same outcome via raw Admin REST: realm-representation PUT for the WebAuthn PASSWORDLESS policy and SMTP, authoring/binding the flow, and `execute-actions-email` for credential bootstrap | ✅ done |
+| `admin-zero-password-login-mcp.md` | `admin:zero-password-login` (tooling=`mcp`) — the "0 password required login flow": one browser flow with `ext-magic-form` and `webauthn-authenticator-passwordless` as ALTERNATIVE siblings, so magic link doubles as the passkey bootstrap path. Drives `importAuthenticationFlow`, `setWebAuthnPasswordlessPolicy`, `setSmtpSettings`, `listFlowExecutions`/`setExecutionAuthenticatorConfig`, `bindRealmAuthenticationFlow`, `sendRequiredActionEmail` (all confirmed present on the server) | ✅ done |
+| `admin-zero-password-login.md` | `admin:zero-password-login` (tooling=`rest`) — same outcome via raw Admin REST: the atomic-flows import (or the manual sequence, where the two ALTERNATIVEs' `priority` is load-bearing), the WebAuthn PASSWORDLESS realm policy, SMTP, and `ext-magic-create-nonexistent-user=false` — which in a zero-password flow *is* the whole authentication boundary | ✅ done |
 | `cluster-setup-mcp.md` | `admin:cluster-setup` (tooling=`mcp` only) — provisioning a dedicated Phase Two cluster: org/region/tier/billing selection, Stripe checkout handoff (never completes payment), polling to `ACTIVE`, optional first deployment and custom domain | ✅ done |
 | `cluster-create-deployment-mcp.md` | `admin:cluster-create-deployment` (tooling=`mcp` only) — creating a new deployment (realm) in an existing `ACTIVE` cluster, including recognizing "isolate/secure this app" as a request for a new realm | ✅ done |
 | `admin-corporate-sso-mcp.md` | `admin:corporate-sso` (tooling=`mcp`) — routing by email domain via organizations (`linkIdentityProviderToOrganization`), the `homeIdp`/`homeIdp with orgs-check` custom flows and `forwardToLinkedIdp`, why an IdP-redirector execution is the wrong answer | ✅ done |
@@ -46,6 +49,17 @@ Both `admin-password-email-otp-mfa*.md` files reference
 in place of `ext-auth-username-auth-note` as the first execution. That single substitution is the
 entire difference between "passwordless" and "password + second factor"; verified live (correct
 password → OTP sent; wrong password → rejected before `ext-email-otp` runs, no mail sent).
+
+Both `admin-zero-password-login*.md` files reference
+[`assets/zero-password-login.partial-import.json`](../assets/zero-password-login.partial-import.json),
+copied verbatim from the `bindingAuthenticationFlow` skill's
+`passwordless-or-magic-link.partial-import.json`. Two things about it are deliberate and worth not
+"fixing": `ext-magic-form` (priority 2) sits *ahead* of `webauthn-authenticator-passwordless`
+(priority 3) because the magic-link form works for a user with no credentials at all, so the
+default screen is never a dead end; and the sub-flow's inherited alias/description still say
+"passwordless-or-password" / "Username, password, otp and other auth forms" even though there is
+no password step — misleading, but the parent references the sub-flow *by alias*, so neither can
+be renamed alone.
 
 Both `admin-email-otp-login*.md` files reference
 [`assets/email-otp-flow.partial-import.json`](../assets/email-otp-flow.partial-import.json). Its

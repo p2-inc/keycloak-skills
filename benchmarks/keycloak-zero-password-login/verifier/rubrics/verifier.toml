@@ -1,0 +1,20 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm lets priya@acme.example and marcus@acme.example log in with a WebAuthn
+passkey and never shows a password field, with or without a registered credential. All
+of: starting from zero credentials, requesting the webauthn-register-passwordless
+required action produces captured mail with an action-token link; opening that link and
+completing a real WebAuthn registration ceremony (headless browser, CDP virtual
+authenticator) never shows a password field; a fresh authorization-code login using that
+same passkey never shows a password field and returns to http://localhost:9999/callback
+with an authorization code and the original state value preserved; a login attempt with
+no registered credential at all still never falls back to a password field; priya and
+marcus both still exist and are enabled; and only the master and acme realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"
