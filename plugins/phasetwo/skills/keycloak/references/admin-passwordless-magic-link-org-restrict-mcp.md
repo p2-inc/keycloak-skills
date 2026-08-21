@@ -20,7 +20,8 @@ against that, and only then reaching the magic-link step itself.
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
-| Create the organization | `createOrganization` |
+| Create the organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below |
+| Find an existing one | `listDeploymentOrganizations` |
 | Add a member | (org membership tool — see `admin-org-restrict-login-mcp.md`'s tool table) |
 | Confirm no flow already does this | `listAuthenticationFlows` |
 | Author the flow **and bind it**, in one call | `importAuthenticationFlow` (needs the atomic-flows extension — see below) |
@@ -28,6 +29,28 @@ against that, and only then reaching the magic-link step itself.
 | Configure outgoing mail | `setSmtpSettings` |
 | Bind an already-existing flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
+
+> **First, the terminology that makes the rest of this readable: in Phase Two a *deployment* IS a
+> Keycloak realm.** One deployment == one realm, with the same name — `createClusterDeployment`'s
+> returned `name` is the realm name. So "the deployment's realm" is not a realm *inside* a
+> deployment; it's the same thing said twice, and `deploymentRealm` is just that name.
+>
+> **`createOrganization` is the wrong tool for this intent, and it fails in a way that wastes a
+> whole session.** There are **two separate organization stores**, and they are not connected:
+>
+> | Store | Lives on | Written by | Read by |
+> |---|---|---|---|
+> | **Account-level** Phase Two orgs — the ones that own clusters and hold billing | the Phase Two **control plane** | `createOrganization`, `listMyOrganizations` | the control plane |
+> | **Deployment orgs** — i.e. realm orgs: the `keycloak-orgs` store at `/realms/{realm}/orgs` | the **deployment's own Keycloak** (that realm) | **`createDeploymentOrganization`** | `linkIdentityProviderToOrganization`, `ext-select-org`, Home IdP Discovery |
+>
+> `createOrganization` only ever writes the first one, and its `realm` argument selects a
+> *control-plane* realm — **not** a deployment/realm. Passing a deployment name to it **404s**,
+> because no such realm exists on the control plane. An org it did create is invisible to the link
+> tool, which returns `{"error": "<orgId> not found"}`. Both failures look like a bad org id rather
+> than the wrong store, which is what makes this expensive to diagnose.
+>
+> Use **`createDeploymentOrganization`** (and `listDeploymentOrganizations` to find an existing
+> one). Its returned `orgId` is what `linkIdentityProviderToOrganization` expects.
 
 ## Prerequisite: the keycloak-orgs extension
 

@@ -33,12 +33,35 @@ MCP tools below will work.
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
-| Create the customer's organization | `createOrganization` (see the domain-verification caveat below — **before** relying on it) |
+| Create the customer's organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below |
+| Find an existing one | `listDeploymentOrganizations` |
 | Create the corporate IdP | `createOidcIdp` / `createSamlIdp` |
 | **Link the IdP to the organization** | `linkIdentityProviderToOrganization` — **pass `domains`**, or routing stays dead |
 | See what flows exist | `listAuthenticationFlows` |
 | Bind the flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
+
+> **First, the terminology that makes the rest of this readable: in Phase Two a *deployment* IS a
+> Keycloak realm.** One deployment == one realm, with the same name — `createClusterDeployment`'s
+> returned `name` is the realm name. So "the deployment's realm" is not a realm *inside* a
+> deployment; it's the same thing said twice, and `deploymentRealm` is just that name.
+>
+> **`createOrganization` is the wrong tool for this intent, and it fails in a way that wastes a
+> whole session.** There are **two separate organization stores**, and they are not connected:
+>
+> | Store | Lives on | Written by | Read by |
+> |---|---|---|---|
+> | **Account-level** Phase Two orgs — the ones that own clusters and hold billing | the Phase Two **control plane** | `createOrganization`, `listMyOrganizations` | the control plane |
+> | **Deployment orgs** — i.e. realm orgs: the `keycloak-orgs` store at `/realms/{realm}/orgs` | the **deployment's own Keycloak** (that realm) | **`createDeploymentOrganization`** | `linkIdentityProviderToOrganization`, `ext-select-org`, Home IdP Discovery |
+>
+> `createOrganization` only ever writes the first one, and its `realm` argument selects a
+> *control-plane* realm — **not** a deployment/realm. Passing a deployment name to it **404s**,
+> because no such realm exists on the control plane. An org it did create is invisible to the link
+> tool, which returns `{"error": "<orgId> not found"}`. Both failures look like a bad org id rather
+> than the wrong store, which is what makes this expensive to diagnose.
+>
+> Use **`createDeploymentOrganization`** (and `listDeploymentOrganizations` to find an existing
+> one). Its returned `orgId` is what `linkIdentityProviderToOrganization` expects.
 
 Capture **`deploymentId`** and **`deploymentRealm`** and reuse them on every call.
 
@@ -82,7 +105,7 @@ for that domain, no matter how correct everything else is.
 Confirm the link exists before moving on — do not assume it from a successful IdP creation.
 
 **"Verified" is real DNS domain-ownership proof, not a flag you set — and triggering it is
-deliberately not exposed here.** Adding a domain to an organization (via `createOrganization`'s
+deliberately not exposed here.** Adding a domain to an organization (via `createDeploymentOrganization`'s
 `domains` argument, or later) does not mark it verified. The extension verifies ownership by
 checking for a specific TXT record — something like `_org-domain-ownership.<domain>` — resolving
 to a value derived from the domain and the organization's ID, and only flips `verified` to `true`
