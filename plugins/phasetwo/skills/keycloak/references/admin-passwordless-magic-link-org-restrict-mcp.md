@@ -71,9 +71,14 @@ than assuming a successful add call means it did.
 
 ## Stage 3 — Author the flow (and bind it)
 
-Confirm with `listAuthenticationFlows` that no flow already does this. Authoring is not covered by
-any tool other than `importAuthenticationFlow` — same 404-if-missing behavior as every other
-atomic-flows-backed intent in this router:
+Confirm with `listAuthenticationFlows` that no flow already does this. `importAuthenticationFlow`
+authors and binds it in one call, but needs the atomic-flows extension — 404 if it's missing.
+**That is not a dead end.** Fall back to the manual sequence, still entirely through MCP tools,
+no raw REST and no credentials needed from the user: `createAuthenticationFlow` for the top
+level, `addAuthenticationSubFlow` for the forms sub-flow, `addAuthenticationExecution` for each
+leaf step below — **in the order the table below gives**, passing `priority` explicitly on every
+call since both append when it's omitted — then `setExecutionRequirement` on each and
+`setExecutionAuthenticatorConfig` for the two that need config.
 
 ```json
 {
@@ -96,7 +101,8 @@ Putting `ext-magic-form` before `ext-select-org` would send mail regardless of m
 defeat the entire point of gating — this is the one thing not to improvise around.
 
 Read the real, hash-prefixed alias back from `importAuthenticationFlow`'s response rather than
-assuming the asset's name — same trap as every other atomic-flows intent.
+assuming the asset's name — same trap as every other atomic-flows intent. (The manual-sequence
+path doesn't have this issue: you choose the alias yourself.)
 
 ## Stage 4 — Realm mail settings
 

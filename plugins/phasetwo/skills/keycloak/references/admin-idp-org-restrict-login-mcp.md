@@ -48,6 +48,7 @@ than returning an empty list, it isn't installed — say so and stop.
 | Broker the customer's IdP | `createOidcIdp` / `createSamlIdp` |
 | **Link the IdP to the owning organization** | `linkIdentityProviderToOrganization` |
 | Author the post-broker flow **and bind it**, in one call | `importAuthenticationFlow` (needs the atomic-flows extension — see below) |
+| If that extension is missing: author it step by step instead | `createAuthenticationFlow` → `addAuthenticationExecution` per step → `setExecutionRequirement` — no raw REST needed |
 | Inspect/adjust the `ext-select-org` matching mode | `listFlowExecutions` / `setExecutionAuthenticatorConfig` |
 | Bind the flow to the IdP separately | `bindIdpBrokerLoginFlow(flowType="post_broker_login")` |
 | Confirm what's bound | `listIdentityProviders` |

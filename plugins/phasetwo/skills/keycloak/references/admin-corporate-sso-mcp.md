@@ -133,12 +133,27 @@ single client) in the same payload.
 
 **Do not use Keycloak's `partialImport` endpoint (or the admin console's "Partial import" action)
 for flows** — it has no handler for authentication flows at all and silently ignores them: HTTP
-200, nothing created, no error. `importAuthenticationFlow` instead requires the
-[p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
-extension on the target Keycloak; it returns a clear 404 if that's missing, in which case offer
-installing it (one jar, one call instead of a long manual create-flow/add-execution/set-requirement
-sequence) rather than silently switching approaches. Note the extension hash-prefixes the created
-alias, so read the real name back rather than assuming the asset's name.
+200, nothing created, no error.
+
+`importAuthenticationFlow` requires the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+extension and returns a clear 404 if it's missing. Offer installing it — one jar, one call instead
+of many — as the first choice. **If it's declined or can't be installed, the fallback still stays
+inside MCP**: `createAuthenticationFlow` → `addAuthenticationSubFlow` for the forms sub-flow →
+`addAuthenticationExecution` for each leaf step (`auth-cookie`, `auth-spnego`,
+`identity-provider-redirector`, `ext-auth-home-idp-discovery`) → `setExecutionRequirement` on
+each → bind. There is no raw-REST or credentials-from-the-user step needed here; report a dead
+end only if one of these tools itself is unavailable on this MCP server.
+
+**Pass `priority` explicitly on every `addAuthenticationSubFlow`/`addAuthenticationExecution`
+call.** Both APPEND when priority is omitted — landing at `(last sibling's priority + 1)` — so
+creating the forms sub-flow before `auth-cookie` exists puts it first. `priority` in the body is
+honoured only from Keycloak 25 onward; older versions need `raiseExecutionPriority`/
+`lowerExecutionPriority` to repair the order afterward. Read it back with `listFlowExecutions`
+before calling the flow done.
+
+Note the atomic-import path hash-prefixes the created alias, so read the real name back rather
+than assuming the asset's name — the manual-sequence path does not have this issue, since you
+choose the alias yourself.
 
 **Both assets deliberately set `forwardToLinkedIdp=true`.** The authenticator's factory default
 is `false`, which silently prevents any redirect at all — the single most likely cause of "I

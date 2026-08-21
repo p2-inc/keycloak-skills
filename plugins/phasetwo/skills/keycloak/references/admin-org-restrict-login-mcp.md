@@ -90,13 +90,22 @@ The two paths that do work:
 | Path | Cost | Requires |
 |---|---|---|
 | **`importAuthenticationFlow`** — authors the whole flow *and* applies bindings in one call | One call | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed on the target Keycloak |
-| **Manual REST sequence** — create flow → create each sub-flow → add each execution → set each requirement → attach authenticator config → bind | Many calls, easy to get wrong | Nothing beyond stock Admin REST |
+| **The manual sequence, through MCP tools** — `createAuthenticationFlow` → `addAuthenticationSubFlow` for each sub-flow → `addAuthenticationExecution` for each leaf step → `setExecutionRequirement` on each → `setExecutionAuthenticatorConfig` where needed → bind | Many calls, easy to get the order wrong | Nothing beyond stock Admin REST — no extension |
 
-**Offer the extension when it isn't installed.** `importAuthenticationFlow` returns a clear 404
-if the extension is missing. That is worth surfacing to the user as a real choice — installing
-one jar collapses a long, error-prone sequence into a single call — rather than silently falling
-into the manual path. If they decline (or can't install it), the manual sequence is legitimate;
-just say upfront that it's substantially more calls.
+**Both paths are MCP tool calls. Neither requires dropping to raw REST or asking the user for
+credentials** — if `importAuthenticationFlow` 404s (extension missing), its own error message
+names the manual-sequence tools; use them rather than reporting a dead end. Offer the extension
+as a real choice first — installing one jar collapses the whole sequence into a single call — but
+proceed with the manual tools when the user prefers that or can't install it.
+
+**Order is load-bearing on the manual path, and `addAuthenticationSubFlow`/`addAuthenticationExecution`
+APPEND.** With no `priority` argument, each call lands at `(last sibling's priority + 1)` — so
+creating a sub-flow before its parent's other steps exist puts it first, ahead of `auth-cookie`.
+Pass `priority` explicitly on every call. It's honoured only from Keycloak 25 onward (added
+2024-05-29); on older versions add steps in the intended order and repair with
+`raiseExecutionPriority`/`lowerExecutionPriority`, which each swap one adjacent sibling per call.
+Read the order back with `listFlowExecutions` before declaring the flow done — nothing errors on
+a wrong order, so it has to be checked, not assumed.
 
 **The atomic import hash-prefixes every alias.** The flow it creates is *not* named what the
 asset says — it gets a generated prefix like `8esLlLB3D3YqVg-Org Browser Flow by Org Name`. Read
