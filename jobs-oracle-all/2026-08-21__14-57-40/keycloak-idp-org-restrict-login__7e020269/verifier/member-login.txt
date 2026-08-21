@@ -1,2 +1,0 @@
-org=engineering
-final=http://localhost:9999/callback?state=verify-member&session_state=fy1jlFtlGU4U9e8EUbQ7tPpK&iss=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Frealms%2Facme&code=e39cc0ea-9578-7275-d082-9d1329dcc9bd.fy1jlFtlGU4U9e8EUbQ7tPpK.bcf25a28-9366-4f3f-a736-28240380ff19

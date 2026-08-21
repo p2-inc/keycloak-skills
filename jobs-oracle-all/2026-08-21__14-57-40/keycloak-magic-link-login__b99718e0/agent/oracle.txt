@@ -1,2 +1,0 @@
-keycloak ready on :8080/auth (acme), mail capture server ready on :1025, proxy ready on :8091, mcp server ready on :8090
-oracle self-check passed: known address received mail and completed login, unregistered address got the same page response with no mail and no new account

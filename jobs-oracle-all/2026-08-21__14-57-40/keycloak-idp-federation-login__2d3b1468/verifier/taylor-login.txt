@@ -1,1 +1,0 @@
-final=http://localhost:9999/callback?state=verify-taylor&session_state=yk1h61MvDT9UvIegrSIy8aHr&iss=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Frealms%2Facme&code=947ea678-5bf8-a54a-9ef3-0d68a39b8d88.yk1h61MvDT9UvIegrSIy8aHr.c45adfd2-e73a-4ad2-851e-d1c99bfdedf6

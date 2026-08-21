@@ -1,3 +1,0 @@
-http://localhost:8080/auth/realms/acme/protocol/openid-connect/auth?client_id=acme-portal&response_type=code&scope=openid+email&redirect_uri=http%3A%2F%2Flocalhost%3A9999%2Fcallback&state=verify-passkey&nonce=nonce-verify-passkey
-http://localhost:8080/auth/realms/acme/login-actions/authenticate?execution=ec8b6783-3189-4d8e-a920-d5fbf9f85dca&client_id=acme-portal&tab_id=riEVnq84NFU&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0IjoidmVyaWZ5LXBhc3NrZXkifQ
-http://localhost:8080/auth/realms/acme/login-actions/authenticate?execution=1c69b610-0461-4715-990d-32c50025b91c&client_id=acme-portal&tab_id=riEVnq84NFU&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0IjoidmVyaWZ5LXBhc3NrZXkifQ

@@ -1,9 +1,0 @@
-keycloak ready on :8080/auth (acme, contoso-idp), proxy ready on :8091, mcp server ready on :8090
-Brokering Contoso's identity provider as 'contoso-sso'...
-Adding attribute mappers (email, given_name->firstName, family_name->lastName)...
-Driving brokered logins for both Contoso staff (no account_hint at all)...
-  taylor: login succeeded (expected)
-  taylor: attributes mapped correctly
-  morgan: login succeeded (expected)
-  morgan: attributes mapped correctly
-Done.
