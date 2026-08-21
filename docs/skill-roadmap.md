@@ -1,21 +1,27 @@
 # Keycloak skills — categories and skill backlog
 
 A survey of what Keycloak's own documentation covers, organised into **categories** of work, with a
-list of **skill ideas** inside each. This is a planning document: nothing here is written or
+list of **capability ideas** inside each. This is a planning document: nothing here is written or
 verified yet, and per [`../plugins/phasetwo/skills/keycloak/references/README.md`](../plugins/phasetwo/skills/keycloak/references/README.md)'s
 authoring conventions, **nothing here should be added to a router until it's genuinely written and
 verified**. Ideas graduate into intents; they don't get stubbed in ahead of time.
 
-Each idea carries four short points, matching the shape the router's intent table needs:
+**An idea here is not assumed to be a skill.** §3 sets out the test that decides, and §4.1/§4.2 sort
+every idea into one of three outcomes: an existing MCP tool call, a proposed tool, or a written
+chapter. Most are not chapters. Read those two tables first — the category sections from **A** onward
+are the underlying survey the tables are derived from.
+
+Each idea carries four short points:
 
 - **What** — the capability, in one line.
-- **Use when** — plain-language triggers a developer would actually type. These become the Step 1
-  intent-table row.
-- **Problem** — what goes wrong without the skill (usually: an agent picks the wrong component, or
-  gets the order wrong, or doesn't know the feature exists).
+- **Use when** — plain-language triggers a developer would actually type. For a chapter these become
+  the Step 1 intent-table row; for an operation they belong in the tool's description instead.
+- **Problem** — what goes wrong without guidance (usually: an agent picks the wrong component, or
+  gets the order wrong, or doesn't know the feature exists). **This is the load-bearing field** — it
+  is what §3's test reads to decide whether a tool can absorb the idea.
 - **Case** — a concrete scenario.
 
-Plus two tags:
+Plus two tags, and on corrected entries an **Outcome** line:
 
 - **Tooling** — which driving mechanism(s) the reference files would cover. `mcp` = Keycloak MCP
   server tools, `rest` = raw Admin REST, `cli` = `kc.sh`/`kcadm`/env vars, `code` = writing source,
@@ -126,81 +132,257 @@ neither.
 24 files all starting `admin-` in one directory, already with two exceptions (`cluster-*-mcp.md`).
 At 200+ reference files this is unnavigable.
 
+### The decisive question: does this need a skill at all?
+
+The three problems above are real, but the layout they imply — one router per category — answers the
+wrong question. It assumes all 132 ideas are skills and asks how to arrange them. Most are not.
+
+Checked against the live tooling: **`phasetwo-mcp` already exposes 99 tools**, and its REST client
+layer is wired further still (`PUT /admin/realms/{realm}` and `PUT /clients/{id}` are both present,
+so every realm-level setting is reachable today and merely lacks a `@Tool`). Around **15 of the ideas
+below are already a single existing tool call**, and another **~55 are one call that nobody has
+annotated yet**. Two of this document's own headline gaps are wrong on the facts — see the
+corrections at **B5** and **J9/N3**.
+
+That matters because of what this repo has already measured
+(`docs/skill-building-lessons.md` §2–§3):
+
+| Measurement | Result |
+|---|---|
+| No-skill baseline, both benchmarked tasks | **reward 1.0** — skills cut cost, they don't add capability |
+| With-skill (MCP arm) vs no-skill | 33 calls / $0.85 vs 126 calls / $5.59 |
+| With-skill (**REST-prose** arm) vs no-skill | **135 calls vs 126 — bought nothing** |
+| Fixing one tool's swallowed error body | −51% calls, −79% cost, 6 → 0 errored calls |
+
+The measured win came from routing to good tools, not from prose. Where the underlying path is
+inherently many REST calls, prose guidance was indistinguishable from no guidance at all. So the
+split to make first is not router-per-category — it is **operation vs. flow**:
+
+- **Operations** — one call, or *n* calls with no decision in them — get an **MCP tool**, with the
+  direct Admin REST call documented as a fallback. No prose. §4.2.
+- **Flows** — where the wrong configuration succeeds silently, the order is load-bearing, the right
+  answer is partly a refusal, or the fix lives in a different layer than the symptom — get a written
+  **chapter**. §4.1.
+
+A capability qualifies as a chapter only if it can name a concrete failure a tool signature cannot
+prevent. If a clearer tool name, a safe default, or a better description removes the trap, the fix
+is the tool: *a skill that exists to warn about a tool's footgun is a bug report.* **B5** is the
+worked example — its two cited traps are already dead, killed by `createLdapUserStorage`'s
+`READ_ONLY` default and its per-vendor attribute defaults.
+
 ### Proposed layout
 
-Split the one router into **one router per category**, each a sibling skill in the same `phasetwo`
-plugin, each with a focused description that fits comfortably in the length budget. Claude selects
-skills by description, so a flat set of well-described category routers needs no super-router above
-it — adding one would just reintroduce the description problem one level up.
+Six skills, not fourteen. Five of the category routers the previous draft proposed —
+`keycloak-users`, `keycloak-access-control`, `keycloak-clients`, `keycloak-realm-ops`,
+`keycloak-organizations` — dissolve almost entirely into §4.2 tool gaps rather than skills.
+
+| Skill | Routing axis | Chapters | Status |
+|---|---|---|---|
+| `keycloak` | `{mcp\|rest}` | 13 shipped + A8, A13, A14, B7, B8, F6, F10 | exists · +7 |
+| `securing-apps` | `{framework}` | H1–H14, plus G5 and H13 | planned separately |
+| `keycloak-operations` | `{cli\|conf-file\|container}` | J1, J3, J4, J7, J9, J10, K9 | new |
+| `keycloak-hardening` | `{rest\|cli}` | G1, O1, O3, O6, H12 (O2, O4 as sections) | new |
+| `keycloak-extension-dev` | none | L1–L9 | new |
+| `keycloak-theming` | none | M2, M3, M4 | new · low priority |
+
+Retired as skills because tools absorb them: **A7, A9, A11, A12, A16, A18, B5, B6, C5–C8, D1–D5,
+D9, E1, E2, E4, F1–F5, F7–F9, F11, G2, G3, G6, G8, I1–I6, I9, M1, M5, N3, N4** — plus the hosted
+halves of **J6**, **J9** and **O5**.
+
+This also retires problem 1 above as a constraint. Six focused descriptions discriminate cleanly,
+and the existing router's intent list grows by **7**, not 119 — comfortably inside the 994-character
+budget it already occupies. Problems 2 and 3 stand: the surviving non-API skills each get their own
+tooling axis, and reference files move into subdirectories, dropping the dead `admin-` prefix.
 
 ```
-plugins/phasetwo/skills/
-├── keycloak-authentication/        ← A: flows, passwordless, MFA, credential policies
-├── keycloak-federation/            ← B: IdP brokering, social, corporate SSO, LDAP/AD
-├── keycloak-organizations/         ← C: orgs, multi-tenancy, org-scoped login
-├── keycloak-users/                 ← D: user profile, registration, required actions, workflows/IGA
-├── keycloak-access-control/        ← E+G: roles, groups, admin delegation, authorization services
-├── keycloak-clients/               ← F: client + protocol config, scopes, mappers, tokens, sessions
-├── keycloak-app-integration/       ← H: securing apps, per framework
-├── keycloak-realm-ops/             ← I: realm lifecycle, keys, email, events, import/export
-├── keycloak-server-config/         ← J: install and configure the server itself
-├── keycloak-deployment/            ← K: containers, operator, HA, observability
-├── keycloak-hardening/             ← O: threat mitigations, FAPI/OAuth 2.1, compliance
-├── keycloak-extension-dev/         ← L: SPI/provider development
-├── keycloak-theming/               ← M: themes and localization
-└── phasetwo-platform/              ← N: cluster/deployment provisioning, p2 extension catalogue
-```
-
-Within each skill, keep today's conventions but organise references into subdirectories and drop
-the dead `admin-` prefix:
-
-```
-keycloak-authentication/
+keycloak/
 ├── SKILL.md
 ├── references/
 │   ├── README.md
-│   ├── passwordless/magic-link-mcp.md, magic-link-rest.md, ...
-│   ├── mfa/email-otp-mcp.md, ...
-│   └── policies/password-policy-rest.md, ...
+│   ├── passwordless/magic-link-mcp.md, ...
+│   ├── brokering/first-login-linking.md, federated-logout.md, ...
+│   └── idp/<vendor>.md          ← unchanged, tooling-agnostic
 └── assets/
 ```
 
-Two further recommendations:
-
-- **Make the tooling axis per-skill, not global.** `keycloak-authentication` asks
-  `{mcp|rest}` exactly as today. `keycloak-server-config` asks `{cli|conf-file|env|operator}`.
-  `keycloak-app-integration` asks `{framework}`. `keycloak-extension-dev` has no tooling axis.
-  Each router's Step 2 states its own axis rather than inheriting one that doesn't apply.
-- **Shared vendor/framework reference pools.** `references/idp/` is already tooling-agnostic and
-  would be shared between `keycloak-federation` and `keycloak-organizations`. Rather than
-  duplicating, keep one copy under the skill that owns it and have the other router `Read:` across
-  — or, if skillsaw objects to cross-skill paths, promote it to a `plugins/phasetwo/shared/`
-  directory referenced by both.
+`references/idp/` stays where it is. With `keycloak-federation` and `keycloak-organizations` no
+longer being separate skills, the cross-skill sharing problem the previous draft had to solve
+disappears.
 
 ### Migration cost
 
-Low, and mostly mechanical: the 13 existing intents split across three of the new skills
-(`keycloak-authentication`, `keycloak-federation`, `phasetwo-platform`), reference files move
-unchanged, and per `adding-a-skill.md` §3 the plugin-level files (`plugin.json` ×2,
-`plugins/phasetwo/README.md`, root `marketplace.json`) need updating for any new intent anyway.
-The one real cost is that `.claude-plugin/marketplace.json` and both `plugin.json`s are already
-out of sync with each other (marketplace says `0.1.0`, plugin says `0.10.0`) — worth fixing as part
-of the split rather than carrying the drift into 14 skills.
+Lower than the previous draft's estimate, because the moves are far fewer. The 13 existing intents
+all stay in the `keycloak` router — no reshuffling — and reference files move only into
+subdirectories. `keycloak-operations` and `keycloak-hardening` are new directories created when
+their first chapter is written, not up front.
 
-**Recommendation**: do the split *before* writing the next batch of references, not after. Moving
-22 files is easy; moving 200 is not.
+The real cost moves to `phasetwo-mcp`: ~55 tools, staged in waves (§4.2). Most need only a `@Tool`
+annotation and a DTO, since the REST calls are already wired. **This is the plan's main risk** — it
+is Java work in a different repo on a different release cycle, and if it is not resourced those
+capabilities end up covered by nothing at all, which is worse than the previous draft's position of
+promising prose.
+
+**Recommendation**: land Wave 1 tools and the two factual corrections (**B5**, **J9/N3**) before
+writing any new reference file. The corrections are a live mis-route — `SKILL.md`'s frontmatter
+still refuses LDAP/AD as having "no MCP tool," and five exist.
 
 ---
 
 ## 4. Categories and skill ideas
 
-16 categories, 132 ideas. 13 already exist as router intents (marked ✅), 6 are deliberately
-deferred as experimental or legacy (**P**), leaving 113 to build.
+16 categories, 132 ideas — but they are not 132 skills. Sorted by §3's operation-vs-flow test:
+
+| Outcome | Count | Where it goes |
+|---|---|---|
+| Already one existing MCP tool call | ~15 | §4.2 — close the idea |
+| One call with no tool yet | ~55 | §4.2 — add the tool, write no prose |
+| Genuine chapter | ~18 | §4.1 |
+| Not an API-shaped task at all | ~28 | `securing-apps`, extension-dev, theming, deployment |
+| Deferred as experimental or legacy (**P**) | 6 | §4 P |
+| Already shipped as router intents (✅) | 13 | unchanged |
+
+The category sections from **A** onward keep every idea and every **Problem** line — that analysis is
+the valuable part and is what the two tables below are derived from. What changes is that an idea is
+no longer assumed to be a skill.
+
+### 4.1 Chapters — capabilities that need written guidance
+
+Each row names a concrete failure that a tool signature cannot prevent. If that column can't be
+filled, the row belongs in §4.2 instead.
+
+| Chapter | Skill | Gate | Why a tool can't absorb it |
+|---|---|---|---|
+| A8 conditional MFA / step-up | `keycloak` | G3, G1 | `addConditional` exists; the nesting level is judgment, and a misplaced condition evaluates true silently — everyone gets prompted, or nobody does |
+| A13 Kerberos / SPNEGO | `keycloak` | G5 | Spans authenticator, user federation and a server-side keytab; fails with opaque browser errors when any one is off |
+| A14 X.509 / mutual TLS | `keycloak` | G5 | Half realm config, half `https-client-auth` server config |
+| B7 first-login flow & account linking | `keycloak` | G4 | The correct answer is partly "not that way" — auto-linking by unverified email is an account-takeover vector |
+| B8 federated logout & SLO | `keycloak` | G1 | Partial logout looks like success and is a security finding |
+| F6 standard vs legacy token exchange | `keycloak` | G2, G4 | v2 is `DEFAULT` and v1 `PREVIEW` — the reverse of every older tutorial |
+| F10 offline & transient sessions | `keycloak` | G2, G1 | Transient sessions are widely mis-stated as configurable; the only lever is a client switch that *disables* the optimization |
+| G1 authorization-services vocabulary | `keycloak-hardening` | G2 | Four concepts whose names each collide with something else in Keycloak; the CRUD beneath is a Wave 3 tool set |
+| J1 first production configuration | `keycloak-operations` | G2 | The build-time vs runtime option split, plus `start-dev` in production |
+| J3 truststore & outgoing TLS | `keycloak-operations` | G5 | `PKIX path building failed` is fixed in Keycloak's truststore, not the JVM's |
+| J4 hostname & reverse proxy | `keycloak-operations` | G5 | Manifests as a token-validation 401, so the wrong layer gets debugged; reworked in v26, making pre-26 advice actively wrong |
+| J7 feature flags | `keycloak-operations` | G2 | Which flags are default moved between 26.x releases |
+| J9 extension install (self-managed) | `keycloak-operations` | G6 | The hosted half is a Wave 1 tool; `kc.sh build` + `providers/` is not an API |
+| J10 bootstrap admin & recovery | `keycloak-operations` | — | Emergency procedure whose alternative is editing the database |
+| K9 version upgrades | `keycloak-operations` | — | 117 files of upgrade notes; the work is finding the few changes that affect a given config |
+| O1 security hardening checklist | `keycloak-hardening` | G4 | 21 mitigations, individually easy, collectively never all applied |
+| O3 OAuth 2.1 compliance | `keycloak-hardening` | G4 | Prerequisite for H12 |
+| O6 token & key compromise response | `keycloak-hardening` | G4 | Composed from four mechanisms under time pressure, and must state plainly that a live access token cannot be un-issued |
+
+Demoted to short sections or dropped — advice rather than mechanism, so no gate fires:
+**C4** organizations vs `keycloak-orgs` (becomes a tool-description job, see §4.2 rule 7) ·
+**E3** groups-vs-roles · **E5** master realm vs per-realm admin · **D10** GDPR posture ·
+**H1** integration decision guide.
+
+**H12** (Keycloak as an MCP authorization server) is a chapter in `keycloak-hardening`, gated G5:
+four MCP spec revisions with different mandatory standards, and the one capability here we can
+verify against our own deployment.
+
+### 4.2 Operations → MCP tool, with REST fallback
+
+Every row is an operation, not a skill: one call, or *n* calls with no decision in them. The
+fallback column is the direct Admin REST call — for self-managed Keycloak, and for use before a
+proposed tool ships. Paths verified against the
+[Admin REST API](https://www.keycloak.org/docs-api/latest/rest-api/index.html) and Phase Two's
+control-plane OpenAPI.
+
+#### Tool design — how a tool absorbs a would-be skill
+
+These are the rules that make the column above legitimate rather than a way of dodging work. They
+belong in `docs/skill-building-lessons.md` §3.
+
+1. **Name the tool for the developer's question, not the endpoint.** `explainTokenClaims`, not
+   `evaluateScopes`. F4's complaint is that Keycloak ships a scope evaluator "which nobody uses
+   because they don't know it exists" — a tool named after the question is discoverable; prose
+   pointing at a console feature is not.
+2. **Encode the trap as a default, not a warning.** `editMode=READ_ONLY` is the model. A safe default
+   applies when nobody read the paragraph.
+3. **Split decoy siblings into distinctly-named tools.** Never one tool with a `mode` argument where
+   the two modes *are* the classic confusion.
+4. **Report resolved state, the way the target system resolves it.** Measured: a "what is bound?"
+   tool that saw only realm level made a successful client-level write look like a failure, and the
+   agent made 13 consecutive shell calls without returning to the tool surface.
+5. **Return `nextStep` where order matters.** This is how a tool carries ordering knowledge that
+   would otherwise have to be a chapter.
+6. **Surface the upstream error body.** Already worth −51% calls / −79% cost once.
+7. **Say what the tool is *not*.** The org tools drive Phase Two's `/realms/{realm}/orgs` API, not
+   Keycloak's own `organizations` feature — which retires **C4**.
+
+#### Already covered — close these ideas
+
+| Idea | MCP tool | Fallback REST call |
+|---|---|---|
+| I2 SMTP | `setSmtpSettings` | `PUT /admin/realms/{realm}` → `smtpServer` |
+| A11 password policy | `setPasswordPolicy` | `PUT /admin/realms/{realm}` → `passwordPolicy` |
+| A12 brute force | `setBruteForceProtection`, `getUserLockoutStatus`, `clearUserLockout` | `PUT /admin/realms/{realm}`; `GET`/`DELETE /admin/realms/{realm}/attack-detection/brute-force/users/{id}` |
+| D2 self-registration | `setLoginAndRegistrationSettings` | `PUT /admin/realms/{realm}` |
+| A4 passkey policy | `getWebAuthnPasswordlessPolicy`, `setWebAuthnPasswordlessPolicy` | `PUT /admin/realms/{realm}` → `webAuthnPolicyPasswordless*` |
+| F1 OIDC client | `createOidcClient` | `POST /admin/realms/{realm}/clients` |
+| F2 SAML client | `createSamlClient` | `POST /admin/realms/{realm}/clients` |
+| **B5 LDAP / Active Directory** | `createLdapUserStorage`, `testLdapConnection`, `syncLdapUsers`, `listUserStorageProviders`, `deleteUserStorageProvider` | `POST /admin/realms/{realm}/components`; `POST /admin/realms/{realm}/testLDAPConnection`; `POST /admin/realms/{realm}/user-storage/{id}/sync` |
+| B6 IdP attribute mappers | `addIdpAttributeMapper` | `POST /admin/realms/{realm}/identity-provider/instances/{alias}/mappers` |
+| C5, C8 organizations | 18 `OrgTools` plus the deployment-organization tools | `/realms/{realm}/orgs/*` |
+| C7 per-organization IdP | `linkIdentityProviderToOrganization` | `POST /realms/{realm}/orgs/{orgId}/idps/link` |
+| I4 event logging | `getEventSettings`, `enableRealmEvents` | `PUT /admin/realms/{realm}/events/config` |
+| I5 event forwarding | `createWebhookSubscription`, `listWebhookSubscriptions`, `listWebhookDeliveryAttempts` | `POST`/`GET /realms/{realm}/webhooks`; `GET /realms/{realm}/webhooks/{id}/sends` |
+| M1 theme branding | `listAvailableThemes`, `setRealmThemes`, `setClientLoginTheme` | `PUT /admin/realms/{realm}` |
+| A18 flow debugging | `getAuthenticationBindings`, `listFlowExecutions`, `listAuthenticationFlows`, `clearClientAuthenticationFlowOverride` | `GET /admin/realms/{realm}`; `GET /admin/realms/{realm}/authentication/flows/{alias}/executions` |
+| N4 cluster domain (part) | `updateClusterDomain`, `getClusterRestartStatus` | `PUT /realms/{realm}/clusters/{id}` |
+
+#### Wave 1 — highest leverage
+
+| Idea | Proposed tool | Fallback REST call |
+|---|---|---|
+| E1 realm & client roles | `listRealmRoles`, `createRealmRole`, `deleteRealmRole`, `addCompositeRole`, `grantUserRole`, `revokeUserRole`, `listUserEffectiveRoles` | `/admin/realms/{realm}/roles`; `/roles/{role-name}/composites`; `/users/{id}/role-mappings/realm` and `/realm/composite` |
+| E2 groups & subgroups | `listGroups`, `createGroup`, `createSubGroup`, `addUserToGroup`, `listGroupMembers`, `setDefaultGroup` | `/admin/realms/{realm}/groups`; `/groups/{id}/children`; `PUT /users/{id}/groups/{group-id}`; `PUT /default-groups/{group-id}` |
+| F4 client scopes & protocol mappers | `listClientScopes`, `createClientScope`, `addClientProtocolMapper`, `attachClientScopeToClient` | `/admin/realms/{realm}/client-scopes`; `/clients/{id}/protocol-mappers`; `PUT /clients/{id}/default-client-scopes/{scopeId}` and `/optional-client-scopes/{scopeId}` |
+| **F4, E1, C6 — "why is my claim missing?"** | **`explainTokenClaims`**, `listEffectiveProtocolMappers`, `listGrantedRoleScopeMappings` | `GET /clients/{id}/evaluate-scopes/generate-example-access-token`; `/evaluate-scopes/protocol-mappers`; `/evaluate-scopes/scope-mappings/{roleContainerId}/granted` |
+| D4 user CRUD & bulk ops | `createUser`, `updateUser`, `deleteUser`, `searchUsers`, `countUsers`, `setUserPassword` | `/admin/realms/{realm}/users` and `/users/{id}`; `/users/count` |
+| F1 client update | `updateOidcClient` | `PUT /admin/realms/{realm}/clients/{id}` — already wired in the client layer, only the `@Tool` is missing |
+| **J9, N3 — extensions** | `listClusterExtensions`, `installClusterExtension`, `removeClusterExtension`, `listSupportedKeycloakVersions` | `/realms/{realm}/clusters/{id}/extensions` and `/extensions/{extensionId}`; `GET /extensions/keycloak-versions`; `POST /extensions/cluster-update` |
+
+`explainTokenClaims` is the highest-leverage single tool in this document: it answers what §F calls
+"the highest-traffic troubleshooting topic in the whole product."
+
+#### Wave 2 — session and lifecycle surface
+
+| Idea | Proposed tool | Fallback REST call |
+|---|---|---|
+| A16, F5, F8 timeouts & lifespans | `setTokenAndSessionTimeouts` — one tool covering all five interacting values, its description stating that the shortest wins | `PUT /admin/realms/{realm}` |
+| F9 logout & revocation | `listUserSessions`, `logoutUser`, `deleteSession`, `logoutAllSessions`, `pushClientRevocation` | `/users/{id}/sessions`; `POST /users/{id}/logout`; `DELETE /sessions/{session-id}`; `POST /logout-all`; `POST /clients/{id}/push-revocation` |
+| D3 required actions & AIA | `listRequiredActions`, `enableRequiredAction`, `setDefaultRequiredAction`, `setRequiredActionConfig` | `/admin/realms/{realm}/authentication/required-actions` and `/{alias}`, `/{alias}/config` |
+| D1 declarative user profile | `getUserProfileConfig`, `setUserProfileConfig` | `GET`/`PUT /admin/realms/{realm}/users/profile` |
+| F7 client secret rotation | `rotateClientSecret` + `getRotatedClientSecret` — deliberately a pair, so the grace period is visible in the tool surface rather than buried in prose | `POST /clients/{id}/client-secret`; `GET`/`DELETE /clients/{id}/client-secret/rotated` |
+| I3 realm keys | `listRealmKeys` | `GET /admin/realms/{realm}/keys` |
+| I6, I7 import / export | `partialExportRealm`, `partialImportRealm` — the description must carry the auth-flow gap and point at `importAuthenticationFlow` | `POST /admin/realms/{realm}/partial-export`; `POST /admin/realms/{realm}/partial-import`; `POST /realms/{realm}/clusters/{id}/deployments/import` |
+| D5 impersonation | `impersonateUser` | `POST /admin/realms/{realm}/users/{id}/impersonation` |
+| N4, plus the hosted halves of J6 and O5 | `listClusterDomains`, `addClusterDomain`, `getClusterDomainStatus`, `setClusterEnvVar`, `listClusterIpRules`, `getClusterResourceUsage`, `getClusterLogs` | `/realms/{realm}/clusters/{id}/domains`, `/env-vars`, `/ip-rules`, `/resource`, `/logs` |
+
+#### Wave 3 — deeper surfaces
+
+| Idea | Proposed tool | Fallback REST call |
+|---|---|---|
+| G2, G3, G6, G8 authorization services | `enableResourceServer`, `createAuthzResource`, `createAuthzScope`, `createAuthzPolicy`, `createAuthzPermission`, **`evaluateAuthzPolicy`**, `importAuthzConfig` | `/clients/{id}/authz/resource-server` and `/resource`, `/scope`, `/policy`, `/permission`, `/import`; `POST /policy/evaluate` |
+| A7 TOTP / authenticator-app MFA | `setOtpPolicy` | `PUT /admin/realms/{realm}` → `otpPolicy*` |
+| A9 WebAuthn as a second factor | **`setWebAuthnTwoFactorPolicy`** — named distinctly to kill the passwordless-policy decoy | `PUT /admin/realms/{realm}` → `webAuthnPolicy*` |
+| E4 fine-grained admin permissions v2 | `getClientManagementPermissions`, `setClientManagementPermissions` | `GET`/`PUT /clients/{id}/management/permissions` |
+| B6 IdP role & claim mappers | `listIdpMappers`, `updateIdpMapper`, `deleteIdpMapper`, `addIdpRoleMapper` | `/identity-provider/instances/{alias}/mappers` and `/mappers/{mapper-id}` |
+| LDAP mappers, key providers, SPI config | `listComponents`, `createComponent`, `updateComponent`, `listSubComponentTypes` | `/admin/realms/{realm}/components`, `/components/{id}`, `/components/{id}/sub-component-types` |
+| I9, M5 localization | `setInternationalization` | `PUT /admin/realms/{realm}` → `internationalizationEnabled`, `supportedLocales` |
+
+#### What a tool cannot absorb
+
+Stated so the catalogue isn't over-claimed. A tool cannot **refuse** — B7's auto-link-by-unverified-
+email is an account-takeover vector, and the guidance has to say so. It cannot **compose across
+surfaces it doesn't own** — J4's hostname options are server configuration, not Admin REST. And it
+cannot **choose** where judgment is the work — A8's conditional nesting level. Those are §4.1.
 
 ### A. Authentication & login flows
 
 `server_admin/topics/authentication/*` (10 files), `login-settings/*`, `users/con-required-actions.adoc`,
-`users/ref-user-credentials.adoc`. The most mature category — 8 of the 13 existing intents live here.
+`users/ref-user-credentials.adoc`. The most mature category — 6 of the 13 existing intents live here.
 
 | # | Skill idea | Status |
 |---|---|---|
@@ -358,13 +540,23 @@ deferred as experimental or legacy (**P**), leaving 113 to build.
   and attribute mappers.
 - **Use when**: "connect Active Directory", "LDAP users", "sync users from our directory", "AD
   authentication".
-- **Problem**: the single most-requested capability the current router explicitly refuses — both
-  `SKILL.md` Step 3 and the reference manifest say plainly there's no coverage and no MCP tool.
-  That's the right honest answer today and the biggest gap in the catalogue. Edit mode is
-  effectively irreversible in practice, and getting it wrong either loses writes silently or
-  writes back into production AD.
+- **Problem**: ~~the single most-requested capability the current router explicitly refuses~~ —
+  **corrected: this is not a gap.** Five MCP tools already exist — `createLdapUserStorage`,
+  `testLdapConnection`, `syncLdapUsers`, `listUserStorageProviders`, `deleteUserStorageProvider`.
+  `SKILL.md`'s frontmatter and its `admin:idp-federation` Step 3 note both still say "no MCP tool
+  exists for it," which is a **live mis-route** and should be fixed independently of this roadmap.
+
+  This entry is also the worked example for §3's tool-absorbs-skill test. The two traps it cites
+  are already dead: `editMode` **defaults to `READ_ONLY`**, so the irreversible-write-back failure
+  cannot happen by omission, and `usernameLDAPAttribute` / `rdnLDAPAttribute` /
+  `uuidLDAPAttribute` each document their own AD-vs-other default (`sAMAccountName` / `objectGUID`
+  vs `uid` / `entryUUID`). The tool's response returns a `nextStep` pointing at
+  `testLdapConnection` then `syncLdapUsers`, carrying the ordering too. A safe default beats a
+  paragraph warning, because it applies when nobody read the paragraph.
 - **Case**: an enterprise wants staff to log in with existing AD credentials, no user migration.
-- **Tooling**: rest (mcp only if tools are added) · **Deps**: stock
+- **Outcome**: **tool exists** (§4.2) — close this idea. LDAP *mappers* beyond the defaults are a
+  Wave 3 `createComponent` gap.
+- **Tooling**: mcp, rest · **Deps**: stock
 
 **B6 — IdP claim/attribute mappers**
 - **What**: map incoming claims or SAML attributes onto Keycloak user attributes, roles, and
@@ -1187,8 +1379,16 @@ above: no Admin REST at all. Tooling axis is `{cli|conf-file|env|container|opera
   installed — `keycloak-magic-link`, `keycloak-orgs`, `keycloak-atomic-auth-flows`. Several current
   references say "requires extension X" without saying how to install it. That gap is worth closing
   early.
+
+  **Corrected: the hosted half of this is an API, not a skill.** Phase Two's control plane exposes
+  full extension CRUD — `/clusters/{id}/extensions` (GET, POST, PUT, DELETE),
+  `/extensions/keycloak-versions`, `/extensions/cluster-update` — so for a Phase Two cluster this is
+  four Wave 1 tools (§4.2), not a reference file. What survives as a chapter is the **self-managed**
+  path only: `kc.sh build`, the `providers/` directory, and which changes force a rebuild. That is
+  genuinely not an API.
 - **Case**: installing `keycloak-orgs` so the org-restrict intents work at all.
-- **Tooling**: cli, container, k8s · **Deps**: stock
+- **Outcome**: **split** — hosted → Wave 1 tools; self-managed → chapter in `keycloak-operations`.
+- **Tooling**: cli, container, k8s (self-managed) · mcp (hosted) · **Deps**: stock
 
 **J10 — Bootstrap admin and admin recovery**
 - **What**: bootstrap admin credentials, temporary admin accounts, and recovering from a lost admin
@@ -1493,8 +1693,16 @@ Phase Two SaaS control plane and the p2-inc extension catalogue. Two intents exi
 - **Problem**: nine existing intents require a p2-inc extension, and a self-managed user following
   them today hits "authenticator not found" with no guidance on what to install. C4 covers the orgs
   half of this; this is the general version, and pairs with J9 for the install mechanics.
+
+  **Corrected: the catalogue is queryable, so it should not be a hand-maintained document.**
+  `GET /clusters/{id}/extensions` returns what is installed and
+  `GET /extensions/keycloak-versions` what is compatible. A `listClusterExtensions` tool answers
+  "which extension do I need / is it available here" against live state, where a written catalogue
+  goes stale the moment the extension list changes.
 - **Case**: a self-managed user asks for magic-link login on vanilla 26.6.
-- **Tooling**: mcp, rest · **Deps**: p2 extensions
+- **Outcome**: **tool gap** (Wave 1, §4.2). The residual prose — what each extension *provides* —
+  belongs in the tool descriptions, per §4.2 rule 7.
+- **Tooling**: mcp · **Deps**: p2 extensions
 
 **N4 — Cluster operations (scale, upgrade, custom domain, backups)**
 - **What**: the lifecycle of an existing Phase Two cluster beyond creation — tier changes, custom
@@ -1626,71 +1834,101 @@ in service meshes); build on demand.
 
 ## 5. Suggested build order
 
-Sequenced by (a) how often the request arrives, (b) whether other skills depend on it, and (c) how
-badly an unaided agent does at it.
+Two tracks, because §4 splits into two kinds of work. **Track A (tools) goes first** — it is cheaper
+per item, it is where the measured win came from, and several Track B chapters get smaller once the
+tools underneath them exist.
 
-**Tier 1 — unblocks the existing skills.** These close gaps the current references already admit to.
+### Track A — tools, in `phasetwo-mcp`
 
-1. **J9** provider/extension deployment — nine existing intents say "requires extension X" and
-   none says how to install it.
-2. **N3** Phase Two extension catalogue — the other half of the same gap.
-3. **I2** SMTP — hard prerequisite of five existing or planned intents, and the most common silent
-   failure behind "the feature doesn't work".
-4. **C4** organizations vs `keycloak-orgs` — routing prerequisite for three existing intents.
-5. **N6** MCP server setup/troubleshooting — `mcp` is one of two tooling arms for everything.
+**Wave 1** (§4.2) closes the most ideas per unit of work, and the corrections first:
 
-**Tier 2 — highest-frequency requests, currently uncovered.**
+1. **Fix the B5 / J9 / N3 factual errors.** `SKILL.md` currently refuses LDAP/AD as having no MCP
+   tool while five exist. That is a live mis-route and lands independently of everything else here.
+2. **`explainTokenClaims`** — answers "roles aren't in my token", the highest-traffic
+   troubleshooting topic in the product, and closes parts of F4, E1 and C6 at once.
+3. **Roles and groups** (E1, E2) — no tools at all today, and the most common admin surface after
+   clients.
+4. **Extension tools** (J9, N3 hosted) — retires this document's own Tier 1.
+5. **User CRUD** (D4) and **`updateOidcClient`** (F1).
 
-6. **F1** OIDC client creation, **F4** scopes and mappers — the two most common tasks in the product.
-7. **J4** hostname/reverse proxy and **H13** token validation — one problem seen from two sides, and
-   the top real-world failure.
-8. **B5** LDAP/AD federation — the biggest single gap the router explicitly refuses today.
-9. **H1** integration decision guide plus two frameworks (**H6** Quarkus, **H5** Spring Boot) —
-   Quarkus first because we can verify against `phasetwo-mcp` itself.
-10. **E1/E2/E3** roles and groups.
+**Wave 2** then **Wave 3**, as listed in §4.2. Most Wave 1–2 tools need only a `@Tool` annotation
+and a DTO, since `PUT /admin/realms/{realm}` and `PUT /clients/{id}` are already wired.
 
-**Tier 3 — differentiating and self-relevant.**
+### Track B — chapters
 
-11. **H12** Keycloak as an MCP authorization server, with **O3** OAuth 2.1 as its prerequisite —
-    directly adjacent to our own product and verifiable against our own deployment.
-12. **D1** declarative user profile, **D2** self-registration.
-13. **A7/A8** TOTP and conditional MFA — stock alternatives to the p2-extension-dependent MFA
-    intents we already ship.
-14. **J1/J8** production configuration and the management interface.
-15. **I4/I6** events and import/export.
+1. **J9 self-managed extension install** — the residue of Tier 1 that is genuinely not an API, and
+   nine shipped intents depend on it.
+2. **J4** hostname & reverse proxy — the top real-world failure, and it pairs with `securing-apps`'
+   token-validation content as one problem seen from two sides.
+3. **A8** conditional MFA / step-up — the most misunderstood construct in Keycloak authentication,
+   and a stock alternative to the extension-dependent MFA intents already shipped.
+4. **B7** first-login & account linking — the complaint that follows every B3 rollout, and the one
+   place the guidance has to refuse what is being asked for.
+5. **O3** OAuth 2.1 → **H12** Keycloak as an MCP authorization server — self-relevant and verifiable
+   against our own deployment.
+6. **F6** standard vs legacy token exchange, **F10** offline & transient sessions.
+7. Then `keycloak-extension-dev` (**L**) and `keycloak-theming` (**M2–M4**), narrower.
 
-**Tier 4 — deep but narrower.** The **G** authorization-services category, **K5** cross-DC, the
-**L** extension-development set, **D6–D8** workflows, the remaining **H** frameworks, **M** theming.
+### Process notes
 
-Two notes on process, from `docs/skill-building-lessons.md`:
+From `docs/skill-building-lessons.md`, with one addition:
 
-- Every new intent needs a benchmark with the oracle passing at reward 1.0 **and** a no-skill
-  baseline. The baseline is what distinguishes "the skill works" from "the model could already do
-  this" — and for several Tier 2 ideas above (F1 especially) the honest answer may be that an
-  unaided agent does fine, in which case the skill's value is efficiency and should be reported as
-  such.
+- Every new chapter needs a benchmark with the oracle at reward 1.0 **and** a no-skill baseline. The
+  baseline distinguishes "the skill works" from "the model could already do this." Both existing
+  benchmarked tasks passed at 1.0 *without* the skill.
 - Prefer **deliberate pairs** of benchmark tasks over one per capability. The same-component,
-  opposite-configuration pair (passwordless vs password-gated OTP) is what revealed that skill
-  value concentrates where there's a hidden trap.
+  opposite-configuration pair (passwordless vs password-gated OTP) is what revealed that skill value
+  concentrates where there is a hidden trap.
+- **New: benchmark at chapter level, not per idea, and measure the tool arm separately.** The
+  previous draft's cost objection — 113 ideas × arms — dissolves once ~70 of those ideas are tools.
+  But it is replaced by a sharper question: for anything in §4.2, the arm worth measuring is
+  *with-tool*, not *with-prose*. The one measurement we have says a REST-prose arm scored 135 calls
+  against a 126-call no-skill baseline. **If a prose arm ever materially beats its baseline on an
+  operation-shaped task, §3's test is too strict and should be loosened** — so run that comparison
+  once, on roles/groups, before committing to the whole of Track A.
+
+Every new tool should also clear the four acceptance conditions that measurably drove agents off the
+tool surface: surfaces the upstream error body, reports resolved rather than partial state, returns
+`nextStep` where order matters, and says what it is *not*.
 
 ---
 
 ## 6. Open questions
 
-1. **Do we do the structural split now?** Recommendation: yes, before the next batch of references.
-   It's ~24 file moves today and 200+ later. Needs a decision because it changes every
-   plugin-manifest file and the install story.
-2. **Scope of the repo — stock Keycloak or Phase Two?** Most of this backlog is vanilla-Keycloak
-   guidance with no Phase Two dependency. That's consistent with the README's framing (a public
-   repo, both self-hosted and hosted), but it means the majority of future content won't reference
-   Phase Two at all. Worth confirming that's intended rather than drifting into it.
-3. **Which Keycloak versions do we target?** Several ideas (C5 organizations, D6–D8 workflows,
-   E4 fine-grained v2, H12 MCP, K3 update-compatibility) are 26.x-only, and pre-26 advice on
-   hostname (J4) is actively wrong. References should state a minimum version; today none do.
-4. **Framework skills (H) are a different kind of work** — writing application code rather than
-   configuring Keycloak. Big, valuable, and arguably a separate plugin. Confirm it's in scope for
-   this repo before building ten of them.
-5. **Benchmark cost.** 113 buildable ideas × (oracle + no-skill + with-skill × tooling arms) is a
-   lot of paid runs. The measured variance band ($1.61 → $4.12 on identical reruns) means single runs
-   won't resolve small deltas. Worth agreeing up front which tiers get full benchmark treatment and
-   which ship on oracle-only evidence.
+**Resolved since the first draft** (see §3, §4):
+
+1. ~~**Do we do the structural split now?**~~ **Yes, but into six skills, not fourteen** — five of
+   the proposed category routers turned out to be tool gaps. The existing 13 intents all stay in the
+   `keycloak` router, so the move is far smaller than "~24 file moves": reference files go into
+   subdirectories, and the two new skill directories are created when their first chapter is written.
+2. ~~**Scope of the repo — stock Keycloak or Phase Two?**~~ **Both, MCP-first.** Stock-Keycloak users
+   are served by the **fallback REST column** in §4.2 rather than by paired prose files. This follows
+   the measurement that REST-prose guidance bought nothing, and it means we stop writing
+   `-mcp`/`-rest` pairs by default — a REST variant is written only where it carries a trap the MCP
+   path does not remove.
+5. ~~**Benchmark cost.**~~ Reframed in §5: benchmark at chapter level, and measure the *tool* arm
+   rather than a prose arm for anything in §4.2.
+
+**Still open:**
+
+3. **Which Keycloak versions do we target?** Unchanged and still the sharpest gap. Several ideas
+   (C5 organizations, D6–D8 workflows, E4 fine-grained v2, H12 MCP, K3 update-compatibility) are
+   26.x-only, and pre-26 advice on hostname (J4) is actively wrong. References should state a minimum
+   version; today none do. This now applies to **tool descriptions too** — a tool that silently
+   assumes 26.6 semantics is the same failure in a worse place.
+4. **Framework skills (H) are a different kind of work.** Answered in principle — they become the
+   separate `securing-apps` skill with a `{framework}` axis rather than router intents — but whether
+   ten of them belong in *this* repo is still a call to make.
+7. **Who owns Track A?** ~55 tools is roughly a doubling of `phasetwo-mcp`: real Java work, in a
+   different repo, on a different release cycle. The waves exist so this can stop after Wave 1 and
+   still capture most of the value. **But if Track A is not resourced, the capabilities it covers end
+   up served by nothing at all — which is worse than the first draft's position of promising prose.**
+   This is the biggest risk in the document and needs an owner, not a recommendation.
+8. **Does a ~160-tool surface have its own routing cost?** This document's objection to 132 competing
+   skill descriptions applies in weaker form to tool schemas. Worth watching for tool-selection
+   errors as Wave 1 lands, and preferring composite tools (`setTokenAndSessionTimeouts` over one tool
+   per timeout field) where the fields genuinely interact.
+9. **Is N6 (MCP setup/troubleshooting) a skill at all?** It has a real prerequisite problem — `mcp`
+   is one of two tooling arms for everything — but its audience is a developer whose tools are
+   failing, which argues for documentation on the MCP server rather than a skill loaded by an agent
+   that cannot reach it.
