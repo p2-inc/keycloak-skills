@@ -131,9 +131,10 @@ curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
   -H 'Content-Type: application/json' \
   -d '{"alias":"<flow>","providerId":"basic-flow","topLevel":true,"builtIn":false}'
 
-# 2. Add each execution to its flow, in order.
+# 2. Add each execution to its flow. These calls APPEND - with no "priority" the server
+#    assigns (last sibling + 1), so order is just call order. Send it explicitly.
 curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/<urlencoded-flow>/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"ext-select-org"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"ext-select-org","priority":20}'
 
 # 3. List executions to get each id, then PUT each one's requirement.
 curl -s "$BASE/admin/realms/$REALM/authentication/flows/<urlencoded-flow>/executions" -H "$H"
@@ -151,6 +152,34 @@ curl -s -X POST "$BASE/admin/realms/$REALM/authentication/executions/<exec-id>/c
 
 Note `/executions` returns the whole tree recursively (level 0 sub-flows, level 1+ their steps),
 which is also how you verify the result.
+
+**Order is load-bearing here, and nothing reports getting it wrong.** The asset's shape is three
+ALTERNATIVE sub-flows off the top level, each ending in `ext-select-org`:
+
+| Flow | Order | Requirement |
+|---|---|---|
+| top level | 1. Cookies sub-flow → 2. IDP sub-flow → 3. Forms sub-flow | ALTERNATIVE each |
+| Cookies sub-flow | `auth-cookie` → `ext-select-org` | REQUIRED each |
+| IDP sub-flow | `identity-provider-redirector` → `ext-select-org` | REQUIRED each |
+| Forms sub-flow | `auth-username-password-form` → *conditional OTP* → `ext-select-org` | REQUIRED / CONDITIONAL / REQUIRED |
+
+`ext-select-org` **must come last inside each sub-flow** — it reads the identity established by
+the step before it. Put it first and it evaluates with no user, so the gate silently admits
+everyone: the exact opposite of the intent, with no error anywhere. Equally, the Forms sub-flow
+landing ahead of the Cookies sub-flow re-prompts users who already hold a session.
+
+Read the order back and check it against the table before declaring this done:
+
+```bash
+curl -s "$BASE/admin/realms/$REALM/authentication/flows/<urlencoded-flow>/executions" -H "$H" \
+  | jq -r '.[] | "\(.index) lvl=\(.level) pri=\(.priority) \(.requirement) \(.providerId // .displayName)"'
+```
+
+`priority` in the body is honoured only from **Keycloak 25** onward (added 2024-05-29); on 24 and
+older it is ignored and calls append regardless. There, add executions in the intended order and
+repair with `POST .../authentication/executions/<exec-id>/raise-priority`, which swaps an
+execution with one adjacent sibling per call. Path A carries the asset's own `priority` values, so
+it gets ordering right for free — this is a Path B hazard only.
 
 ## Verify by logging in, not by reading configuration
 
