@@ -24,7 +24,7 @@ not part of stock Keycloak (Keycloak's own native, in-core Organizations feature
 thing — Phase Two deliberately does not enable it; see the extension's own
 [note on this](https://github.com/p2-inc/keycloak-orgs/blob/main/docs/note-keycloak-organizations-feature.md)).
 On a genuine Phase Two hosted deployment this is always present. If you're unsure, `whoAmI`
-followed by a call like `listOrganizations` erroring out (rather than returning an empty list)
+followed by a call like `listDeploymentOrganizations` erroring out (rather than returning an empty list)
 is a sign the extension isn't installed on this server — say so plainly rather than assuming the
 MCP tools below will work.
 
@@ -110,7 +110,7 @@ deliberately not exposed here.** Adding a domain to an organization (via `create
 checking for a specific TXT record — something like `_org-domain-ownership.<domain>` — resolving
 to a value derived from the domain and the organization's ID, and only flips `verified` to `true`
 once that DNS record is found. **This is a Phase Two-managed process, not something this skill (or
-any MCP tool) triggers.** Use `listOrganizationDomains` to check a domain's current status and get
+any MCP tool) triggers.** Use `listDeploymentOrganizationDomains` to check a domain's current status and get
 the `recordKey`/`recordValue` it needs, then direct the customer to Phase Two's own process for
 getting it verified — don't look for (or improvise) a way to verify it yourself, and don't treat
 an added-but-unverified domain as ready for discovery.

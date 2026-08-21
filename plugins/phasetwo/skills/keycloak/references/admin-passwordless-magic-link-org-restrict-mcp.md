@@ -22,7 +22,7 @@ against that, and only then reaching the magic-link step itself.
 | Identify caller / realm | `whoAmI` |
 | Create the organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below |
 | Find an existing one | `listDeploymentOrganizations` |
-| Add a member | (org membership tool — see `admin-org-restrict-login-mcp.md`'s tool table) |
+| Add a member | `addDeploymentOrganizationMember` (after `findUser`) — **not** `addOrganizationMember`, which is account-level |
 | Confirm no flow already does this | `listAuthenticationFlows` |
 | Author the flow **and bind it**, in one call | `importAuthenticationFlow` (needs the atomic-flows extension — see below) |
 | Inspect/adjust the `ext-select-org` step's matching mode | `listFlowExecutions` / `setExecutionAuthenticatorConfig` |
@@ -56,7 +56,7 @@ against that, and only then reaching the magic-link step itself.
 
 Same dependency as `admin-org-restrict-login-mcp.md`: the real
 **[p2-inc `keycloak-orgs`](https://github.com/p2-inc/keycloak-orgs)** extension, not Keycloak's
-native Organizations feature. If `listOrganizations` errors rather than returning an empty list,
+native Organizations feature. If `listDeploymentOrganizations` errors rather than returning an empty list,
 it isn't installed — say so and stop.
 
 ## Stage 1 — Ask: match by organization NAME or ID?

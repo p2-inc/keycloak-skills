@@ -3,6 +3,30 @@
 The [`../SKILL.md`](../SKILL.md) router dispatches to the files below. Each is loaded **on demand**
 for a specific intent + tooling, never all at once.
 
+## Organizations always mean the deployment's realm
+
+Every intent in this router that touches organizations means **deployment-realm organizations** —
+the `keycloak-orgs` extension's per-realm store at `/realms/{realm}/orgs`, on the deployment's own
+Keycloak. A Phase Two **deployment IS a Keycloak realm** (one deployment == one realm, same name),
+so "the deployment's realm" and "the deployment" are the same thing.
+
+Phase Two *also* has **account-level** organizations — the ones that own clusters and hold billing,
+on the control plane. Those are a **separate use case** (account and cluster ownership), not
+something these skills configure, and the two stores are not connected in either direction.
+
+The MCP toolset splits along that line, and the names do not make it obvious:
+
+| Scope | Tools | Takes |
+|---|---|---|
+| **Deployment realm** — what every org intent here needs | `createDeploymentOrganization`, `listDeploymentOrganizations`, `addDeploymentOrganizationMember`, `listDeploymentOrganizationMembers`, `removeDeploymentOrganizationMember`, `listDeploymentOrganizationDomains`, `linkIdentityProviderToOrganization` | `deploymentId` + `deploymentRealm` |
+| **Control plane** — account/cluster ownership, not these intents | `createOrganization`, `listOrganizations`, `listMyOrganizations`, `addOrganizationMember`, `listOrganizationMembers`, `listOrganizationDomains`, `getOrganization`, `updateOrganization`, the role/invitation tools | `realm` only |
+
+**Reaching for a control-plane tool here fails in a way that reads as a bad org id, not the wrong
+store**: passing a deployment name to `createOrganization` 404s (no such realm on the control
+plane), and an org it created 404s when linked. Only `cluster-setup-mcp.md` legitimately uses the
+control-plane org tools, because picking an owning organization for a new cluster is genuinely an
+account-level question.
+
 ## How the router reaches each file
 
 - **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:email-otp-login`, `admin:password-email-otp-mfa`,

@@ -33,7 +33,7 @@ and the two have different REST surfaces — `/realms/{realm}/orgs` for the exte
 `/admin/realms/{realm}/organizations` for native. Don't substitute one for the other.
 
 On a genuine Phase Two hosted deployment the extension is always present. If you're unsure, a
-`listOrganizations` call erroring out (rather than returning an empty list) means it isn't
+`listDeploymentOrganizations` call erroring out (rather than returning an empty list) means it isn't
 installed — say so plainly and stop, rather than working around it with the native API, which
 `ext-select-org` does not read.
 
@@ -42,11 +42,39 @@ installed — say so plainly and stop, rather than working around it with the na
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
+| Create the organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization` |
+| Find an existing organization | `listDeploymentOrganizations` |
+| Look up a user in that realm | `findUser` |
+| **Add the members the gate will admit** | `addDeploymentOrganizationMember` |
+| Confirm who is a member | `listDeploymentOrganizationMembers` |
 | Confirm which org-aware flow(s) already exist | `listAuthenticationFlows` |
 | Author the flow **and bind it**, in one call | `importAuthenticationFlow` (needs the atomic-flows extension — see below) |
 | Inspect/adjust the `ext-select-org` step's matching mode | `listFlowExecutions` / `setExecutionAuthenticatorConfig` |
 | Bind an already-existing flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
+
+> **First, the terminology that makes the rest of this readable: in Phase Two a *deployment* IS a
+> Keycloak realm.** One deployment == one realm, with the same name — `createClusterDeployment`'s
+> returned `name` is the realm name. So "the deployment's realm" is not a realm *inside* a
+> deployment; it's the same thing said twice, and `deploymentRealm` is just that name.
+>
+> **`createOrganization` is the wrong tool for this intent, and it fails in a way that wastes a
+> whole session.** There are **two separate organization stores**, and they are not connected:
+>
+> | Store | Lives on | Written by | Read by |
+> |---|---|---|---|
+> | **Account-level** Phase Two orgs — the ones that own clusters and hold billing | the Phase Two **control plane** | `createOrganization`, `listMyOrganizations` | the control plane |
+> | **Deployment orgs** — i.e. realm orgs: the `keycloak-orgs` store at `/realms/{realm}/orgs` | the **deployment's own Keycloak** (that realm) | **`createDeploymentOrganization`** | `linkIdentityProviderToOrganization`, `ext-select-org`, Home IdP Discovery |
+>
+> `createOrganization` only ever writes the first one, and its `realm` argument selects a
+> *control-plane* realm — **not** a deployment/realm. Passing a deployment name to it **404s**,
+> because no such realm exists on the control plane. An org it did create is invisible to the link
+> tool, which returns `{"error": "<orgId> not found"}`. Both failures look like a bad org id rather
+> than the wrong store, which is what makes this expensive to diagnose.
+>
+> Use **`createDeploymentOrganization`** (and `listDeploymentOrganizations` to find an existing
+> one). Its returned `orgId` is what `ext-select-org` resolves against at login time, and what
+> `addDeploymentOrganizationMember` takes.
 
 ## Authoring a flow: two paths, and one that does NOT work
 

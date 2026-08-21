@@ -35,7 +35,7 @@ and the two have different REST surfaces — `/realms/{realm}/orgs` versus
 `/admin/realms/{realm}/organizations`. `ext-select-org` reads the extension's, not the native
 one; don't substitute.
 
-On a genuine Phase Two deployment it's always present. If `listOrganizations` errors out rather
+On a genuine Phase Two deployment it's always present. If `listDeploymentOrganizations` errors out rather
 than returning an empty list, it isn't installed — say so and stop.
 
 ## Tools this skill drives (Keycloak MCP server)
