@@ -2,19 +2,19 @@
 name: keycloak
 description: >-
   Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
-  OTP, or passkey WebAuthn); email OTP as a 2FA second factor; org-membership login restriction
-  (password, federated, or magic-link); cluster/deployment provisioning. Also identity brokering:
-  domain-routed corporate SSO ("route by email domain"); social login buttons ("log in with
-  Google/GitHub/Microsoft/Facebook"); and enterprise IdP federation — connecting Entra ID, Okta,
-  Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Oracle, Duo, CyberArk, JumpCloud, LastPass,
-  Salesforce, or Cloudflare Access as a login button, no domain routing required. Triggers:
-  "passwordless", "magic link", "email OTP", "2FA by email", "passkeys", "restrict login to org
-  X", "spin up a cluster", "corporate SSO", "log in with Google/GitHub", "connect Okta/Entra
-  ID/Auth0", "add an identity provider", "SAML/OIDC SSO". Cluster/deployment is MCP-only. Not
-  WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
+  OTP, passkey WebAuthn, or passkey-or-magic-link "0 password required"); email OTP as a 2FA second
+  factor; org-membership login restriction (password, federated, or magic-link); cluster/deployment
+  provisioning. Also identity brokering: domain-routed corporate SSO ("route by email domain");
+  social login buttons ("log in with Google/GitHub/Microsoft/Facebook"); and enterprise IdP
+  federation — Entra ID, Okta, Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Oracle, Duo,
+  CyberArk, JumpCloud, LastPass, Salesforce, or Cloudflare Access as a login button. Triggers:
+  "passwordless", "magic link", "email OTP", "2FA by email", "passkeys", "0 password required",
+  "restrict login to org X", "spin up a cluster", "corporate SSO", "connect Okta/Entra ID",
+  "add an identity provider", "SAML/OIDC SSO". Cluster/deployment is MCP-only. Not WebAuthn/TOTP as
+  a second factor, not LDAP/AD user federation.
 license: Apache-2.0
 metadata:
-  version: '0.13.0'
+  version: '0.14.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -37,6 +37,7 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 | Password login, hardened with an emailed one-time code as a SECOND factor — "email OTP as MFA", "password plus a code emailed to me", "2FA by email", "require a login code after the password", "email-based two-factor". NOT passwordless — the password is still required and gates the OTP (a wrong password never even sends the email). Uses the same `ext-email-otp` authenticator as the row above but a different, load-bearing first step (`auth-username-password-form`, not an identifier-only step). Not the passwordless row above, and not WebAuthn/TOTP as a second factor. | **admin:password-email-otp-mfa** |
 | Magic-link login, but only for members of a specific organization — "magic link restricted to org X", "passwordless login gated by organization membership", "only email the link to people on this team", "a user logs in with magic link and account_hint decides if they get in". This is the combination of the row above with the account_hint-gated org check `admin:org-restrict-login` uses for password logins — neither the plain `magic link` flow nor `Org Browser Flow` alone covers this; it needs a custom flow that runs the org check *before* the email goes out. Needs the keycloak-orgs extension, same as the org-restrict rows below. | **admin:passwordless-magic-link-org-restrict** |
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
+| One login flow offering a passkey **OR** a magic link, with no password anywhere — "0 password required login", "zero password login", "passkeys or magic link", "let them use a passkey or email them a link", "passwordless with a fallback that isn't a password". Branded the "0 password required login flow". The two methods sit side by side as alternatives, which is also how a brand-new user with no passkey gets in at all (magic link *is* the passkey bootstrap path). Not passkey-only (`admin:passwordless-passkey`) and not magic-link-only (`admin:passwordless-magic-link`) — pick this only when **both** methods are wanted in one flow. | **admin:zero-password-login** |
 | Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
 | Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
 | Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone with no domain routing (that's `admin:idp-federation`, next row) and not restricting login to organization members (a different mechanism — see the two rows after that). | **admin:corporate-sso** |
@@ -137,6 +138,20 @@ Read: references/admin-passwordless-passkey-{tooling}.md
   tooling=mcp  → references/admin-passwordless-passkey-mcp.md
   tooling=rest → references/admin-passwordless-passkey.md
 ```
+
+### admin:zero-password-login
+```
+Read: references/admin-zero-password-login-{tooling}.md
+  tooling=mcp  → references/admin-zero-password-login-mcp.md
+  tooling=rest → references/admin-zero-password-login.md
+```
+Requires the p2-inc `keycloak-magic-link` extension for `ext-magic-form` (WebAuthn itself is stock
+Keycloak), so **half** of this flow depends on a jar — check before authoring. Don't answer this
+with the auto-created `magic link` flow: that offers magic link only, no passkey path. The two
+authenticators are ALTERNATIVE siblings and their order is load-bearing — `ext-magic-form` must be
+the lower priority, or a user with no passkey lands on a ceremony they cannot complete. Verifying
+the passkey half needs a real browser with a CDP virtual authenticator; the magic-link half is
+scriptable over plain HTTP.
 
 ### admin:cluster-setup
 ```

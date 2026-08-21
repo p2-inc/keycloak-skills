@@ -82,19 +82,47 @@ curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
 
 curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/flow" \
   -H "$H" -H 'Content-Type: application/json' \
-  -d "{\"alias\":\"$SUB\",\"provider\":\"basic-flow\",\"type\":\"basic-flow\"}"
+  -d "{\"alias\":\"$SUB\",\"provider\":\"basic-flow\",\"type\":\"basic-flow\",\"priority\":2}"
 
+# Pass priority explicitly - these calls otherwise APPEND, and the sub-flow created
+# above would sit at priority 0, ahead of the two leaves. Order matters: see the table.
+i=0
 for p in auth-cookie identity-provider-redirector; do
   curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-    -H "$H" -H 'Content-Type: application/json' -d "{\"provider\":\"$p\"}"
+    -H "$H" -H 'Content-Type: application/json' -d "{\"provider\":\"$p\",\"priority\":$i}"
+  i=$((i+1))
 done
+i=0
 for p in auth-username-password-form ext-email-otp; do
   curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$SUB" '$f|@uri')/executions/execution" \
-    -H "$H" -H 'Content-Type: application/json' -d "{\"provider\":\"$p\"}"
+    -H "$H" -H 'Content-Type: application/json' -d "{\"provider\":\"$p\",\"priority\":$i}"
+  i=$((i+1))
 done
 # List executions of both flows, PUT requirements (top-level ALTERNATIVE x3, forms REQUIRED x2),
 # then attach config to ext-email-otp (below) and bind.
 ```
+
+### The manual path silently loses this order
+
+`executions/execution` and `executions/flow` **append**: with no `priority` in the body the
+server assigns `last sibling's priority + 1`, so the resulting order is just the order the calls
+were made in. Creating the sub-flow before the top-level leaves puts the sub-flow at priority 0 —
+*first* — and the table above inverted. Nothing errors; the console looks right.
+
+Send `priority` explicitly on every add call, then **read the order back and check it**:
+
+```bash
+curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" -H "$H" \
+  | jq -r '.[] | "\(.index) lvl=\(.level) pri=\(.priority) \(.requirement) \(.providerId // .displayName)"'
+```
+
+`priority` in the body is honoured only from **Keycloak 25** onward (added 2024-05-29); on 24 and
+older it is ignored and calls append regardless. There, add them in the intended order and repair
+with `POST .../authentication/executions/<exec-id>/raise-priority`, which swaps an execution with
+one adjacent sibling per call.
+
+The `authentication-flow/import` path carries the asset's own `priority` values, so the extension
+path gets ordering right for free — this hazard is the manual sequence's alone.
 
 ## The one config option
 

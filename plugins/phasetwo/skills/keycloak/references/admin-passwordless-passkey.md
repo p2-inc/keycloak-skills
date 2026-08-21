@@ -92,10 +92,13 @@ curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW"
 
 # 4. Add whichever of these two providers is missing directly to the flow — leaf
 #    authenticators work fine on a bare top-level basic-flow, no sub-flow needed.
+# These calls APPEND: with no "priority" the server assigns (last sibling + 1), so the
+# order is simply the order you call them in. Send it explicitly - auth-cookie must be
+# first, so an existing SSO session is consulted before the passkey step runs.
 curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"auth-cookie"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"auth-cookie","priority":0}'
 curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless","priority":1}'
 
 # 5. List executions again to get each one's own id, then set requirements:
 #    auth-cookie -> ALTERNATIVE (an existing SSO session still works),
@@ -106,6 +109,19 @@ curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f 
 curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" \
   -H "$H" -H 'Content-Type: application/json' -d '{"id":"<webauthn-execution-id>","requirement":"REQUIRED"}'
 ```
+
+Then confirm the order actually landed — nothing errors if it didn't:
+
+```bash
+curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" -H "$H" \
+  | jq -r '.[] | "\(.index) pri=\(.priority) \(.requirement) \(.providerId)"'
+```
+
+`priority` in the body is honoured only from **Keycloak 25** onward (added 2024-05-29); on 24 and
+older it is ignored and calls append regardless. There, add them in order and repair with
+`POST .../authentication/executions/<exec-id>/raise-priority`, which swaps an execution with one
+adjacent sibling per call. The `authentication-flow/import` path carries its own `priority`
+values, so it gets this right for free.
 
 **Do not add a Username Password Form, and do not add it to a copy of the stock `browser`
 flow without stripping that step out first** — a copied `browser` flow keeps Kerberos, the

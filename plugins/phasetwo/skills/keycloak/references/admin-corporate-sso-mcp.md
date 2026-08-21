@@ -35,7 +35,7 @@ MCP tools below will work.
 | Identify caller / realm | `whoAmI` |
 | Create the customer's organization | `createOrganization` (see the domain-verification caveat below — **before** relying on it) |
 | Create the corporate IdP | `createOidcIdp` / `createSamlIdp` |
-| **Link the IdP to the organization** | `linkIdentityProviderToOrganization` |
+| **Link the IdP to the organization** | `linkIdentityProviderToOrganization` — **pass `domains`**, or routing stays dead |
 | See what flows exist | `listAuthenticationFlows` |
 | Bind the flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
@@ -50,12 +50,21 @@ Capture **`deploymentId`** and **`deploymentRealm`** and reuse them on every cal
 
 ## The hard prerequisite — establish this first
 
-**Discovery is organization-driven.** The discoverer looks up an organization by the user's
-email domain and forwards to *that organization's linked IdP*. There is no standalone
-domain-to-IdP setting anywhere. So the first question is:
+**Discovery matches on the IdP's own domain list, written when you link it.** The
+domains you pass to `linkIdentityProviderToOrganization` land on the IdP as the config key
+`home.idp.discovery.domains`, and that is what the discoverer compares the typed address
+against. So the first question is:
 
-> **"Is the company modelled as an organization in this realm, with a verified email domain,
-> and is the IdP linked to it?"**
+> **"Is the company modelled as an organization in this realm, and is the IdP linked to it
+> *with the domains passed on the link*?"**
+
+Two corollaries that save a long debugging session:
+
+- **Domain verification is irrelevant to routing.** Verified domains feed a different, optional
+  authenticator (`ext-auth-org-id-verifier`). An unverified domain routes perfectly well.
+- **Adding a domain to the organization does not route anything.** The organization's `domains`
+  and the link's `domains` are separate lists; only the latter drives discovery. Pass the
+  domains to `linkIdentityProviderToOrganization` even if the org already lists them.
 
 Three things must all be true, and each fails silently on its own:
 
@@ -171,10 +180,9 @@ email addresses reproduces some of the behaviour while being the opposite of fed
 - **The redirect URI the customer must whitelist** is
   `{base}/realms/{realm}/broker/{alias}/endpoint`. It contains the alias, so choose the alias
   *before* asking them to whitelist anything.
-- **`hideOnLogin`** — tempting, to keep one customer's button off a shared login page.
-  Measured: setting it true removes the route for the **matched** domain too, leaving those
-  users with no password field *and* no way forward. Leave it visible unless you have verified
-  the matched-domain path still works.
+- **`hideOnLogin`** — not yours to choose here. Linking forces it to `true`, by design: an
+  org-linked IdP is reached by domain match, not by a button on a shared login page. Do not
+  set it back to `false` afterwards.
 - **`syncMode`** — `IMPORT` copies profile fields on first login only; `FORCE` refreshes them
   on every login, usually right when the customer's directory is authoritative.
 - **First broker login** — the default flow reviews the profile when fields are missing and can
@@ -194,10 +202,10 @@ intent matches").
 | Symptom | Cause |
 |---|---|
 | Matched domain still shows the password form | `forwardToLinkedIdp` left at its `false` default, or the IdP is not linked to the organization |
+| Matched domain gets neither password nor route | Linked without `domains`, so the IdP is hidden but unroutable — re-link passing the domains |
 | SSO button shown to everyone, nothing routes | Provider created but not linked to an organization |
-| Domain never matches | The organization's domain is not marked verified |
+| Domain never matches | The domains were added to the organization but not passed on the link (verification is not the cause) |
 | Everyone gets forwarded to the provider | An identity-provider-redirector execution in the bound flow |
-| Matched domain gets neither password nor route | `hideOnLogin` is true on the provider |
 | A required MCP tool is missing | Report it and stop; do not switch to REST unsolicited |
 | `400` "Cookie not found" while scripting | `Secure` cookies not sent over http by the client |
 | `invalid_redirect_uri` at the customer's provider | They whitelisted a different alias than the one created |
