@@ -1,0 +1,27 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+Realm `acme` is wired for IdP-initiated SSO (portal tiles) from BOTH already-federated SAML
+identity providers, `okta-sso` and `entra-sso`, into two specific clients. A tile aimed at
+the OIDC client `acme-portal` is delivered as a 302/303 browser REDIRECT (GET) to its main
+page http://localhost:9999/ - NOT as an HTML auto-POST form, which a plain OIDC web app
+cannot consume. A tile aimed at the SAML client `acme-reports` is delivered by POST binding
+to its ACS http://localhost:9998/saml/acs carrying a SAMLResponse. Routing is decided by the
+tile's target URL only: a tile into `acme-portal` carrying RelayState=acme-reports still
+lands in `acme-portal`. The direct, non-broker endpoint
+/realms/acme/protocol/saml/clients/{portalUrlName} still refuses the OIDC client with 400
+"Wrong client protocol." while the broker path for the same urlName succeeds. Both identity
+providers are untouched (present, enabled, providerId "saml") and exactly the master and
+acme realms exist. The verifier discovers whatever urlName values the agent chose.
+
+Sanctioned sandbox simplification: both identity providers have validateSignature=false and
+wantAssertionsSigned=false, and the mock vendor POSTs an UNSIGNED SAML response - there is
+no real Okta/Entra tenant and the sandbox is no-network. This is deliberate, documented, and
+orthogonal to everything scored here.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"
