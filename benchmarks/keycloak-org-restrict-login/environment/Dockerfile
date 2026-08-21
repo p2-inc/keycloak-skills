@@ -1,7 +1,7 @@
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
 # registry - pinned by digest, not :latest, so this stays reproducible even if the
 # tag moves. Requires `docker login quay.io` with Phase Two Quay credentials.
-FROM quay.io/phasetwo/phasetwo-mcp@sha256:0dd572971918aa628a3260e96d1a668775906e6baa0b30428b95261ddaf9375b AS mcp-app
+FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
 
 # Phase Two's own Keycloak distribution - includes the REAL p2-inc keycloak-orgs
 # extension (io.phasetwo.keycloak-keycloak-orgs jar, baked into providers/ already

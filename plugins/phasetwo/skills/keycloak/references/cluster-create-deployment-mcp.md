@@ -4,6 +4,32 @@ This guides a user, one step at a time, through creating a **deployment** — a 
 realm — inside an **existing, ACTIVE Phase Two dedicated cluster**, using the Keycloak MCP
 server. The end state: a new, empty realm, with the user pointed at what to do in it next.
 
+## Deployment == realm
+
+**A Phase Two deployment IS a Keycloak realm.** Not a container for one, not a thing that has
+one — the same object under two names. One deployment == one realm, and they share a name: the
+`name` returned by `createClusterDeployment` *is* the realm name, which is what every
+deployment-scoped tool takes as `deploymentRealm`.
+
+Worth stating plainly because the two vocabularies sit side by side in this toolset and the
+overlap is not obvious:
+
+| Phrase | Means |
+|---|---|
+| `deploymentId` | the deployment's UUID, used by the control plane to find the cluster and mint a token |
+| `deploymentRealm` | that same deployment's **name**, used as the realm name on the cluster's Keycloak |
+| "the deployment's realm" | the deployment. Said twice. |
+
+Two consequences that cause real, hard-to-read failures:
+
+- Tools taking `deploymentId` + `deploymentRealm` act on the **deployment's own Keycloak**. Tools
+  taking only `realm` act on the **Phase Two control plane**, where a deployment name is not a
+  realm and 404s.
+- Because a deployment is a realm, everything realm-scoped in Keycloak is per-deployment:
+  its own users, clients, authentication flows, and — the one that bites — its own
+  `keycloak-orgs` organization store, which is **not** the account-level organization store that
+  owns clusters. See `admin-corporate-sso-mcp.md` for how those two get confused.
+
 ## The translation to make explicit before doing anything
 
 Several requests that don't mention "deployment" or "realm" at all actually resolve to this

@@ -74,8 +74,16 @@ The wrong-password row is what proves this is genuinely two-factor: knowing the 
 worthless without the password, since the code is never sent until the password step succeeds.
 
 The extension hash-prefixes the created alias — read it back from the response rather than
-assuming. A 404 means the atomic-flows extension isn't installed; offer it and fall back to
-`admin-password-email-otp-mfa.md`'s manual REST sequence only if declined.
+assuming. A 404 means the atomic-flows extension isn't installed; offer installing it first.
+**The component path below is the default and always available — no extension, no raw REST, no
+credentials from the user**:
+`addFlow` → `addSubFlow` for the forms sub-flow →
+`addAuthenticator` for `auth-cookie`, `identity-provider-redirector`,
+`auth-username-password-form`, `ext-email-otp` (**in that order** — the password form must
+come before `ext-email-otp`, that's the whole point of this intent — with `priority` passed
+explicitly on every call, since both add calls append when it's omitted) →
+`setExecutionRequirement` on each → bind. Read the order back with `listFlowExecutions` before
+calling it done.
 
 ## Stage 3 — The one config option
 

@@ -65,35 +65,25 @@ in a single call; prefer that over the manual sequence below, and offer installi
 extension if it 404s. (Keycloak's own `partialImport` endpoint is *not* an alternative: it has
 no handler for authentication flows and silently ignores them — HTTP 200, nothing created.)
 
-Otherwise, the manual sequence against the deployment's Keycloak Admin REST API directly:
+Otherwise, the component path — **still entirely through MCP tools**, no raw REST and no
+credentials needed from the user:
 
-```bash
-BASE=<deployment base_url>/auth   # adjust if the deployment has no /auth relative path
-H="Authorization: Bearer $ADMIN_TOKEN"
-REALM=<deploymentRealm>
+1. `addFlow(alias="Passkey Only")` — a bare top-level flow; leaf authenticators
+   work fine on it directly, no sub-flow needed.
+2. `addAuthenticator(flowAlias="Passkey Only", provider="auth-cookie", priority=0)`
+3. `addAuthenticator(flowAlias="Passkey Only", provider="webauthn-authenticator-passwordless", priority=1)`
 
-# 1. Create an empty top-level flow.
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
-  -H 'Content-Type: application/json' \
-  -d '{"alias":"Passkey Only","providerId":"basic-flow","topLevel":true,"builtIn":false}'
+   **Pass `priority` explicitly on both** — the call appends when it's omitted, at
+   `(last sibling's priority + 1)`, so call order alone decides the outcome. `priority` in the
+   body is honoured only from Keycloak 25 onward; on older versions add them in this order anyway
+   and repair with `raiseExecutionPriority`/`lowerExecutionPriority` if it lands wrong.
+4. `listFlowExecutions(flowAlias="Passkey Only")` to get each execution's own id, then
+   `setExecutionRequirement` twice:
+   - `auth-cookie` → `ALTERNATIVE` (an existing SSO session still works)
+   - `webauthn-authenticator-passwordless` → `REQUIRED` (the only path otherwise — this is what
+     makes it "no password, ever," not just deprioritized)
 
-# 2. Add two executions directly to it (leaf authenticators work fine on a
-#    bare top-level basic-flow — no sub-flow needed).
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"auth-cookie"}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless"}'
-
-# 3. List executions to get each one's own id, then set requirements:
-#    Cookie -> ALTERNATIVE (an existing SSO session still works),
-#    WebAuthn Passwordless Authenticator -> REQUIRED (the only path otherwise -
-#    this is what makes it "no password, ever", not just deprioritized).
-curl -s "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions" -H "$H"
-curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<cookie-execution-id>","requirement":"ALTERNATIVE"}'
-curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<webauthn-execution-id>","requirement":"REQUIRED"}'
-```
+Read the order back with `listFlowExecutions` before moving on — nothing errors on a wrong order.
 
 **Do not add a Username Password Form, and do not add it to a copy of the stock
 `browser` flow without stripping that step out first** — a copied `browser` flow keeps

@@ -35,7 +35,7 @@ and the two have different REST surfaces — `/realms/{realm}/orgs` versus
 `/admin/realms/{realm}/organizations`. `ext-select-org` reads the extension's, not the native
 one; don't substitute.
 
-On a genuine Phase Two deployment it's always present. If `listOrganizations` errors out rather
+On a genuine Phase Two deployment it's always present. If `listDeploymentOrganizations` errors out rather
 than returning an empty list, it isn't installed — say so and stop.
 
 ## Tools this skill drives (Keycloak MCP server)
@@ -43,13 +43,37 @@ than returning an empty list, it isn't installed — say so and stop.
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
-| Create the organizations | `createOrganization` |
+| Create the organizations **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below |
+| Find existing ones | `listDeploymentOrganizations` |
 | Broker the customer's IdP | `createOidcIdp` / `createSamlIdp` |
 | **Link the IdP to the owning organization** | `linkIdentityProviderToOrganization` |
 | Author the post-broker flow **and bind it**, in one call | `importAuthenticationFlow` (needs the atomic-flows extension — see below) |
+| If that extension is missing: author it step by step instead | `addFlow` → `addAuthenticator` per step → `setExecutionRequirement` — no raw REST needed |
 | Inspect/adjust the `ext-select-org` matching mode | `listFlowExecutions` / `setExecutionAuthenticatorConfig` |
 | Bind the flow to the IdP separately | `bindIdpBrokerLoginFlow(flowType="post_broker_login")` |
 | Confirm what's bound | `listIdentityProviders` |
+
+> **First, the terminology that makes the rest of this readable: in Phase Two a *deployment* IS a
+> Keycloak realm.** One deployment == one realm, with the same name — `createClusterDeployment`'s
+> returned `name` is the realm name. So "the deployment's realm" is not a realm *inside* a
+> deployment; it's the same thing said twice, and `deploymentRealm` is just that name.
+>
+> **`createOrganization` is the wrong tool for this intent, and it fails in a way that wastes a
+> whole session.** There are **two separate organization stores**, and they are not connected:
+>
+> | Store | Lives on | Written by | Read by |
+> |---|---|---|---|
+> | **Account-level** Phase Two orgs — the ones that own clusters and hold billing | the Phase Two **control plane** | `createOrganization`, `listMyOrganizations` | the control plane |
+> | **Deployment orgs** — i.e. realm orgs: the `keycloak-orgs` store at `/realms/{realm}/orgs` | the **deployment's own Keycloak** (that realm) | **`createDeploymentOrganization`** | `linkIdentityProviderToOrganization`, `ext-select-org`, Home IdP Discovery |
+>
+> `createOrganization` only ever writes the first one, and its `realm` argument selects a
+> *control-plane* realm — **not** a deployment/realm. Passing a deployment name to it **404s**,
+> because no such realm exists on the control plane. An org it did create is invisible to the link
+> tool, which returns `{"error": "<orgId> not found"}`. Both failures look like a bad org id rather
+> than the wrong store, which is what makes this expensive to diagnose.
+>
+> Use **`createDeploymentOrganization`** (and `listDeploymentOrganizations` to find an existing
+> one). Its returned `orgId` is what `linkIdentityProviderToOrganization` expects.
 
 ## Stage 1 — Ask: match the organization by NAME or by ID?
 

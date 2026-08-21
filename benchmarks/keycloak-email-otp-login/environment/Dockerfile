@@ -7,7 +7,7 @@
 # The tradeoff is explicit: a run's result can now change without this task
 # changing. If you need a reproducible historical run, pin the digest back here.
 # Requires `docker login quay.io` with Phase Two Quay credentials.
-FROM quay.io/phasetwo/phasetwo-mcp:latest AS mcp-app
+FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
 
 # Phase Two's own Keycloak distribution. This single base image already bundles BOTH
 # extensions this task needs as real Maven dependencies of phasetwo-module (see

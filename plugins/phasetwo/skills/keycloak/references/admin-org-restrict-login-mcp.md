@@ -33,7 +33,7 @@ and the two have different REST surfaces — `/realms/{realm}/orgs` for the exte
 `/admin/realms/{realm}/organizations` for native. Don't substitute one for the other.
 
 On a genuine Phase Two hosted deployment the extension is always present. If you're unsure, a
-`listOrganizations` call erroring out (rather than returning an empty list) means it isn't
+`listDeploymentOrganizations` call erroring out (rather than returning an empty list) means it isn't
 installed — say so plainly and stop, rather than working around it with the native API, which
 `ext-select-org` does not read.
 
@@ -42,11 +42,39 @@ installed — say so plainly and stop, rather than working around it with the na
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
+| Create the organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization` |
+| Find an existing organization | `listDeploymentOrganizations` |
+| Look up a user in that realm | `findUser` |
+| **Add the members the gate will admit** | `addDeploymentOrganizationMember` |
+| Confirm who is a member | `listDeploymentOrganizationMembers` |
 | Confirm which org-aware flow(s) already exist | `listAuthenticationFlows` |
 | Author the flow **and bind it**, in one call | `importAuthenticationFlow` (needs the atomic-flows extension — see below) |
 | Inspect/adjust the `ext-select-org` step's matching mode | `listFlowExecutions` / `setExecutionAuthenticatorConfig` |
 | Bind an already-existing flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
+
+> **First, the terminology that makes the rest of this readable: in Phase Two a *deployment* IS a
+> Keycloak realm.** One deployment == one realm, with the same name — `createClusterDeployment`'s
+> returned `name` is the realm name. So "the deployment's realm" is not a realm *inside* a
+> deployment; it's the same thing said twice, and `deploymentRealm` is just that name.
+>
+> **`createOrganization` is the wrong tool for this intent, and it fails in a way that wastes a
+> whole session.** There are **two separate organization stores**, and they are not connected:
+>
+> | Store | Lives on | Written by | Read by |
+> |---|---|---|---|
+> | **Account-level** Phase Two orgs — the ones that own clusters and hold billing | the Phase Two **control plane** | `createOrganization`, `listMyOrganizations` | the control plane |
+> | **Deployment orgs** — i.e. realm orgs: the `keycloak-orgs` store at `/realms/{realm}/orgs` | the **deployment's own Keycloak** (that realm) | **`createDeploymentOrganization`** | `linkIdentityProviderToOrganization`, `ext-select-org`, Home IdP Discovery |
+>
+> `createOrganization` only ever writes the first one, and its `realm` argument selects a
+> *control-plane* realm — **not** a deployment/realm. Passing a deployment name to it **404s**,
+> because no such realm exists on the control plane. An org it did create is invisible to the link
+> tool, which returns `{"error": "<orgId> not found"}`. Both failures look like a bad org id rather
+> than the wrong store, which is what makes this expensive to diagnose.
+>
+> Use **`createDeploymentOrganization`** (and `listDeploymentOrganizations` to find an existing
+> one). Its returned `orgId` is what `ext-select-org` resolves against at login time, and what
+> `addDeploymentOrganizationMember` takes.
 
 ## Authoring a flow: two paths, and one that does NOT work
 
@@ -62,13 +90,40 @@ The two paths that do work:
 | Path | Cost | Requires |
 |---|---|---|
 | **`importAuthenticationFlow`** — authors the whole flow *and* applies bindings in one call | One call | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed on the target Keycloak |
-| **Manual REST sequence** — create flow → create each sub-flow → add each execution → set each requirement → attach authenticator config → bind | Many calls, easy to get wrong | Nothing beyond stock Admin REST |
+| **The component path, through MCP tools** — `addFlow` → `addSubFlow` per sub-flow → `addAuthenticator` per leaf step (passing `priority` **and** `requirement`) → `addConditional` for the conditional-OTP sub-flow → `addAuthenticatorConfig` on each `ext-select-org` step → bind | Many calls, order matters | Nothing beyond stock Admin REST — no extension |
 
-**Offer the extension when it isn't installed.** `importAuthenticationFlow` returns a clear 404
-if the extension is missing. That is worth surfacing to the user as a real choice — installing
-one jar collapses a long, error-prone sequence into a single call — rather than silently falling
-into the manual path. If they decline (or can't install it), the manual sequence is legitimate;
-just say upfront that it's substantially more calls.
+**Both paths are MCP tool calls. Neither requires dropping to raw REST or asking the user for
+credentials** — component authoring is the default, and `importAuthenticationFlow` is the one-shot
+for deployments that have the extension. If it 404s, build the flow from components rather than
+reporting a dead end. Offer the extension
+as a real choice first — installing one jar collapses the whole sequence into a single call — but
+proceed with the component tools when the user prefers that or can't install it.
+
+**Order is load-bearing on the component path, and `addSubFlow`/`addAuthenticator`
+APPEND.** With no `priority` argument, each call lands at `(last sibling's priority + 1)` — so
+creating a sub-flow before its parent's other steps exist puts it first, ahead of `auth-cookie`.
+Pass `priority` explicitly on every call. It's honoured only from Keycloak 25 onward (added
+2024-05-29); on older versions add steps in the intended order and repair with
+`raiseExecutionPriority`/`lowerExecutionPriority`, which each swap one adjacent sibling per call.
+Read the order back with `listFlowExecutions` before declaring the flow done — nothing errors on
+a wrong order, so it has to be checked, not assumed.
+
+**This flow is the one with a CONDITIONAL sub-flow, so it needs `addConditional`.** A conditional
+is not a single step: it's a sub-flow whose *execution* is `CONDITIONAL`, whose **first** child is
+a condition authenticator, followed by the steps being gated. For the OTP branch that means
+`addConditional(parentFlowAlias="<Forms Sub-Flow>", alias="<Conditional OTP>",
+conditionProvider="conditional-user-configured", priority=20)`, then
+`addAuthenticator(flowAlias="<Conditional OTP>", provider="auth-otp-form", priority=1,
+requirement="REQUIRED")` for the gated step. `conditional-user-configured` takes no config; every
+other condition (`conditional-user-role`, `conditional-user-attribute`, `conditional-client-scope`,
+…) does — read its real key names with `getAuthenticatorConfigDescription` rather than guessing,
+because they aren't uniform (`negate` vs `not` vs `included` for the same idea).
+
+**Config aliases are unique per realm, not per execution.** This asset attaches
+`match-by-org-name` to `ext-select-org` in *three* sub-flows. The atomic import turns that into one
+shared config, but `addAuthenticatorConfig` creates one per execution and the second attach with a
+repeated alias returns **409** — so give each a distinct alias (`match-by-org-name-cookies`,
+`-idp`, `-forms`). Same values, different aliases.
 
 **The atomic import hash-prefixes every alias.** The flow it creates is *not* named what the
 asset says — it gets a generated prefix like `8esLlLB3D3YqVg-Org Browser Flow by Org Name`. Read

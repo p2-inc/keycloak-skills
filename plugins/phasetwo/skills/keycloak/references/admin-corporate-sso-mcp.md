@@ -24,7 +24,7 @@ not part of stock Keycloak (Keycloak's own native, in-core Organizations feature
 thing — Phase Two deliberately does not enable it; see the extension's own
 [note on this](https://github.com/p2-inc/keycloak-orgs/blob/main/docs/note-keycloak-organizations-feature.md)).
 On a genuine Phase Two hosted deployment this is always present. If you're unsure, `whoAmI`
-followed by a call like `listOrganizations` erroring out (rather than returning an empty list)
+followed by a call like `listDeploymentOrganizations` erroring out (rather than returning an empty list)
 is a sign the extension isn't installed on this server — say so plainly rather than assuming the
 MCP tools below will work.
 
@@ -33,12 +33,35 @@ MCP tools below will work.
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
-| Create the customer's organization | `createOrganization` (see the domain-verification caveat below — **before** relying on it) |
+| Create the customer's organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below |
+| Find an existing one | `listDeploymentOrganizations` |
 | Create the corporate IdP | `createOidcIdp` / `createSamlIdp` |
 | **Link the IdP to the organization** | `linkIdentityProviderToOrganization` — **pass `domains`**, or routing stays dead |
 | See what flows exist | `listAuthenticationFlows` |
 | Bind the flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
+
+> **First, the terminology that makes the rest of this readable: in Phase Two a *deployment* IS a
+> Keycloak realm.** One deployment == one realm, with the same name — `createClusterDeployment`'s
+> returned `name` is the realm name. So "the deployment's realm" is not a realm *inside* a
+> deployment; it's the same thing said twice, and `deploymentRealm` is just that name.
+>
+> **`createOrganization` is the wrong tool for this intent, and it fails in a way that wastes a
+> whole session.** There are **two separate organization stores**, and they are not connected:
+>
+> | Store | Lives on | Written by | Read by |
+> |---|---|---|---|
+> | **Account-level** Phase Two orgs — the ones that own clusters and hold billing | the Phase Two **control plane** | `createOrganization`, `listMyOrganizations` | the control plane |
+> | **Deployment orgs** — i.e. realm orgs: the `keycloak-orgs` store at `/realms/{realm}/orgs` | the **deployment's own Keycloak** (that realm) | **`createDeploymentOrganization`** | `linkIdentityProviderToOrganization`, `ext-select-org`, Home IdP Discovery |
+>
+> `createOrganization` only ever writes the first one, and its `realm` argument selects a
+> *control-plane* realm — **not** a deployment/realm. Passing a deployment name to it **404s**,
+> because no such realm exists on the control plane. An org it did create is invisible to the link
+> tool, which returns `{"error": "<orgId> not found"}`. Both failures look like a bad org id rather
+> than the wrong store, which is what makes this expensive to diagnose.
+>
+> Use **`createDeploymentOrganization`** (and `listDeploymentOrganizations` to find an existing
+> one). Its returned `orgId` is what `linkIdentityProviderToOrganization` expects.
 
 Capture **`deploymentId`** and **`deploymentRealm`** and reuse them on every call.
 
@@ -82,12 +105,12 @@ for that domain, no matter how correct everything else is.
 Confirm the link exists before moving on — do not assume it from a successful IdP creation.
 
 **"Verified" is real DNS domain-ownership proof, not a flag you set — and triggering it is
-deliberately not exposed here.** Adding a domain to an organization (via `createOrganization`'s
+deliberately not exposed here.** Adding a domain to an organization (via `createDeploymentOrganization`'s
 `domains` argument, or later) does not mark it verified. The extension verifies ownership by
 checking for a specific TXT record — something like `_org-domain-ownership.<domain>` — resolving
 to a value derived from the domain and the organization's ID, and only flips `verified` to `true`
 once that DNS record is found. **This is a Phase Two-managed process, not something this skill (or
-any MCP tool) triggers.** Use `listOrganizationDomains` to check a domain's current status and get
+any MCP tool) triggers.** Use `listDeploymentOrganizationDomains` to check a domain's current status and get
 the `recordKey`/`recordValue` it needs, then direct the customer to Phase Two's own process for
 getting it verified — don't look for (or improvise) a way to verify it yourself, and don't treat
 an added-but-unverified domain as ready for discovery.
@@ -110,12 +133,27 @@ single client) in the same payload.
 
 **Do not use Keycloak's `partialImport` endpoint (or the admin console's "Partial import" action)
 for flows** — it has no handler for authentication flows at all and silently ignores them: HTTP
-200, nothing created, no error. `importAuthenticationFlow` instead requires the
-[p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
-extension on the target Keycloak; it returns a clear 404 if that's missing, in which case offer
-installing it (one jar, one call instead of a long manual create-flow/add-execution/set-requirement
-sequence) rather than silently switching approaches. Note the extension hash-prefixes the created
-alias, so read the real name back rather than assuming the asset's name.
+200, nothing created, no error.
+
+`importAuthenticationFlow` requires the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+extension and returns a clear 404 if it's missing. Offer installing it — one jar, one call instead
+of many — as the one-shot. **The component path is the default and always available, entirely
+inside MCP**: `addFlow` → `addSubFlow` for the forms sub-flow →
+`addAuthenticator` for each leaf step (`auth-cookie`, `auth-spnego`,
+`identity-provider-redirector`, `ext-auth-home-idp-discovery`) → `setExecutionRequirement` on
+each → bind. There is no raw-REST or credentials-from-the-user step needed here; report a dead
+end only if one of these tools itself is unavailable on this MCP server.
+
+**Pass `priority` explicitly on every `addSubFlow`/`addAuthenticator`
+call.** Both APPEND when priority is omitted — landing at `(last sibling's priority + 1)` — so
+creating the forms sub-flow before `auth-cookie` exists puts it first. `priority` in the body is
+honoured only from Keycloak 25 onward; older versions need `raiseExecutionPriority`/
+`lowerExecutionPriority` to repair the order afterward. Read it back with `listFlowExecutions`
+before calling the flow done.
+
+Note the atomic-import path hash-prefixes the created alias, so read the real name back rather
+than assuming the asset's name — the manual-sequence path does not have this issue, since you
+choose the alias yourself.
 
 **Both assets deliberately set `forwardToLinkedIdp=true`.** The authenticator's factory default
 is `false`, which silently prevents any redirect at all — the single most likely cause of "I

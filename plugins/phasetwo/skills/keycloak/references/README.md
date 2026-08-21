@@ -3,6 +3,69 @@
 The [`../SKILL.md`](../SKILL.md) router dispatches to the files below. Each is loaded **on demand**
 for a specific intent + tooling, never all at once.
 
+## Authoring flows: components first
+
+Custom authentication flows are built **component by component** through MCP tools, on stock
+Keycloak Admin REST with no extension required. That is the default path, not a fallback:
+
+| Step | Tool |
+|---|---|
+| The flow itself | `addFlow` (or `copyFlow` to start from a built-in like `browser`) |
+| One authenticator | `addAuthenticator` |
+| A nested flow | `addSubFlow` |
+| A conditional sub-flow + its condition | `addConditional` |
+| Per-step config | `addAuthenticatorConfig` |
+| Undo | `deleteExecution`, `deleteAuthenticatorConfig`, `deleteFlow` |
+| Discover what exists | `listAuthenticatorProviders`, `getAuthenticatorConfigDescription` |
+
+`importAuthenticationFlow` is the one-shot alternative: it authors a whole flow *and* its bindings
+in a single call, and is the only way to import a flow **completely** at once — but it needs the
+[p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+extension and 404s without it. Paired with `deleteFlow` it also gives a clean re-import cycle.
+Keycloak's own `partialImport` is not a substitute for either path: it has no authentication-flow
+handler and ignores flows silently (HTTP 200, nothing created).
+
+Offer the extension when it's missing — one jar collapses many calls into one — but never report a
+dead end: the component tools always work.
+
+Three things that are load-bearing on the component path:
+
+- **Order.** `addAuthenticator` / `addSubFlow` **append** when `priority` is omitted (the server
+  assigns `last sibling + 1`), so call order alone decides the result — and a sub-flow created
+  before its parent's other steps lands *first*. Pass `priority` on every call, and read the order
+  back with `listFlowExecutions`: nothing errors on a wrong order. `priority` is honoured only from
+  **Keycloak 25** onward; older servers need `raiseExecutionPriority` / `lowerExecutionPriority`.
+- **Requirement.** New executions are created `DISABLED`. Pass `requirement` on the add call, or
+  the step exists and does nothing.
+- **Config aliases are unique per realm, not per execution.** The bundled assets deliberately reuse
+  one alias across several executions (`match-by-org-name` on three `ext-select-org` steps). The
+  atomic import turns that into one shared config; `addAuthenticatorConfig` cannot, so give each
+  execution a distinct alias or the second attach returns 409.
+
+## Organizations always mean the deployment's realm
+
+Every intent in this router that touches organizations means **deployment-realm organizations** —
+the `keycloak-orgs` extension's per-realm store at `/realms/{realm}/orgs`, on the deployment's own
+Keycloak. A Phase Two **deployment IS a Keycloak realm** (one deployment == one realm, same name),
+so "the deployment's realm" and "the deployment" are the same thing.
+
+Phase Two *also* has **account-level** organizations — the ones that own clusters and hold billing,
+on the control plane. Those are a **separate use case** (account and cluster ownership), not
+something these skills configure, and the two stores are not connected in either direction.
+
+The MCP toolset splits along that line, and the names do not make it obvious:
+
+| Scope | Tools | Takes |
+|---|---|---|
+| **Deployment realm** — what every org intent here needs | `createDeploymentOrganization`, `listDeploymentOrganizations`, `addDeploymentOrganizationMember`, `listDeploymentOrganizationMembers`, `removeDeploymentOrganizationMember`, `listDeploymentOrganizationDomains`, `linkIdentityProviderToOrganization` | `deploymentId` + `deploymentRealm` |
+| **Control plane** — account/cluster ownership, not these intents | `createOrganization`, `listOrganizations`, `listMyOrganizations`, `addOrganizationMember`, `listOrganizationMembers`, `listOrganizationDomains`, `getOrganization`, `updateOrganization`, the role/invitation tools | `realm` only |
+
+**Reaching for a control-plane tool here fails in a way that reads as a bad org id, not the wrong
+store**: passing a deployment name to `createOrganization` 404s (no such realm on the control
+plane), and an org it created 404s when linked. Only `cluster-setup-mcp.md` legitimately uses the
+control-plane org tools, because picking an owning organization for a new cluster is genuinely an
+account-level question.
+
 ## How the router reaches each file
 
 - **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:email-otp-login`, `admin:password-email-otp-mfa`,

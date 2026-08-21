@@ -89,6 +89,28 @@ Two mechanical notes:
 - The atomic endpoint **hash-prefixes the alias it creates**. Read the real alias back from the
   response and use that when binding — don't assume the asset's literal name.
 
+### If the atomic-flows extension isn't installed
+
+`importAuthenticationFlow` needs the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+extension and 404s without it. Offer installing it as the one-shot — one jar, one call instead of
+many. **The component path below is the default and always available — no raw REST, no credentials
+from the user**:
+
+1. `addFlow(alias="Passwordless-or-magic-link")`
+2. `addSubFlow(parentFlowAlias="Passwordless-or-magic-link", alias="Passwordless-or-magic-link forms", priority=3)`
+3. `addAuthenticator` four times on the top-level flow (`auth-cookie` priority 0,
+   `auth-spnego` priority 1, `identity-provider-redirector` priority 2), and twice on the forms
+   sub-flow (`ext-magic-form` priority 2, `webauthn-authenticator-passwordless` priority 3) —
+   **matching the table above exactly**, and passing `priority` explicitly on every call, since
+   both add-execution calls append when it's omitted.
+4. `setExecutionRequirement` on each of the six — `ALTERNATIVE` for all but `auth-spnego`
+   (`DISABLED`).
+5. Bind with `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow`.
+
+`priority` in the body is honoured only from Keycloak 25 onward; on older versions add the
+executions in this order anyway and repair with `raiseExecutionPriority`/`lowerExecutionPriority`.
+Read the order back with `listFlowExecutions` before moving on — nothing errors on a wrong order.
+
 ### What the user actually sees (verified on Keycloak 26.0.7)
 
 Driven end to end against a live realm, both halves completing real

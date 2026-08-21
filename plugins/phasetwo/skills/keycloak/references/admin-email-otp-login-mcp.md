@@ -63,8 +63,14 @@ plus the binding in the same payload:
 
 For one client instead of realm-wide, use `clientFlowBinding: {clientId, browserFlowBinding}`.
 The extension hash-prefixes the alias it creates, so read the real one back from the response
-rather than assuming. A 404 means the atomic-flows extension isn't installed — offer it, and fall
-back to `admin-email-otp-login.md`'s manual REST sequence only if the user declines.
+rather than assuming. A 404 means the atomic-flows extension isn't installed — offer installing
+it first as the one-shot. **The component path below is the default and always available — no
+extension, no raw REST, no credentials from the user**: `addFlow` → `addSubFlow` for the forms sub-flow →
+`addAuthenticator` for `auth-cookie`, `identity-provider-redirector`,
+`ext-auth-username-auth-note`, `ext-email-otp` (**in that order**, `priority` passed explicitly
+on every call — both add calls append when it's omitted) → `setExecutionRequirement` on each →
+`setExecutionAuthenticatorConfig` on `ext-email-otp` for the option below → bind. Read the order
+back with `listFlowExecutions` before calling it done.
 
 **The execution order inside the forms sub-flow is load-bearing, and so is WHICH authenticator
 collects the identifier** — verify both if authoring by hand rather than from the asset:

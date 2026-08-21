@@ -20,8 +20,9 @@ against that, and only then reaching the magic-link step itself.
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
-| Create the organization | `createOrganization` |
-| Add a member | (org membership tool — see `admin-org-restrict-login-mcp.md`'s tool table) |
+| Create the organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below |
+| Find an existing one | `listDeploymentOrganizations` |
+| Add a member | `addDeploymentOrganizationMember` (after `findUser`) — **not** `addOrganizationMember`, which is account-level |
 | Confirm no flow already does this | `listAuthenticationFlows` |
 | Author the flow **and bind it**, in one call | `importAuthenticationFlow` (needs the atomic-flows extension — see below) |
 | Inspect/adjust the `ext-select-org` step's matching mode | `listFlowExecutions` / `setExecutionAuthenticatorConfig` |
@@ -29,11 +30,33 @@ against that, and only then reaching the magic-link step itself.
 | Bind an already-existing flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
 
+> **First, the terminology that makes the rest of this readable: in Phase Two a *deployment* IS a
+> Keycloak realm.** One deployment == one realm, with the same name — `createClusterDeployment`'s
+> returned `name` is the realm name. So "the deployment's realm" is not a realm *inside* a
+> deployment; it's the same thing said twice, and `deploymentRealm` is just that name.
+>
+> **`createOrganization` is the wrong tool for this intent, and it fails in a way that wastes a
+> whole session.** There are **two separate organization stores**, and they are not connected:
+>
+> | Store | Lives on | Written by | Read by |
+> |---|---|---|---|
+> | **Account-level** Phase Two orgs — the ones that own clusters and hold billing | the Phase Two **control plane** | `createOrganization`, `listMyOrganizations` | the control plane |
+> | **Deployment orgs** — i.e. realm orgs: the `keycloak-orgs` store at `/realms/{realm}/orgs` | the **deployment's own Keycloak** (that realm) | **`createDeploymentOrganization`** | `linkIdentityProviderToOrganization`, `ext-select-org`, Home IdP Discovery |
+>
+> `createOrganization` only ever writes the first one, and its `realm` argument selects a
+> *control-plane* realm — **not** a deployment/realm. Passing a deployment name to it **404s**,
+> because no such realm exists on the control plane. An org it did create is invisible to the link
+> tool, which returns `{"error": "<orgId> not found"}`. Both failures look like a bad org id rather
+> than the wrong store, which is what makes this expensive to diagnose.
+>
+> Use **`createDeploymentOrganization`** (and `listDeploymentOrganizations` to find an existing
+> one). Its returned `orgId` is what `linkIdentityProviderToOrganization` expects.
+
 ## Prerequisite: the keycloak-orgs extension
 
 Same dependency as `admin-org-restrict-login-mcp.md`: the real
 **[p2-inc `keycloak-orgs`](https://github.com/p2-inc/keycloak-orgs)** extension, not Keycloak's
-native Organizations feature. If `listOrganizations` errors rather than returning an empty list,
+native Organizations feature. If `listDeploymentOrganizations` errors rather than returning an empty list,
 it isn't installed — say so and stop.
 
 ## Stage 1 — Ask: match by organization NAME or ID?
@@ -48,9 +71,14 @@ than assuming a successful add call means it did.
 
 ## Stage 3 — Author the flow (and bind it)
 
-Confirm with `listAuthenticationFlows` that no flow already does this. Authoring is not covered by
-any tool other than `importAuthenticationFlow` — same 404-if-missing behavior as every other
-atomic-flows-backed intent in this router:
+Confirm with `listAuthenticationFlows` that no flow already does this. `importAuthenticationFlow`
+authors and binds it in one call, but needs the atomic-flows extension — 404 if it's missing.
+**That is not a dead end — component authoring is the default path.** Build it through MCP tools,
+no raw REST and no credentials needed from the user: `addFlow` for the top
+level, `addSubFlow` for the forms sub-flow, `addAuthenticator` for each
+leaf step below — **in the order the table below gives**, passing `priority` explicitly on every
+call since both append when it's omitted — then `setExecutionRequirement` on each and
+`setExecutionAuthenticatorConfig` for the two that need config.
 
 ```json
 {
@@ -73,7 +101,8 @@ Putting `ext-magic-form` before `ext-select-org` would send mail regardless of m
 defeat the entire point of gating — this is the one thing not to improvise around.
 
 Read the real, hash-prefixed alias back from `importAuthenticationFlow`'s response rather than
-assuming the asset's name — same trap as every other atomic-flows intent.
+assuming the asset's name — same trap as every other atomic-flows intent. (The manual-sequence
+path doesn't have this issue: you choose the alias yourself.)
 
 ## Stage 4 — Realm mail settings
 
