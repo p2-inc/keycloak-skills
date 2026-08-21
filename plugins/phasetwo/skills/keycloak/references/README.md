@@ -9,7 +9,7 @@ for a specific intent + tooling, never all at once.
   `admin:passwordless-magic-link-org-restrict`, `admin:passwordless-passkey`,
   `admin:zero-password-login`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
-  `admin:social-login`, `admin:idp-federation`,
+  `admin:social-login`, `admin:idp-federation`, `admin:idp-initiated-sso`,
   `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
 - **Step 3** maps the intent + tooling to the `Read:` list below.
@@ -38,6 +38,8 @@ for a specific intent + tooling, never all at once.
 | `admin-social-login.md` | `admin:social-login` (tooling=`rest`) — same outcome via raw Admin REST `identity-provider/instances`, including how to set the provider-specific config keys the MCP tool can't | ✅ done |
 | `admin-idp-federation-mcp.md` | `admin:idp-federation` (tooling=`mcp`) — enterprise IdP brokering via `createOidcIdp`/`createSamlIdp`; the vendor routing table, the deterministic Keycloak SP-value computation that unblocks the vendor-console-first ordering most SAML vendors need, and the file-vs-URL metadata split | ✅ done |
 | `admin-idp-federation.md` | `admin:idp-federation` (tooling=`rest`) — same outcome via raw Admin REST `identity-provider/import-config` + `instances` | ✅ done |
+| `admin-idp-initiated-sso-mcp.md` | `admin:idp-initiated-sso` (tooling=`mcp`) — an external portal tile (Okta/Entra) landing a user in ONE client: `createSamlClient`'s `idpInitiatedSsoUrlName`/`brokeredIdpAlias`, and two verified tool gaps (no update-client tool, so existing clients can't be retrofitted; and it can't produce the REDIRECT-binding config an OIDC target needs) that route the developer to the `rest` file | ✅ done |
+| `admin-idp-initiated-sso.md` | `admin:idp-initiated-sso` (tooling=`rest`) — same outcome via a read-merge-`PUT` on the client's attributes; the direct-vs-broker endpoint asymmetry (only the broker path skips Keycloak's client-protocol check, which is what makes an OIDC target possible), the 4-step binding-selection priority, and the OIDC-target recipe framed honestly as an SSO-cookie bootstrap rather than a native OIDC flow | ✅ done |
 | `admin-org-restrict-login-mcp.md` | `admin:org-restrict-login` (tooling=`mcp`) — restricting login to one organization's members via `ext-select-org` (`match_by_org_name`), authored+bound in one call with `importAuthenticationFlow` (needs the keycloak-atomic-auth-flows extension; offers it, falls back to a manual REST sequence); explicit about the `account_hint`/`prompt=select_account` trigger requirement | ✅ done |
 | `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
 | `admin-idp-org-restrict-login-mcp.md` | `admin:idp-org-restrict-login` (tooling=`mcp`) — gating FEDERATED login on organization membership: the org-owned IdP link that makes the gate work at all, a post-broker flow containing `ext-select-org` bound as the IdP's `postBrokerLoginFlowAlias` (the stock post-broker flow has none, so binding it gates nothing) | ✅ done |
@@ -87,7 +89,7 @@ clicks doesn't change based on whether Keycloak is driven via MCP or REST: `soci
 `social-microsoft.md`, `social-github.md`, `social-facebook.md` (consumer social login) and
 `entra-id.md`, `auth0.md`, `adfs.md`, `aws.md`, `google-workspace.md`, `cyberark.md`, `duo.md`,
 `jumpcloud.md`, `lastpass.md`, `onelogin.md`, `oracle.md`, `pingone.md`, `salesforce.md`,
-`cloudflare.md` (enterprise federation). The 14 enterprise files (Auth0 and Salesforce each cover
+`cloudflare.md` (enterprise federation), plus `okta-idp-initiated.md` and `entra-idp-initiated.md` (the vendor-console half of `admin:idp-initiated-sso`; their Keycloak-side mechanics live in the two `admin-idp-initiated-sso*.md` files and are deliberately not duplicated into them). The 14 enterprise files (Auth0 and Salesforce each cover
 both their OIDC and SAML wizards in one file) are verified against
 [p2-inc/idp-wizard](https://github.com/p2-inc/idp-wizard)'s actual step content — vendor console
 menu paths, exact field names, and load-bearing ordering (JumpCloud's is reversed relative to every
