@@ -1,0 +1,20 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm has a plain "log in with Contoso" button: exactly one identity provider
+brokers the `contoso-idp` realm via OIDC (providerId "oidc", enabled true). BOTH `taylor`
+and `morgan` - two unrelated Contoso staff, neither singled out - can complete a browser
+authorization-code login against `acme-portal` using `kc_idp_hint` alone, with no
+account_hint and no organization-membership requirement, landing on
+http://localhost:9999/callback with an authorization code. After a successful login,
+Contoso's email/given_name/family_name claims are mapped onto the brokered Keycloak user
+as email/firstName/lastName. Realm `contoso-idp` is unchanged (still exactly the taylor
+and morgan accounts, acme-app still a confidential client, no identity providers added),
+and exactly the master, acme, and contoso-idp realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"

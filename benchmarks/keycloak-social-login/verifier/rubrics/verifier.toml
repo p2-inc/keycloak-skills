@@ -1,0 +1,22 @@
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The acme realm offers Sign in with GitHub as a built-in social identity provider (providerId
+"github", not a generic oidc/saml config), enabled, with the fixture OAuth App's client ID/secret
+wired in (verified indirectly: a kc_idp_hint login attempt 302s to
+https://github.com/login/oauth/authorize carrying that client_id, and the client secret is never
+returned in plaintext). Its callback URI is the standard {baseUrl}/realms/acme/broker/{alias}/endpoint
+shape. GitHub's actual claim shape is mapped correctly: a Username Template Importer
+(oidc-username-idp-mapper) references GitHub's real 'login' field via ${CLAIM.login}, not an
+OIDC-standard claim like preferred_username/given_name/sub/email that GitHub never sends; and a
+github-user-attribute-mapper (GitHub's own compatible mapper type, not the generic
+oidc-user-attribute-idp-mapper) maps GitHub's 'name' JSON field to the user's firstName attribute,
+not an OIDC-standard field like given_name/first_name. Only the master and acme realms exist. No
+live brokered login against github.com is attempted or required - see verifier.md for why.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"

@@ -1,20 +1,20 @@
 ---
 name: keycloak
 description: >-
-  Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login: magic link
-  (emailed link), email OTP (emailed 6-digit code, `ext-email-otp`), or passkey-only WebAuthn.
-  Also email OTP as a SECOND factor on a required password ("2FA/MFA by email") — password-gated,
-  not passwordless. Corporate/enterprise SSO by email domain. Phase Two cluster/deployment
-  provisioning — "isolate/secure this app" means "new deployment". Restricting login to one
-  organization's members — password, federated/SSO, or magic-link; account_hint-gated, needing
-  keycloak-orgs. Triggers: "passwordless login", "magic link", "email OTP", "2FA/MFA by email",
-  "passkey login", "no more passwords", "corporate SSO", "restrict login to org X", "spin up a
-  cluster", "new deployment" — even bare "passwordless"/"passkeys". Cluster/deployment is
-  MCP-only; the rest works via Admin REST or the Keycloak MCP server. Not WebAuthn as a second
-  factor, not TOTP/HOTP authenticator apps.
+  Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
+  OTP, or passkey WebAuthn); email OTP as a 2FA second factor; org-membership login restriction
+  (password, federated, or magic-link); cluster/deployment provisioning. Also identity brokering:
+  domain-routed corporate SSO ("route by email domain"); social login buttons ("log in with
+  Google/GitHub/Microsoft/Facebook"); and enterprise IdP federation — connecting Entra ID, Okta,
+  Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Oracle, Duo, CyberArk, JumpCloud, LastPass,
+  Salesforce, or Cloudflare Access as a login button, no domain routing required. Triggers:
+  "passwordless", "magic link", "email OTP", "2FA by email", "passkeys", "restrict login to org
+  X", "spin up a cluster", "corporate SSO", "log in with Google/GitHub", "connect Okta/Entra
+  ID/Auth0", "add an identity provider", "SAML/OIDC SSO". Cluster/deployment is MCP-only. Not
+  WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
 license: Apache-2.0
 metadata:
-  version: '0.12.0'
+  version: '0.13.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -39,7 +39,9 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
 | Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
 | Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
-| Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone (that's identity brokering generally, not domain-routed — not covered here) and not restricting login to organization members (a different mechanism — see the next two rows). | **admin:corporate-sso** |
+| Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone with no domain routing (that's `admin:idp-federation`, next row) and not restricting login to organization members (a different mechanism — see the two rows after that). | **admin:corporate-sso** |
+| Add a built-in **consumer social login** button — "log in with Google", "add a GitHub login button", "sign in with Microsoft/Facebook", "social login", "OAuth login with \[Google/GitHub/Microsoft/Facebook/...\]". Client ID + secret only, no discovery/metadata URL. Not a company's own Workspace/Entra ID/Okta tenant (that's enterprise federation, next row — "Google" as a company SSO source means Google **Workspace SAML**, not this) and not domain-routed (`admin:corporate-sso` above). | **admin:social-login** |
+| Broker a company's own enterprise identity provider as a login option — "connect Okta/Entra ID/Auth0/ADFS/PingOne/...", "set up SAML SSO with \[vendor\]", "add \[vendor\] as an identity provider", "OIDC/SAML federation with our IdP". Covers Entra ID, Auth0, ADFS, AWS SSO, Google Workspace, CyberArk, JumpCloud, OneLogin, Oracle, PingOne, Duo, Salesforce, LastPass, Cloudflare Access, Okta, and any other generic OIDC/SAML 2.0 IdP. Not domain-auto-routing (`admin:corporate-sso` — this intent creates the button, that one decides who gets redirected automatically) and not a consumer social button (`admin:social-login` above) and not LDAP/AD user federation (reading users from a directory — no MCP tool for that, point at the Phase Two console). | **admin:idp-federation** |
 | Restrict login so only members of a specific organization can complete it — "only let members of this org log in", "gate login by organization membership", "restrict access to org X". Not domain-based auto-routing (that's `admin:corporate-sso` — a user can be routed to an IdP without any membership restriction at all) and not a login that "just works" once bound — it only activates when the request carries `account_hint` or `prompt=select_account`. This row is for **local password** logins; if the user authenticates at an external IdP, see the next row. | **admin:org-restrict-login** |
 | Restrict **federated/SSO** login so only members of a specific organization get in — "corporate organization restriction", "restrict SSO login to a team/tenant", "only let this customer's staff into their own org", "organization-restricted corporate login", "gate IdP login by org membership", "post-broker organization check". The user signs in at an external identity provider and the membership check runs *afterwards*, bound to the IdP's post-broker login flow. Not domain-based routing (`admin:corporate-sso` sends users to their IdP but restricts nobody) and not the local-password gate (`admin:org-restrict-login`). | **admin:idp-org-restrict-login** |
 
@@ -158,6 +160,33 @@ Read: references/admin-corporate-sso-{tooling}.md
   tooling=mcp  → references/admin-corporate-sso-mcp.md
   tooling=rest → references/admin-corporate-sso.md
 ```
+
+### admin:social-login
+```
+Read: references/admin-social-login-{tooling}.md
+  tooling=mcp  → references/admin-social-login-mcp.md
+  tooling=rest → references/admin-social-login.md
+```
+Then, for the specific vendor asked for, also read the matching per-vendor console walkthrough:
+`references/idp/social-google.md`, `social-microsoft.md`, `social-github.md`, `social-facebook.md`.
+For any other built-in provider (GitLab, Bitbucket, Instagram, X/Twitter, LinkedIn, Stack Overflow,
+PayPal, OpenShift) there's no dedicated walkthrough yet — the mechanism is the same, say so plainly.
+
+### admin:idp-federation
+```
+Read: references/admin-idp-federation-{tooling}.md
+  tooling=mcp  → references/admin-idp-federation-mcp.md
+  tooling=rest → references/admin-idp-federation.md
+```
+If the vendor is **Okta**, hand off to the `settingOktaIdentityProvider` skill instead — it's a
+complete guided workflow, don't duplicate it here. For every other vendor, the mechanics file's own
+Step 1 table maps to the matching per-vendor file under `references/idp/`: `entra-id.md`, `auth0.md`,
+`adfs.md`, `aws.md`, `google-workspace.md`, `cyberark.md`, `duo.md`, `jumpcloud.md`, `lastpass.md`,
+`onelogin.md`, `oracle.md`, `pingone.md`, `salesforce.md`, `cloudflare.md`. Read exactly the one
+matching the developer's vendor — these are console click-paths, not tooling-specific, so the same
+file serves both `mcp` and `rest` tooling. If asked about **LDAP/Active Directory** as a login
+source, that's user federation, not brokering — say plainly this skill doesn't cover it (no MCP tool
+exists for it) rather than routing it into a SAML/OIDC vendor file.
 
 ### admin:idp-org-restrict-login
 ```

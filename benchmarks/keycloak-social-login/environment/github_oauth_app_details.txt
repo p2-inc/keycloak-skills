@@ -1,0 +1,5 @@
+Acme's engineering team registered a GitHub OAuth App for the customer portal and handed
+these over. Fixture values for this sandbox — not real GitHub-issued credentials.
+
+github_client_id=8f2b6e19a4c5d7018e3f
+github_client_secret=1a9c3e7f5b2d804e6c1f9a3b7d5e2c8f4a6b0d1e

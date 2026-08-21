@@ -8,6 +8,7 @@ for a specific intent + tooling, never all at once.
 - **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:email-otp-login`, `admin:password-email-otp-mfa`,
   `admin:passwordless-magic-link-org-restrict`, `admin:passwordless-passkey`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
+  `admin:social-login`, `admin:idp-federation`,
   `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
 - **Step 3** maps the intent + tooling to the `Read:` list below.
@@ -30,6 +31,10 @@ for a specific intent + tooling, never all at once.
 | `cluster-create-deployment-mcp.md` | `admin:cluster-create-deployment` (tooling=`mcp` only) — creating a new deployment (realm) in an existing `ACTIVE` cluster, including recognizing "isolate/secure this app" as a request for a new realm | ✅ done |
 | `admin-corporate-sso-mcp.md` | `admin:corporate-sso` (tooling=`mcp`) — routing by email domain via organizations (`linkIdentityProviderToOrganization`), the `homeIdp`/`homeIdp with orgs-check` custom flows and `forwardToLinkedIdp`, why an IdP-redirector execution is the wrong answer | ✅ done |
 | `admin-corporate-sso.md` | `admin:corporate-sso` (tooling=`rest`) — same outcome via raw Admin REST: `organizationsEnabled`, creating the IdP and the verified-domain organization, linking them, and when the built-in `browser` flow already routes without any custom flow at all | ✅ done |
+| `admin-social-login-mcp.md` | `admin:social-login` (tooling=`mcp`) — built-in consumer social providers (`createSocialIdp`); the fixed `providerId` list confirmed against Keycloak's `org.keycloak.social` package, the hardcoded `trustEmail=true`, and the provider-specific config keys (`hostedDomain`, `tenantId`, `fetchedFields`, `key`, `sandbox`) that the tool cannot set | ✅ done |
+| `admin-social-login.md` | `admin:social-login` (tooling=`rest`) — same outcome via raw Admin REST `identity-provider/instances`, including how to set the provider-specific config keys the MCP tool can't | ✅ done |
+| `admin-idp-federation-mcp.md` | `admin:idp-federation` (tooling=`mcp`) — enterprise IdP brokering via `createOidcIdp`/`createSamlIdp`; the vendor routing table, the deterministic Keycloak SP-value computation that unblocks the vendor-console-first ordering most SAML vendors need, and the file-vs-URL metadata split | ✅ done |
+| `admin-idp-federation.md` | `admin:idp-federation` (tooling=`rest`) — same outcome via raw Admin REST `identity-provider/import-config` + `instances` | ✅ done |
 | `admin-org-restrict-login-mcp.md` | `admin:org-restrict-login` (tooling=`mcp`) — restricting login to one organization's members via `ext-select-org` (`match_by_org_name`), authored+bound in one call with `importAuthenticationFlow` (needs the keycloak-atomic-auth-flows extension; offers it, falls back to a manual REST sequence); explicit about the `account_hint`/`prompt=select_account` trigger requirement | ✅ done |
 | `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
 | `admin-idp-org-restrict-login-mcp.md` | `admin:idp-org-restrict-login` (tooling=`mcp`) — gating FEDERATED login on organization membership: the org-owned IdP link that makes the gate work at all, a post-broker flow containing `ext-select-org` bound as the IdP's `postBrokerLoginFlowAlias` (the stock post-broker flow has none, so binding it gates nothing) | ✅ done |
@@ -61,6 +66,24 @@ Both `admin-corporate-sso*.md` files reference shared assets/scripts at the skil
 `admin-org-restrict-login-mcp.md` references `assets/org-browser-flow-by-org-name.partial-import.json`
 and `assets/org-browser-flow-by-org-id.partial-import.json` — two alternative *configurations* of
 the same flow alias, not two coexisting flows; pick one up front.
+
+`admin-social-login*.md` and `admin-idp-federation*.md` both point into `references/idp/` for
+per-vendor console click-paths — **tooling-agnostic**, since which console buttons a developer
+clicks doesn't change based on whether Keycloak is driven via MCP or REST: `social-google.md`,
+`social-microsoft.md`, `social-github.md`, `social-facebook.md` (consumer social login) and
+`entra-id.md`, `auth0.md`, `adfs.md`, `aws.md`, `google-workspace.md`, `cyberark.md`, `duo.md`,
+`jumpcloud.md`, `lastpass.md`, `onelogin.md`, `oracle.md`, `pingone.md`, `salesforce.md`,
+`cloudflare.md` (enterprise federation). The 14 enterprise files (Auth0 and Salesforce each cover
+both their OIDC and SAML wizards in one file) are verified against
+[p2-inc/idp-wizard](https://github.com/p2-inc/idp-wizard)'s actual step content — vendor console
+menu paths, exact field names, and load-bearing ordering (JumpCloud's is reversed relative to every
+other vendor: Keycloak's SP values go in *first*, its metadata export comes out *last*) — not
+recalled generically. **Okta is deliberately absent** — it hands off to `settingOktaIdentityProvider`
+per `SKILL.md`'s Step 3, so no `okta.md` exists here; don't add one without first checking whether
+the dedicated skill should absorb the content instead. The remaining built-in social providers
+(GitLab, Bitbucket, Instagram, X/Twitter, LinkedIn, Stack Overflow, PayPal, OpenShift) and any
+generic OIDC/SAML vendor outside the 14 above have no dedicated walkthrough yet — say so plainly
+per the "growing this router" convention below rather than improvising one.
 
 **Note on the `*.partial-import.json` asset names**: that naming is now misleading. Keycloak's
 `partialImport` endpoint has **no handler for authentication flows** and silently ignores them
