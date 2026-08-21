@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.4.1, pluggy-1.6.0 -- /usr/local/bin/python3
+rootdir: /app
+configfile: ../dev/null
+plugins: json-ctrf-0.3.5
+collecting ... collected 7 items
+
+../app::test_the_login_page_never_offers_a_password PASSED               [ 14%]
+../app::test_magic_link_login_completes PASSED                           [ 28%]
+../app::test_no_mail_or_account_is_created_for_an_unregistered_address PASSED [ 42%]
+../app::test_passkey_login_completes PASSED                              [ 57%]
+../app::test_existing_accounts_still_exist_and_are_enabled PASSED        [ 71%]
+../app::test_no_password_credential_was_created PASSED                   [ 85%]
+../app::test_only_the_acme_realm_was_added PASSED                        [100%]
+
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED ../app::test_the_login_page_never_offers_a_password
+PASSED ../app::test_magic_link_login_completes
+PASSED ../app::test_no_mail_or_account_is_created_for_an_unregistered_address
+PASSED ../app::test_passkey_login_completes
+PASSED ../app::test_existing_accounts_still_exist_and_are_enabled
+PASSED ../app::test_no_password_credential_was_created
+PASSED ../app::test_only_the_acme_realm_was_added
+============================== 7 passed in 10.06s ==============================

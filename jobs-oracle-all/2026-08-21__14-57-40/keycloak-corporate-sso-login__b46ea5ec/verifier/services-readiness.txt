@@ -1,0 +1,1 @@
+keycloak ready on :8080/auth (acme, contoso-idp), mcp server ready on :8090

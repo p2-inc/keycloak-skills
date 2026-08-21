@@ -8,7 +8,7 @@
 # does not yet strip `ifResourceExists`. The task passes on this image, but an agent
 # using the MCP tools burns ~2x the calls and ~5x the cost working around the opaque
 # error. Re-pin to a newer digest once those fixes ship to quay.
-FROM quay.io/phasetwo/phasetwo-mcp@sha256:0dd572971918aa628a3260e96d1a668775906e6baa0b30428b95261ddaf9375b AS mcp-app
+FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
 
 # Phase Two's own Keycloak distribution - includes the REAL p2-inc keycloak-orgs
 # extension (io.phasetwo.keycloak-keycloak-orgs jar, baked into providers/ already

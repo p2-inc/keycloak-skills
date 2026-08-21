@@ -1,0 +1,26 @@
+{
+  "schema_version": "ATIF-v1.7",
+  "session_id": "keycloak-org-restrict-login__1fc80d78",
+  "agent": {
+    "name": "oracle",
+    "version": "unknown"
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "source": "user",
+      "message": "Acme's security team has a new requirement:\n\n> \"Only engineering staff should be able to sign in to the internal tools portal.\"\n\nA Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.\n\nRealm `acme` has one browser application registered, the public client `acme-portal`, whose redirect URI is `http://localhost:9999/callback`. It has two staff accounts, both already able to log in with a password:\n\n- `priya` / `Priya!Pass1` \u2014 she is engineering staff and should be let in.\n- `morgan` / `Morgan!Pass1` \u2014 he is not engineering staff and should be turned away.\n\nNeither account belongs to any organization yet, and no organization exists yet.\n\nThe application will send a real login request to `acme-portal` carrying `account_hint=engineering` (the value it will use to mean \"the engineering team\") \u2014 it will not send `prompt=select_account`, and this is the only signal available to distinguish \"let this person in\" from \"turn this person away.\"\n\nConfigure the `acme` realm so that all of the following hold, for a browser authorization-code login against `acme-portal` carrying `account_hint=engineering`:\n\n1. `priya` completes the login and arrives back at `http://localhost:9999/callback` with an authorization code.\n2. `morgan` does not complete the login \u2014 he must not receive an authorization code.\n3. A login carrying an `account_hint` that matches no real organization at all does not complete for anyone, including `priya` \u2014 the gate must actually check membership in a real, specific organization, not merely require the presence of any `account_hint` value.\n4. No realm other than `master` and `acme` exists, and no other users or realms were added."
+    },
+    {
+      "step_id": 2,
+      "source": "agent",
+      "message": "[oracle: oracle/solve.sh]"
+    }
+  ],
+  "final_metrics": {
+    "total_steps": 2,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_cached_tokens": 0
+  }
+}

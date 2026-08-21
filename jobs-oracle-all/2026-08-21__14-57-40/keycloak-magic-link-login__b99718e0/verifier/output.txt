@@ -1,0 +1,27 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.4.1, pluggy-1.6.0 -- /usr/local/bin/python3
+rootdir: /app
+configfile: ../dev/null
+plugins: json-ctrf-0.3.5
+collecting ... collected 8 items
+
+../app::test_a_known_address_receives_mail_with_no_password_prompt[priya@acme.example] PASSED [ 12%]
+../app::test_a_known_address_receives_mail_with_no_password_prompt[marcus@acme.example] PASSED [ 25%]
+../app::test_the_emailed_link_completes_login_and_preserves_state[priya@acme.example] PASSED [ 37%]
+../app::test_the_emailed_link_completes_login_and_preserves_state[marcus@acme.example] PASSED [ 50%]
+../app::test_an_unregistered_address_gets_the_same_response_as_a_registered_one PASSED [ 62%]
+../app::test_no_mail_or_account_is_created_for_an_unregistered_address PASSED [ 75%]
+../app::test_existing_accounts_still_exist_and_are_enabled PASSED        [ 87%]
+../app::test_only_the_acme_realm_was_added PASSED                        [100%]
+
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED ../app::test_a_known_address_receives_mail_with_no_password_prompt[priya@acme.example]
+PASSED ../app::test_a_known_address_receives_mail_with_no_password_prompt[marcus@acme.example]
+PASSED ../app::test_the_emailed_link_completes_login_and_preserves_state[priya@acme.example]
+PASSED ../app::test_the_emailed_link_completes_login_and_preserves_state[marcus@acme.example]
+PASSED ../app::test_an_unregistered_address_gets_the_same_response_as_a_registered_one
+PASSED ../app::test_no_mail_or_account_is_created_for_an_unregistered_address
+PASSED ../app::test_existing_accounts_still_exist_and_are_enabled
+PASSED ../app::test_only_the_acme_realm_was_added
+============================== 8 passed in 3.42s ===============================

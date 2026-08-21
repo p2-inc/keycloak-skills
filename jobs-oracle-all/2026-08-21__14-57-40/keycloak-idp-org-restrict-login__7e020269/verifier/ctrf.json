@@ -1,0 +1,65 @@
+{
+    "results": {
+        "tool": {
+            "name": "pytest",
+            "version": "8.4.1"
+        },
+        "summary": {
+            "tests": 5,
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0,
+            "pending": 0,
+            "other": 0,
+            "start": 1787313555.7802737,
+            "stop": 1787313556.5299253
+        },
+        "tests": [
+            {
+                "name": "::test_member_of_the_owning_org_completes_login",
+                "status": "passed",
+                "duration": 0.2849057929997798,
+                "start": 1787313555.9901724,
+                "stop": 1787313556.2754672,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_non_member_of_the_hinted_org_is_rejected",
+                "status": "passed",
+                "duration": 0.10093329301162157,
+                "start": 1787313556.275681,
+                "stop": 1787313556.376923,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_nonexistent_org_hint_is_rejected",
+                "status": "passed",
+                "duration": 0.09828941599698737,
+                "start": 1787313556.3771718,
+                "stop": 1787313556.4759393,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_the_partner_realm_is_unchanged",
+                "status": "passed",
+                "duration": 0.04019333301403094,
+                "start": 1787313556.4763052,
+                "stop": 1787313556.5169501,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_only_the_expected_realms_exist",
+                "status": "passed",
+                "duration": 0.012225333994138055,
+                "start": 1787313556.5172055,
+                "stop": 1787313556.5298347,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            }
+        ]
+    }
+}

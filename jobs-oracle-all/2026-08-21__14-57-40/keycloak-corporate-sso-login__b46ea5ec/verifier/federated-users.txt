@@ -1,0 +1,2 @@
+jvega@contoso.example federated=['contoso-sso'] credentials=[]
+rkhan@contoso.example federated=['contoso-sso'] credentials=[]

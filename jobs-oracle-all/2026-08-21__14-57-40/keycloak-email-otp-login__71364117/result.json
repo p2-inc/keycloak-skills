@@ -1,0 +1,144 @@
+{
+  "task_name": "keycloak-email-otp-login",
+  "rollout_name": "keycloak-email-otp-login__71364117",
+  "rewards": {
+    "reward": 1.0
+  },
+  "agent": "oracle",
+  "agent_name": "oracle",
+  "model": null,
+  "skill_mode": "no-skill",
+  "skill_source": "none",
+  "requested_skills_dir": null,
+  "effective_skills_dir": null,
+  "skills_sandbox_dir": null,
+  "include_task_skills": false,
+  "n_tool_calls": 0,
+  "n_skill_invocations": 0,
+  "n_prompts": 1,
+  "agent_result": {
+    "n_tool_calls": 0,
+    "n_skill_invocations": 0,
+    "n_prompts": 1,
+    "n_input_tokens": 0,
+    "n_output_tokens": 0,
+    "n_cache_read_tokens": 0,
+    "n_cache_creation_tokens": 0,
+    "total_tokens": 0,
+    "cost_usd": null,
+    "usage_source": "unavailable",
+    "price_source": null
+  },
+  "final_metrics": {
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_cached_tokens": 0,
+    "total_cost_usd": null
+  },
+  "trajectory_summary": {
+    "steps": 1,
+    "tool_call_steps": 0,
+    "user_message_steps": 0,
+    "agent_message_steps": 0,
+    "agent_thought_steps": 0,
+    "other_steps": 1,
+    "event_type_counts": {
+      "oracle": 1
+    },
+    "tool_call_status_counts": {},
+    "partial_trajectory": false,
+    "trajectory_source": null
+  },
+  "usage_tracking": {
+    "requested": "auto",
+    "status": "unavailable",
+    "environment": "docker",
+    "endpoint_kind": "none",
+    "usage_source": "unavailable"
+  },
+  "error": null,
+  "error_category": null,
+  "verifier_error": null,
+  "verifier_error_category": null,
+  "export_error": null,
+  "idle_timeout_info": null,
+  "agent_timeout_info": null,
+  "sandbox_startup_info": null,
+  "transport_error_info": null,
+  "verifier_timeout_info": null,
+  "api_error_info": null,
+  "suspected_api_error_info": null,
+  "partial_trajectory": false,
+  "trajectory_source": null,
+  "started_at": "2026-08-21 14:57:40.647570",
+  "finished_at": "2026-08-21 14:58:31.927078",
+  "timing": {
+    "environment_setup": 4.8,
+    "verifier": 6.2,
+    "total": 51.3
+  },
+  "scenes": [
+    {
+      "name": "default",
+      "skills_dir": null,
+      "roles": [
+        {
+          "name": "agent",
+          "agent": "oracle",
+          "model": null,
+          "reasoning_effort": null,
+          "timeout_sec": null,
+          "idle_timeout_sec": null,
+          "skills_dir": null,
+          "capabilities": null,
+          "env_keys": []
+        }
+      ],
+      "turns": [
+        {
+          "role": "agent",
+          "has_prompt": false
+        }
+      ]
+    }
+  ],
+  "loop": {
+    "strategy": "single-shot"
+  },
+  "source": {
+    "type": "github",
+    "repo": "p2-inc/keycloak-skills",
+    "requested_ref": "rtuf/fix-org-tool-pairing",
+    "resolved_sha": "71960bcf2d8d25ab9fb7c39623b7da44c33cda4b",
+    "path": "benchmarks/keycloak-email-otp-login",
+    "dirty": false,
+    "file_hashes": {
+      "environment/Dockerfile": "sha256:21128250b78cc941806b87411db5f37e3d9b7c7106d405968f718a4a20cb206c",
+      "environment/acme-realm.json": "sha256:f044916e06e3bff4c170549a3b6295e79a74047587af3c0d3db5d43a2175204c",
+      "environment/admin_credentials.txt": "sha256:3f320f4eea10bfcdf760ab755cad76e412c54b766e58f6b9cc5e531240919c99",
+      "environment/deployment_token_proxy.py": "sha256:0721c05c9eb4cbf674b8708c57a97d8eac2cf9fc1038f1088700d7ce4501d632",
+      "environment/docker-compose.yaml": "sha256:0090951ba35271a70dbc3ee423a556d331f9aac5d1890c8b27a96119e51d4ac2",
+      "environment/entrypoint.sh": "sha256:d053bd32ed65eef3be56088e88975b1d967bf362fb7673835c76d5711c848d11",
+      "environment/keycloak-atomic-auth-flows.jar": "sha256:7fb45b19d6b8f49dd6566b1bd32c50e6d3496eedfbea3520d596afe2658829ed",
+      "environment/mail_capture_server.py": "sha256:bb51ee6bf1c2601843d932487cb3076403b692146da2efc811d9c4fd2410fc98",
+      "environment/mail_server_details.txt": "sha256:207582a92ed36759a198043ba8d46b706c81986441df5e511bcfa1f470f3c4e5",
+      "environment/skills/emailOtpLoginMcp/SKILL.md": "sha256:d51475c13e0ae8d54540aa4edce3ba5ca42f81b074b22b5169a14c7377ec9839",
+      "environment/skills/emailOtpLoginMcp/assets/email-otp-flow.partial-import.json": "sha256:ebb7babc41c9d0b0c71bd79d8bb5429f299de53586b97b9b017186796a5a0672",
+      "environment/skills/emailOtpLoginRest/SKILL.md": "sha256:88b69a24a4d454a10dc3a6775bb775c65d5f79726f739a61266ec193be41ed9a",
+      "environment/skills/emailOtpLoginRest/assets/email-otp-flow.partial-import.json": "sha256:ebb7babc41c9d0b0c71bd79d8bb5429f299de53586b97b9b017186796a5a0672",
+      "environment/wait_for_services.sh": "sha256:694508e150717bca52470b983f05094782bd51b898a80d0bf675dde055fe6e93",
+      "image/README.md": "sha256:0da3d0fd14b3021977912e37026e627f2bb6cc96e092f06e239e64c4c5998b05",
+      "oracle/email-otp-flow.partial-import.json": "sha256:ebb7babc41c9d0b0c71bd79d8bb5429f299de53586b97b9b017186796a5a0672",
+      "oracle/solve.py": "sha256:9861124c7909b875b518545115dc2fa4fa3e62aace8f7210332a22cab1b6240d",
+      "oracle/solve.sh": "sha256:fa17fce4a5c56e6c8be655f83d8261f0debd6f70d3a720cb576b88a10494a328",
+      "task.md": "sha256:f3f27a98ae6543ab5210442945485a34687c3f334ec558c6f2c162796e1449f5",
+      "verifier/rubrics/verifier.md": "sha256:039284438f206c78aece7580a17d6407f13ab41702b54cd61533d52ea25c3195",
+      "verifier/rubrics/verifier.toml": "sha256:693edd2d18d7c5b37abfceb98c57e1223faf212732140a0ca052eaf31f6cba55",
+      "verifier/test.sh": "sha256:a8e23e9d327dc3297a01332a958312580ebdded3230c5b81f88e5cda047e2dde",
+      "verifier/test_outputs.py": "sha256:d6e5bccd978a9dad141236e78b87778b532dd9d50d5756673a5e792641933087",
+      "verifier/verifier.md": "sha256:7e4b0cba17294443b747c7e314ac286e821ab954f85ace6bd33c812cb4111c5b"
+    }
+  },
+  "task_digest": "sha256:a7bb477c094e973323b3d5b6fe7d2b061f731175c1f228378ae99b6d41584a41",
+  "sandbox_id": null
+}

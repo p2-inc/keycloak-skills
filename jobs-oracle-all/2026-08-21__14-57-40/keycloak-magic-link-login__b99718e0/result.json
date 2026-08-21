@@ -1,0 +1,140 @@
+{
+  "task_name": "keycloak-magic-link-login",
+  "rollout_name": "keycloak-magic-link-login__b99718e0",
+  "rewards": {
+    "reward": 1.0
+  },
+  "agent": "oracle",
+  "agent_name": "oracle",
+  "model": null,
+  "skill_mode": "no-skill",
+  "skill_source": "none",
+  "requested_skills_dir": null,
+  "effective_skills_dir": null,
+  "skills_sandbox_dir": null,
+  "include_task_skills": false,
+  "n_tool_calls": 0,
+  "n_skill_invocations": 0,
+  "n_prompts": 1,
+  "agent_result": {
+    "n_tool_calls": 0,
+    "n_skill_invocations": 0,
+    "n_prompts": 1,
+    "n_input_tokens": 0,
+    "n_output_tokens": 0,
+    "n_cache_read_tokens": 0,
+    "n_cache_creation_tokens": 0,
+    "total_tokens": 0,
+    "cost_usd": null,
+    "usage_source": "unavailable",
+    "price_source": null
+  },
+  "final_metrics": {
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_cached_tokens": 0,
+    "total_cost_usd": null
+  },
+  "trajectory_summary": {
+    "steps": 1,
+    "tool_call_steps": 0,
+    "user_message_steps": 0,
+    "agent_message_steps": 0,
+    "agent_thought_steps": 0,
+    "other_steps": 1,
+    "event_type_counts": {
+      "oracle": 1
+    },
+    "tool_call_status_counts": {},
+    "partial_trajectory": false,
+    "trajectory_source": null
+  },
+  "usage_tracking": {
+    "requested": "auto",
+    "status": "unavailable",
+    "environment": "docker",
+    "endpoint_kind": "none",
+    "usage_source": "unavailable"
+  },
+  "error": null,
+  "error_category": null,
+  "verifier_error": null,
+  "verifier_error_category": null,
+  "export_error": null,
+  "idle_timeout_info": null,
+  "agent_timeout_info": null,
+  "sandbox_startup_info": null,
+  "transport_error_info": null,
+  "verifier_timeout_info": null,
+  "api_error_info": null,
+  "suspected_api_error_info": null,
+  "partial_trajectory": false,
+  "trajectory_source": null,
+  "started_at": "2026-08-21 14:58:36.297418",
+  "finished_at": "2026-08-21 14:59:36.619438",
+  "timing": {
+    "environment_setup": 15.4,
+    "verifier": 7.2,
+    "total": 60.3
+  },
+  "scenes": [
+    {
+      "name": "default",
+      "skills_dir": null,
+      "roles": [
+        {
+          "name": "agent",
+          "agent": "oracle",
+          "model": null,
+          "reasoning_effort": null,
+          "timeout_sec": null,
+          "idle_timeout_sec": null,
+          "skills_dir": null,
+          "capabilities": null,
+          "env_keys": []
+        }
+      ],
+      "turns": [
+        {
+          "role": "agent",
+          "has_prompt": false
+        }
+      ]
+    }
+  ],
+  "loop": {
+    "strategy": "single-shot"
+  },
+  "source": {
+    "type": "github",
+    "repo": "p2-inc/keycloak-skills",
+    "requested_ref": "rtuf/fix-org-tool-pairing",
+    "resolved_sha": "71960bcf2d8d25ab9fb7c39623b7da44c33cda4b",
+    "path": "benchmarks/keycloak-magic-link-login",
+    "dirty": false,
+    "file_hashes": {
+      "environment/Dockerfile": "sha256:3b447fab6b8f92e9465b0dacc3001c6ae0227fac23a50336080e69aa2a8d76bc",
+      "environment/acme-realm.json": "sha256:ab37cf7b6c9b7b26b43efa8f7c5f8b8f152170980a732b06a48e57aca5c4f73c",
+      "environment/admin_credentials.txt": "sha256:3f320f4eea10bfcdf760ab755cad76e412c54b766e58f6b9cc5e531240919c99",
+      "environment/deployment_token_proxy.py": "sha256:0721c05c9eb4cbf674b8708c57a97d8eac2cf9fc1038f1088700d7ce4501d632",
+      "environment/docker-compose.yaml": "sha256:f851418546f38100c06499f69280dfbd7477430aa41ed13681b3dc2b50319e4e",
+      "environment/entrypoint.sh": "sha256:7bd412ac03c3ec3a1a9ab9e10238d7b187e916c0026d2c7dbbd1a0cd897d3fa2",
+      "environment/keycloak-magic-link.jar": "sha256:3cf777e4cfb9d112f480a5f4c9966daec5b5de61f0bed6e6c81a067438efa612",
+      "environment/mail_capture_server.py": "sha256:bb51ee6bf1c2601843d932487cb3076403b692146da2efc811d9c4fd2410fc98",
+      "environment/mail_server_details.txt": "sha256:207582a92ed36759a198043ba8d46b706c81986441df5e511bcfa1f470f3c4e5",
+      "environment/skills/passwordlessMagicLinkLogin/SKILL.md": "sha256:84d3622d39da3c879bb79760671295ab4020ac217dd043e0aba64c036d0b41b6",
+      "environment/skills/passwordlessMagicLinkLoginMcp/SKILL.md": "sha256:81352b4f0bd89a3e6e289e94a7d1b0a6f29a31ff7acf3899b4e4b5461b50a262",
+      "environment/wait_for_services.sh": "sha256:d87e45adc99f9033b8ec947f54d7a3cedd288befdd2d2021c54ea322695ef502",
+      "oracle/solve.py": "sha256:ac17a305b28fda75f52589db370e34be06100981ba8d24d2cada375ca4adb89b",
+      "oracle/solve.sh": "sha256:00fa75a8238b0a836509a4942578171a6b866d707b5b65c379d76a96ae4420b5",
+      "task.md": "sha256:9336dc2970dc5b0f13a989dc8c8808b3f2050559b2e642743bdbb41c49b1f569",
+      "verifier/rubrics/verifier.md": "sha256:6c0e59341829c66bd882bc568d407eb686fd33e65345debd20852c8eaa6014f7",
+      "verifier/rubrics/verifier.toml": "sha256:149c241a1dadc5ceac4e7aa3e1c55e40d6c4b6c21387229c7ac3db407edc521e",
+      "verifier/test.sh": "sha256:04122ef3810d3f0b026bd29e703c9ac29cb7574501c166f7a0f752a24952e4d2",
+      "verifier/test_outputs.py": "sha256:ca4310c34b56394fbcc1e8e92e0cf1b1ebac9d7ff48d43679890bcae483000cd",
+      "verifier/verifier.md": "sha256:1af4b732be20745e30cb5a4246986522055f8b26351bfa66831d1a3ba64f8090"
+    }
+  },
+  "task_digest": "sha256:30baf88e1ff340309ef1ee2370329e283869045b6b6b98f18076d8441315bda2",
+  "sandbox_id": null
+}

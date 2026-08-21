@@ -1,0 +1,116 @@
+<!DOCTYPE html><html class="login-pf"><head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Sign in to Acme Portal</title>
+    <link rel="icon" href="/auth/resources/m8zuz/login/keycloak.v2/img/favicon.ico">
+            <link href="/auth/resources/m8zuz/common/keycloak/vendor/patternfly-v5/patternfly.min.css" rel="stylesheet">
+            <link href="/auth/resources/m8zuz/common/keycloak/vendor/patternfly-v5/patternfly-addons.css" rel="stylesheet">
+            <link href="/auth/resources/m8zuz/login/keycloak.v2/css/styles.css" rel="stylesheet">
+    <script type="importmap">
+        {
+            "imports": {
+                "rfc4648": "/auth/resources/m8zuz/common/keycloak/vendor/rfc4648/rfc4648.js"
+            }
+        }
+    </script>
+    <script type="module" src="/auth/resources/m8zuz/login/keycloak.v2/js/passwordVisibility.js"></script>
+    <script type="module">
+        import { startSessionPolling } from "/auth/resources/m8zuz/login/keycloak.v2/js/authChecker.js";
+
+        startSessionPolling(
+            "/auth/realms/acme/login-actions/restart?client_id=acme-portal&tab_id=riEVnq84NFU&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0IjoidmVyaWZ5LXBhc3NrZXkifQ&skip_logout=true"
+        );
+
+        const DARK_MODE_CLASS = "pf-v5-theme-dark";
+        const mediaQuery =window.matchMedia("(prefers-color-scheme: dark)");
+        updateDarkMode(mediaQuery.matches);
+        mediaQuery.addEventListener("change", (event) =>
+          updateDarkMode(event.matches),
+        );
+        function updateDarkMode(isEnabled) {
+          const { classList } = document.documentElement;
+          if (isEnabled) {
+            classList.add(DARK_MODE_CLASS);
+          } else {
+            classList.remove(DARK_MODE_CLASS);
+          }
+        }
+    </script>
+<script> if (typeof history.replaceState === 'function') {  history.replaceState({}, "some title", "http://localhost:8080/auth/realms/acme/login-actions/authenticate?execution=1c69b610-0461-4715-990d-32c50025b91c&client_id=acme-portal&tab_id=riEVnq84NFU&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0IjoidmVyaWZ5LXBhc3NrZXkifQ"); }</script></head>
+
+<body id="keycloak-bg" class="">
+
+<div class="pf-v5-c-login">
+  <div class="pf-v5-c-login__container">
+    <header id="kc-header" class="pf-v5-c-login__header">
+      <div id="kc-header-wrapper" class="pf-v5-c-brand">Acme Portal</div>
+    </header>
+    <main class="pf-v5-c-login__main">
+      <div class="pf-v5-c-login__main-header">
+        <h1 class="pf-v5-c-title pf-m-3xl" id="kc-page-title"><!-- template: webauthn-autthenticate.ftl -->
+
+        Passkey login
+</h1>
+      </div>
+      <div class="pf-v5-c-login__main-body">
+
+
+<!-- template: webauthn-autthenticate.ftl -->
+
+        <div id="kc-form-webauthn" class="pf-v5-c-form">
+            <form id="webauth" action="http://localhost:8080/auth/realms/acme/login-actions/authenticate?session_code=uDRQBzydU8pTN8esojevFT0N0i6HKN0lxRLApAJ3YnI&amp;execution=1c69b610-0461-4715-990d-32c50025b91c&amp;client_id=acme-portal&amp;tab_id=riEVnq84NFU&amp;client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0IjoidmVyaWZ5LXBhc3NrZXkifQ" method="post">
+                <input type="hidden" id="clientDataJSON" name="clientDataJSON">
+                <input type="hidden" id="authenticatorData" name="authenticatorData">
+                <input type="hidden" id="signature" name="signature">
+                <input type="hidden" id="credentialId" name="credentialId">
+                <input type="hidden" id="userHandle" name="userHandle">
+                <input type="hidden" id="error" name="error">
+            </form>
+
+            <div class="pf-v5-c-form__group no-bottom-margin">
+
+                <div id="kc-form-buttons" class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <input id="authenticateWebAuthnButton" type="button" autofocus="autofocus" value="Sign in with Passkey" class="pf-v5-c-button pf-v5-c-button pf-m-primary pf-m-block btn-lg">
+                </div>
+            </div>
+        </div>
+
+    <script type="module">
+        import { authenticateByWebAuthn } from "/auth/resources/m8zuz/login/keycloak.v2/js/webauthnAuthenticate.js";
+        const authButton = document.getElementById('authenticateWebAuthnButton');
+        authButton.addEventListener("click", function() {
+            const input = {
+                isUserIdentified : false,
+                challenge : '_DUpFVlTRjaA71XAH4aeRA',
+                userVerification : 'preferred',
+                rpId : 'localhost',
+                createTimeout : 0,
+                errmsg : "WebAuthn is not supported by this browser. Try another one or contact your administrator."
+            };
+            authenticateByWebAuthn(input);
+        });
+    </script>
+
+
+          <form id="kc-select-try-another-way-form" action="http://localhost:8080/auth/realms/acme/login-actions/authenticate?session_code=uDRQBzydU8pTN8esojevFT0N0i6HKN0lxRLApAJ3YnI&amp;execution=1c69b610-0461-4715-990d-32c50025b91c&amp;client_id=acme-portal&amp;tab_id=riEVnq84NFU&amp;client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0IjoidmVyaWZ5LXBhc3NrZXkifQ" method="post" novalidate="novalidate">
+              <input type="hidden" name="tryAnotherWay" value="on">
+              <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()" class="pf-v5-c-button pf-m-secondary pf-m-block pf-v5-u-mt-md-on-md">
+                    Try Another Way
+              </a>
+          </form>
+
+      </div>
+      <div class="pf-v5-c-login__main-footer">
+<!-- template: webauthn-autthenticate.ftl -->
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+
+</body></html>

@@ -1,0 +1,101 @@
+{
+  "task_path": "benchmarks/keycloak-corporate-sso-login",
+  "agent": "oracle",
+  "model": null,
+  "reasoning_effort": null,
+  "environment": "docker",
+  "acp_transport": "docker-stdio",
+  "environment_manifest": null,
+  "skill_mode": "no-skill",
+  "skill_source": "none",
+  "requested_skills_dir": null,
+  "effective_skills_dir": null,
+  "skills_sandbox_dir": null,
+  "include_task_skills": false,
+  "sandbox_user": "agent",
+  "sandbox_locked_paths": [
+    "/oracle",
+    "/solution",
+    "/verifier",
+    "/tests",
+    "/testbed_verify"
+  ],
+  "sandbox_setup_timeout": 120,
+  "skip_install": false,
+  "agent_install_timeout": null,
+  "context_root": null,
+  "base_image_override": null,
+  "timeout_sec": 1800,
+  "concurrency": 4,
+  "agent_idle_timeout_sec": 600,
+  "started_at": "2026-08-21 14:57:40.625316",
+  "agent_env": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
+  "scenes": [
+    {
+      "name": "default",
+      "skills_dir": null,
+      "roles": [
+        {
+          "name": "agent",
+          "agent": "oracle",
+          "model": null,
+          "reasoning_effort": null,
+          "timeout_sec": null,
+          "idle_timeout_sec": null,
+          "skills_dir": null,
+          "capabilities": null,
+          "env_keys": []
+        }
+      ],
+      "turns": [
+        {
+          "role": "agent",
+          "has_prompt": false
+        }
+      ]
+    }
+  ],
+  "loop": {
+    "strategy": "single-shot"
+  },
+  "usage_tracking": {
+    "requested": "auto"
+  },
+  "source": {
+    "type": "github",
+    "repo": "p2-inc/keycloak-skills",
+    "requested_ref": "rtuf/fix-org-tool-pairing",
+    "resolved_sha": "71960bcf2d8d25ab9fb7c39623b7da44c33cda4b",
+    "path": "benchmarks/keycloak-corporate-sso-login",
+    "dirty": false,
+    "file_hashes": {
+      "environment/Dockerfile": "sha256:e8fcc47c8d808bf33839383a77e1d4a49a8abd10f298890c4a72156a3ac34f1a",
+      "environment/acme-realm.json": "sha256:bb391198e9957504bbd6ab1c7b0ae88ae6ccba367fc2033dc98392d938ce16a9",
+      "environment/admin_credentials.txt": "sha256:3f320f4eea10bfcdf760ab755cad76e412c54b766e58f6b9cc5e531240919c99",
+      "environment/contoso-idp-realm.json": "sha256:619788d393e5dbb4933574bc56b4d206206fce168af8007e5943d97a9b7f6247",
+      "environment/corporate_idp_details.txt": "sha256:8af23b75982fb7c73fb76061139a29b9f4bcb756ad1b77a76d2eef305bdd9883",
+      "environment/docker-compose.yaml": "sha256:f851418546f38100c06499f69280dfbd7477430aa41ed13681b3dc2b50319e4e",
+      "environment/entrypoint.sh": "sha256:40d473b5140a11bf29db0569ecf02b001d8411b4593fa0ec107d3c5462012cfa",
+      "environment/skills/corporateSsoLoginMcp/SKILL.md": "sha256:79b4a2b5c62c224361938a4ddacad7b2baf9b8809a1f2d40a009ee8f65badd72",
+      "environment/skills/corporateSsoLoginMcp/assets/home-idp-with-orgs-check.partial-import.json": "sha256:fd99423ca833e94dd2e77d389655186cfec45660202c69abc7549caeaa6fcd52",
+      "environment/skills/corporateSsoLoginMcp/assets/home-idp.partial-import.json": "sha256:94113d945b371ef55ecf344062f92059b535a50912e2aa60de0fa8d7934a8fa3",
+      "environment/skills/corporateSsoLoginMcp/scripts/browser_login.py": "sha256:6f465c75aa131526a5ed745a40000ca1d61f4ede3e9ee768f41b1af7454d02be",
+      "environment/skills/corporateSsoLoginRest/SKILL.md": "sha256:72255fab152135593b7ca44a6d6021493e621c0b71bc0bdbc7871da95bca2f7d",
+      "environment/skills/corporateSsoLoginRest/assets/home-idp-with-orgs-check.partial-import.json": "sha256:fd99423ca833e94dd2e77d389655186cfec45660202c69abc7549caeaa6fcd52",
+      "environment/skills/corporateSsoLoginRest/assets/home-idp.partial-import.json": "sha256:94113d945b371ef55ecf344062f92059b535a50912e2aa60de0fa8d7934a8fa3",
+      "environment/skills/corporateSsoLoginRest/scripts/browser_login.py": "sha256:6f465c75aa131526a5ed745a40000ca1d61f4ede3e9ee768f41b1af7454d02be",
+      "environment/wait_for_services.sh": "sha256:165e1c6bbb9554111111a673b213a3cb20435f07421de5c65a102df46db938e3",
+      "oracle/solve.py": "sha256:982811d9e7aa2045782bc93a0689e921a8a262b32968b32e57edae4c1097895b",
+      "oracle/solve.sh": "sha256:f9bf810c5c97c793f5f9efbce0abb78b268a17bce0cd644bd5ff30434eb55d32",
+      "task.md": "sha256:55d5aef0369d110ff545c04c9288e91992da040bf18f18998a08b591a45682ab",
+      "verifier/rubrics/verifier.md": "sha256:f81898052e19b69ac4f98c14bb36347b4a51ce9e5f34122734b0ac2d846cb2c7",
+      "verifier/rubrics/verifier.toml": "sha256:825f8525219af861a05e2281cf772f4c557fc06e1c2f8ac26cb2c1041d0c1022",
+      "verifier/test.sh": "sha256:b37949dfc44d6bf843ded26681ff7b5922e0edde7aba7f3ea9ec24f54bfe5687",
+      "verifier/test_outputs.py": "sha256:5deeec8f1c67827b270cf29c826e16ab452737ec07515cf1cc43cb7ce36056b4",
+      "verifier/verifier.md": "sha256:858892b687c61467a563135b11408e262be3f5511edf63ab6f087af8fa93f8d4"
+    }
+  },
+  "task_digest": "sha256:0cf9cb55c75b323f6446bca6544919139c81f603586a34ec1e462468c7c6390b"
+}

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html class="login-pf">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="robots" content="noindex, nofollow">
+
+            <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Sign in to Acme Portal</title>
+    <link rel="icon" href="/auth/resources/tjtsa/login/keycloak.v2/img/favicon.ico" />
+            <link href="/auth/resources/tjtsa/common/keycloak/vendor/patternfly-v5/patternfly.min.css" rel="stylesheet" />
+            <link href="/auth/resources/tjtsa/common/keycloak/vendor/patternfly-v5/patternfly-addons.css" rel="stylesheet" />
+            <link href="/auth/resources/tjtsa/login/keycloak.v2/css/styles.css" rel="stylesheet" />
+    <script type="importmap">
+        {
+            "imports": {
+                "rfc4648": "/auth/resources/tjtsa/common/keycloak/vendor/rfc4648/rfc4648.js"
+            }
+        }
+    </script>
+    <script type="module" src="/auth/resources/tjtsa/login/keycloak.v2/js/passwordVisibility.js"></script>
+    <script type="module">
+        import { startSessionPolling } from "/auth/resources/tjtsa/login/keycloak.v2/js/authChecker.js";
+
+        startSessionPolling(
+            "/auth/realms/acme/login-actions/restart?client_id=acme-portal&tab_id=38yQfswoqQk&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoibm8tcGFzc3dvcmQifQ&skip_logout=true"
+        );
+
+        const DARK_MODE_CLASS = "pf-v5-theme-dark";
+        const mediaQuery =window.matchMedia("(prefers-color-scheme: dark)");
+        updateDarkMode(mediaQuery.matches);
+        mediaQuery.addEventListener("change", (event) =>
+          updateDarkMode(event.matches),
+        );
+        function updateDarkMode(isEnabled) {
+          const { classList } = document.documentElement;
+          if (isEnabled) {
+            classList.add(DARK_MODE_CLASS);
+          } else {
+            classList.remove(DARK_MODE_CLASS);
+          }
+        }
+    </script>
+<SCRIPT> if (typeof history.replaceState === 'function') {  history.replaceState({}, "some title", "http://localhost:8080/auth/realms/acme/login-actions/authenticate?execution=a2a8cf07-ddbc-4f1f-b750-4b281b995683&client_id=acme-portal&tab_id=38yQfswoqQk&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoibm8tcGFzc3dvcmQifQ"); }</SCRIPT></head>
+
+<body id="keycloak-bg" class="">
+
+<div class="pf-v5-c-login">
+  <div class="pf-v5-c-login__container">
+    <header id="kc-header" class="pf-v5-c-login__header">
+      <div id="kc-header-wrapper"
+              class="pf-v5-c-brand">Acme Portal</div>
+    </header>
+    <main class="pf-v5-c-login__main">
+      <div class="pf-v5-c-login__main-header">
+        <h1 class="pf-v5-c-title pf-m-3xl" id="kc-page-title"><!-- template: login-username.ftl -->
+
+        Sign in to your account
+
+</h1>
+      </div>
+      <div class="pf-v5-c-login__main-body">
+
+            <div class="pf-v5-c-alert pf-m-inline pf-v5-u-mb-md pf-m-danger">
+                <div class="pf-v5-c-alert__icon">
+                    
+                    
+                    <span class="fa fa-fw fa-exclamation-circle"></span>
+                    
+                </div>
+                <span class="pf-v5-c-alert__title kc-feedback-text">Your email domain matches the contoso organization but you don&#39;t have an account yet.</span>
+            </div>
+
+<!-- template: login-username.ftl -->
+
+        <div id="kc-form">
+            <div id="kc-form-wrapper">
+                    <form id="kc-form-login" class="pf-v5-c-form" onsubmit="login.disabled = true; return true;" action="http://localhost:8080/auth/realms/acme/login-actions/authenticate?session_code=aAXBbkcWXdmhAF2h2E_JT1sPW3Lh_iONHW5TCe3Omsg&amp;execution=a2a8cf07-ddbc-4f1f-b750-4b281b995683&amp;client_id=acme-portal&amp;tab_id=38yQfswoqQk&amp;client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoibm8tcGFzc3dvcmQifQ"
+                          method="post">
+                            <div class="pf-v5-c-form__group">
+
+<div class="pf-v5-c-form__group">
+  <div class="pf-v5-c-form__label">
+    <label for="username" class="pf-v5-c-form__label">
+        <span class="pf-v5-c-form__label-text">
+                                              Username or email
+
+        </span>
+    </label>
+  </div>
+
+    <span class="pf-v5-c-form-control ">
+        <input id="username" name="username" value="rkhan@contoso.example" type="text" autocomplete="username" autofocus
+                aria-invalid=""/>
+    </span>
+
+  <div id="input-error-client-username"></div>
+</div>
+
+
+                            </div>
+
+                        <div class="pf-v5-c-form__group">
+                        </div>
+
+  <div class="pf-v5-c-form__group">
+    <div class="pf-v5-c-form__actions">
+  <button class="pf-v5-c-button pf-m-primary pf-m-block " name="login" id="kc-login" type="submit">Sign In</button>
+    </div>
+  </div>
+                    </form>
+            </div>
+        </div>
+
+
+
+
+      </div>
+      <div class="pf-v5-c-login__main-footer">
+<!-- template: login-username.ftl -->
+
+  <div class="pf-v5-c-login__main-footer-band">
+      <p class="pf-v5-c-login__main-footer-band-item">
+          Or sign in with
+      </p>
+  </div>
+  <div id="kc-social-providers" class="kc-social-section kc-social-gray">
+      <ul class="pf-v5-c-login__main-footer-links ">
+              <li class="pf-v5-c-login__main-footer-links-item">
+                  <a id="social-contoso-sso" class="pf-v5-c-login__main-footer-links-item-link " aria-label="Contoso SSO"
+                          type="button" href="/auth/realms/acme/broker/contoso-sso/login?client_id=acme-portal&amp;tab_id=38yQfswoqQk&amp;client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoibm8tcGFzc3dvcmQifQ&amp;session_code=aAXBbkcWXdmhAF2h2E_JT1sPW3Lh_iONHW5TCe3Omsg">
+                          <span class="kc-social-provider-name">Contoso SSO</span>
+                  </a>
+              </li>
+      </ul>
+  </div>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+</body>
+</html>

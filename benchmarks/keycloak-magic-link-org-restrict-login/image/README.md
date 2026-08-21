@@ -36,7 +36,7 @@ bundled `keycloak-atomic-auth-flows.jar`.
   `keycloak-orgs` (organizations, membership, `ext-select-org`) and `keycloak-magic-link`
   (`ext-magic-form`, `ext-auth-username-auth-note`, action-token handling). Plain upstream
   Keycloak has neither. Keycloak's *native* Organizations feature is deliberately never enabled.
-- **`quay.io/phasetwo/phasetwo-mcp:latest`** for the MCP server, tracked by tag rather than
+- **`773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest`** for the MCP server, tracked by tag rather than
   digest on purpose: a digest pin previously held this task on a build that predated several tool
   fixes, so the benchmark measured a server nobody shipped any more. The tradeoff is that a
   rebuild can change behavior without this task changing.

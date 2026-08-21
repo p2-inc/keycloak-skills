@@ -1,0 +1,27 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-8.4.1, pluggy-1.6.0 -- /usr/sbin/python3
+rootdir: /app
+configfile: ../dev/null
+plugins: json-ctrf-0.3.5
+collecting ... collected 8 items
+
+../app::test_oidc_target_is_delivered_by_redirect_not_post[entra] PASSED [ 12%]
+../app::test_oidc_target_is_delivered_by_redirect_not_post[okta] PASSED  [ 25%]
+../app::test_saml_target_is_delivered_by_post_to_its_acs[entra] PASSED   [ 37%]
+../app::test_saml_target_is_delivered_by_post_to_its_acs[okta] PASSED    [ 50%]
+../app::test_relay_state_cannot_route_to_a_different_client PASSED       [ 62%]
+../app::test_direct_saml_endpoint_rejects_the_oidc_client PASSED         [ 75%]
+../app::test_both_identity_providers_are_untouched PASSED                [ 87%]
+../app::test_only_the_expected_realms_exist PASSED                       [100%]
+
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED ../app::test_oidc_target_is_delivered_by_redirect_not_post[entra]
+PASSED ../app::test_oidc_target_is_delivered_by_redirect_not_post[okta]
+PASSED ../app::test_saml_target_is_delivered_by_post_to_its_acs[entra]
+PASSED ../app::test_saml_target_is_delivered_by_post_to_its_acs[okta]
+PASSED ../app::test_relay_state_cannot_route_to_a_different_client
+PASSED ../app::test_direct_saml_endpoint_rejects_the_oidc_client
+PASSED ../app::test_both_identity_providers_are_untouched
+PASSED ../app::test_only_the_expected_realms_exist
+============================== 8 passed in 0.56s ===============================

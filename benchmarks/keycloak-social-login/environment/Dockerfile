@@ -1,8 +1,10 @@
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
-# registry rather than vendored in git - pinned by digest, not :latest, so this
-# stays reproducible even if the tag moves. Same digest as the other MCP-wired
+# ECR staging registry rather than vendored in git. Tracks :latest deliberately, so
+# benchmarks exercise the current staging build; that means a run is reproducible
+# only relative to whatever :latest pointed at. Pin a digest here when a result has
+# to be reproducible later. Requires ECR auth to pull - see docs/adding-a-skill.md. Same digest as the other MCP-wired
 # tasks in this repo (keycloak-magic-link-login, keycloak-idp-org-restrict-login).
-FROM quay.io/phasetwo/phasetwo-mcp@sha256:0dd572971918aa628a3260e96d1a668775906e6baa0b30428b95261ddaf9375b AS mcp-app
+FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
 
 # Stock upstream Keycloak is enough here - unlike keycloak-idp-org-restrict-login
 # (which needs the real p2-inc keycloak-orgs extension for ext-select-org) or

@@ -1,0 +1,78 @@
+{
+    "results": {
+        "tool": {
+            "name": "pytest",
+            "version": "8.4.1"
+        },
+        "summary": {
+            "tests": 6,
+            "passed": 6,
+            "failed": 0,
+            "skipped": 0,
+            "pending": 0,
+            "other": 0,
+            "start": 1787313565.0599654,
+            "stop": 1787313568.474505
+        },
+        "tests": [
+            {
+                "name": "::test_a_known_address_receives_mail_with_no_password_prompt",
+                "status": "passed",
+                "duration": 0.09122983399720397,
+                "start": 1787313565.3284068,
+                "stop": 1787313565.4234235,
+                "file_path": "../verifier/test_outputs.py",
+                "tags": [
+                    "parametrize::email::['priya@acme.example', 'marcus@acme.example']"
+                ]
+            },
+            {
+                "name": "::test_the_emailed_link_completes_login_and_preserves_state",
+                "status": "passed",
+                "duration": 0.09627716700197197,
+                "start": 1787313565.5492117,
+                "stop": 1787313565.6461217,
+                "file_path": "../verifier/test_outputs.py",
+                "tags": [
+                    "parametrize::email::['priya@acme.example', 'marcus@acme.example']"
+                ]
+            },
+            {
+                "name": "::test_an_unregistered_address_gets_the_same_response_as_a_registered_one",
+                "status": "passed",
+                "duration": 0.23251583299133927,
+                "start": 1787313565.7348433,
+                "stop": 1787313565.968287,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_no_mail_or_account_is_created_for_an_unregistered_address",
+                "status": "passed",
+                "duration": 2.285473126990837,
+                "start": 1787313565.9689448,
+                "stop": 1787313568.2607493,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_existing_accounts_still_exist_and_are_enabled",
+                "status": "passed",
+                "duration": 0.06813975001568906,
+                "start": 1787313568.264081,
+                "stop": 1787313568.3330104,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_only_the_acme_realm_was_added",
+                "status": "passed",
+                "duration": 0.13869816600345075,
+                "start": 1787313568.3333368,
+                "stop": 1787313568.4734528,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            }
+        ]
+    }
+}

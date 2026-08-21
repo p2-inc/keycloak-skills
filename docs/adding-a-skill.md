@@ -176,19 +176,25 @@ benchmarks/<task-name>/
    binary (e.g. an internal MCP server jar), **pull it from a registry in a multi-stage Docker
    build, pinned by digest** — don't commit the binary. Example from this repo's own Dockerfiles:
    ```dockerfile
-   FROM quay.io/phasetwo/phasetwo-mcp@sha256:<digest> AS mcp-app
+   FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
    ...
    COPY --from=mcp-app /deployments /opt/mcp-app
    ```
-   **`quay.io/phasetwo/phasetwo-mcp` requires authentication to pull.** Before building (or
-   running `docker pull`/`docker build` locally to resolve a digest for a new version), log in
-   yourself in your own terminal:
+   The MCP server image lives in **Phase Two's ECR staging repository**
+   (`arn:aws:ecr:us-west-2:773532640636:repository/mcp/staging`), and every benchmark tracks
+   `:latest` so runs exercise the current staging build. The trade-off is deliberate but real: a
+   run is only reproducible relative to whatever `:latest` pointed at that day. Pin a digest
+   (`@sha256:<digest>`) instead when a specific result has to be reproducible later.
+
+   **ECR requires authentication to pull.** Log in yourself, in your own terminal, before
+   building:
    ```bash
-   docker login quay.io
+   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 773532640636.dkr.ecr.us-west-2.amazonaws.com
    ```
-   Use your own Phase Two Quay credentials — don't hand credentials to an AI assistant to enter on
-   your behalf. Without this, the pull fails with `401 UNAUTHORIZED` even though the reference
-   looks like a normal public image pull.
+   Use your own AWS credentials — don't hand credentials to an AI assistant to enter on your
+   behalf. Without this, the pull fails with an authentication error even though the reference
+   looks like a normal image pull. The ECR login token expires (12 hours), so a build that worked
+   yesterday can fail today for this reason alone.
 3. Write `oracle/solve.py` (+ `solve.sh` wrapper) — a real solution using the same
    REST/tool calls a human or agent would use. This is also your best source of ground truth
    when writing the corresponding skill reference doc.

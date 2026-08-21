@@ -1,0 +1,74 @@
+{
+    "results": {
+        "tool": {
+            "name": "pytest",
+            "version": "8.4.1"
+        },
+        "summary": {
+            "tests": 6,
+            "passed": 6,
+            "failed": 0,
+            "skipped": 0,
+            "pending": 0,
+            "other": 0,
+            "start": 1787313509.8447278,
+            "stop": 1787313510.4160287
+        },
+        "tests": [
+            {
+                "name": "::test_taylor_can_log_in_with_no_hint_at_all",
+                "status": "passed",
+                "duration": 0.22490424898569472,
+                "start": 1787313510.0192816,
+                "stop": 1787313510.2446039,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_morgan_can_also_log_in_with_no_hint_at_all",
+                "status": "passed",
+                "duration": 0.11735975000192411,
+                "start": 1787313510.244886,
+                "stop": 1787313510.3626437,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_claims_are_mapped_onto_the_brokered_user",
+                "status": "passed",
+                "duration": 0.009135292013525032,
+                "start": 1787313510.3630424,
+                "stop": 1787313510.3725786,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_idp_config_is_sane",
+                "status": "passed",
+                "duration": 0.0009489590156590566,
+                "start": 1787313510.3729322,
+                "stop": 1787313510.3741736,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_the_contoso_realm_is_unchanged",
+                "status": "passed",
+                "duration": 0.02695816599589307,
+                "start": 1787313510.374417,
+                "stop": 1787313510.4018376,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_only_the_expected_realms_exist",
+                "status": "passed",
+                "duration": 0.013475708998157643,
+                "start": 1787313510.4021182,
+                "stop": 1787313510.4159436,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            }
+        ]
+    }
+}

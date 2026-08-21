@@ -1,0 +1,143 @@
+{
+  "task_name": "keycloak-idp-org-restrict-login",
+  "rollout_name": "keycloak-idp-org-restrict-login__7e020269",
+  "rewards": {
+    "reward": 1.0
+  },
+  "agent": "oracle",
+  "agent_name": "oracle",
+  "model": null,
+  "skill_mode": "no-skill",
+  "skill_source": "none",
+  "requested_skills_dir": null,
+  "effective_skills_dir": null,
+  "skills_sandbox_dir": null,
+  "include_task_skills": false,
+  "n_tool_calls": 0,
+  "n_skill_invocations": 0,
+  "n_prompts": 1,
+  "agent_result": {
+    "n_tool_calls": 0,
+    "n_skill_invocations": 0,
+    "n_prompts": 1,
+    "n_input_tokens": 0,
+    "n_output_tokens": 0,
+    "n_cache_read_tokens": 0,
+    "n_cache_creation_tokens": 0,
+    "total_tokens": 0,
+    "cost_usd": null,
+    "usage_source": "unavailable",
+    "price_source": null
+  },
+  "final_metrics": {
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_cached_tokens": 0,
+    "total_cost_usd": null
+  },
+  "trajectory_summary": {
+    "steps": 1,
+    "tool_call_steps": 0,
+    "user_message_steps": 0,
+    "agent_message_steps": 0,
+    "agent_thought_steps": 0,
+    "other_steps": 1,
+    "event_type_counts": {
+      "oracle": 1
+    },
+    "tool_call_status_counts": {},
+    "partial_trajectory": false,
+    "trajectory_source": null
+  },
+  "usage_tracking": {
+    "requested": "auto",
+    "status": "unavailable",
+    "environment": "docker",
+    "endpoint_kind": "none",
+    "usage_source": "unavailable"
+  },
+  "error": null,
+  "error_category": null,
+  "verifier_error": null,
+  "verifier_error_category": null,
+  "export_error": null,
+  "idle_timeout_info": null,
+  "agent_timeout_info": null,
+  "sandbox_startup_info": null,
+  "transport_error_info": null,
+  "verifier_timeout_info": null,
+  "api_error_info": null,
+  "suspected_api_error_info": null,
+  "partial_trajectory": false,
+  "trajectory_source": null,
+  "started_at": "2026-08-21 14:58:32.029291",
+  "finished_at": "2026-08-21 14:59:23.099480",
+  "timing": {
+    "environment_setup": 3.9,
+    "verifier": 6.0,
+    "total": 51.1
+  },
+  "scenes": [
+    {
+      "name": "default",
+      "skills_dir": null,
+      "roles": [
+        {
+          "name": "agent",
+          "agent": "oracle",
+          "model": null,
+          "reasoning_effort": null,
+          "timeout_sec": null,
+          "idle_timeout_sec": null,
+          "skills_dir": null,
+          "capabilities": null,
+          "env_keys": []
+        }
+      ],
+      "turns": [
+        {
+          "role": "agent",
+          "has_prompt": false
+        }
+      ]
+    }
+  ],
+  "loop": {
+    "strategy": "single-shot"
+  },
+  "source": {
+    "type": "github",
+    "repo": "p2-inc/keycloak-skills",
+    "requested_ref": "rtuf/fix-org-tool-pairing",
+    "resolved_sha": "71960bcf2d8d25ab9fb7c39623b7da44c33cda4b",
+    "path": "benchmarks/keycloak-idp-org-restrict-login",
+    "dirty": false,
+    "file_hashes": {
+      "environment/Dockerfile": "sha256:d3448b3110b5049a5cc753f3b92ef97ad61430ac7806acfa5b2cb28c95d236d1",
+      "environment/acme-realm.json": "sha256:9258015f2842d252b087196c29a69b5439a2f81ff8f445f76fec8b90ab831eaf",
+      "environment/admin_credentials.txt": "sha256:3f320f4eea10bfcdf760ab755cad76e412c54b766e58f6b9cc5e531240919c99",
+      "environment/deployment_token_proxy.py": "sha256:0721c05c9eb4cbf674b8708c57a97d8eac2cf9fc1038f1088700d7ce4501d632",
+      "environment/docker-compose.yaml": "sha256:f851418546f38100c06499f69280dfbd7477430aa41ed13681b3dc2b50319e4e",
+      "environment/entrypoint.sh": "sha256:4ca3946c545d54998f0cac08f22c7c5f4cc7ab3c838170c68a5fb6f3c06271bb",
+      "environment/keycloak-atomic-auth-flows.jar": "sha256:7fb45b19d6b8f49dd6566b1bd32c50e6d3496eedfbea3520d596afe2658829ed",
+      "environment/partner-idp-realm.json": "sha256:83fc45ee9eeb114c95e6dfe6614df4ae6a637794dddf39def97296765cf26788",
+      "environment/partner_idp_details.txt": "sha256:c5ec539736cf801016b3f274741834e4a96ca7c87365782a282aa752198c65da",
+      "environment/skills/identityProviderOrgRestrictLoginMcp/SKILL.md": "sha256:d1da6b7dbe29690fb5b4bf3ea02a5378e7b16575ad4d63ba2327ffd2e930e2a8",
+      "environment/skills/identityProviderOrgRestrictLoginMcp/assets/post-org-broker-login-select-organization.partial-import.json": "sha256:02b810f96e4f1eab35953c5c9870d7f2d2eb6b7a28718173eeacdaac41946634",
+      "environment/skills/identityProviderOrgRestrictLoginRest/SKILL.md": "sha256:77f5a903b4e52d3f070c2f23408b68a7bd95296b6d3bc4471332af799f90d533",
+      "environment/skills/identityProviderOrgRestrictLoginRest/assets/post-org-broker-login-select-organization.partial-import.json": "sha256:02b810f96e4f1eab35953c5c9870d7f2d2eb6b7a28718173eeacdaac41946634",
+      "environment/wait_for_services.sh": "sha256:2fca9c7ca7a772eb80c90cb866c2e11b54e080a5dd9fe57e157a91deba017ded",
+      "oracle/post-org-broker-login-select-organization.partial-import.json": "sha256:02b810f96e4f1eab35953c5c9870d7f2d2eb6b7a28718173eeacdaac41946634",
+      "oracle/solve.py": "sha256:60644330be157c0ac3697b557b520b5c7c1aaac86cb57d6793a34d1a7b35fd3d",
+      "oracle/solve.sh": "sha256:045022234d8921e8fcaedef41572391f4e1fcca9d7948048080e0259ca6b0da4",
+      "task.md": "sha256:6d8e21fefca3d8bd2c05b8d84ef094bbaa53e3ea04a617ade0ada22f1740184f",
+      "verifier/rubrics/verifier.md": "sha256:c9573a42d8be86982a9936eca3fc4f473e02606d003c9c58908a04e2cdaaecb2",
+      "verifier/rubrics/verifier.toml": "sha256:9c8a77597701063d025033f290f950c57b06d5ad02d2eda85f81921d0531a3ab",
+      "verifier/test.sh": "sha256:a8e23e9d327dc3297a01332a958312580ebdded3230c5b81f88e5cda047e2dde",
+      "verifier/test_outputs.py": "sha256:b44fff73798372e4c60bc46509e1185314dc616af12760c64d980854fe61083f",
+      "verifier/verifier.md": "sha256:c3b54e3a3d6d7ab75f8d6aeb3bae996dae9ddcb73a8be239ca9e60ceb6325ba3"
+    }
+  },
+  "task_digest": "sha256:cf48f55509453c86bd6c98416a1ddf0492e29b36d1e7e4ca59459bcbb5002c2b",
+  "sandbox_id": null
+}

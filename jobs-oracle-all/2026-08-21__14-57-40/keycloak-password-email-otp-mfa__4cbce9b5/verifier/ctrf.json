@@ -1,0 +1,74 @@
+{
+    "results": {
+        "tool": {
+            "name": "pytest",
+            "version": "8.4.1"
+        },
+        "summary": {
+            "tests": 6,
+            "passed": 6,
+            "failed": 0,
+            "skipped": 0,
+            "pending": 0,
+            "other": 0,
+            "start": 1787313565.3644447,
+            "stop": 1787313569.1858652
+        },
+        "tests": [
+            {
+                "name": "::test_flow_gates_email_otp_behind_a_password_step",
+                "status": "passed",
+                "duration": 0.1668407489778474,
+                "start": 1787313565.5512788,
+                "stop": 1787313565.7186422,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_correct_password_gets_a_code_that_completes_login",
+                "status": "passed",
+                "duration": 0.15199999998731073,
+                "start": 1787313565.7189236,
+                "stop": 1787313565.8718607,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_wrong_password_sends_no_mail_at_all",
+                "status": "passed",
+                "duration": 1.7453587510099169,
+                "start": 1787313565.8722737,
+                "stop": 1787313567.6267095,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_unknown_username_sends_no_mail",
+                "status": "passed",
+                "duration": 1.3180058340076357,
+                "start": 1787313567.6302888,
+                "stop": 1787313568.9514375,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_seeded_users_still_exist_with_passwords",
+                "status": "passed",
+                "duration": 0.21625266699993517,
+                "start": 1787313568.9537075,
+                "stop": 1787313569.170761,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            },
+            {
+                "name": "::test_only_the_expected_realms_exist",
+                "status": "passed",
+                "duration": 0.014134331999230199,
+                "start": 1787313569.1710548,
+                "stop": 1787313569.1856453,
+                "retries": 0,
+                "file_path": "../verifier/test_outputs.py"
+            }
+        ]
+    }
+}

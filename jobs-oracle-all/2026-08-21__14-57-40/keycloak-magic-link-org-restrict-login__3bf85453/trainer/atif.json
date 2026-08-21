@@ -1,0 +1,21 @@
+{
+  "schema_version": "ATIF-v1.7",
+  "session_id": "keycloak-magic-link-org-restrict-login__3bf85453",
+  "agent": {
+    "name": "oracle",
+    "version": "unknown"
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "source": "user",
+      "message": "Acme's security team has a new requirement, layered on top of a request IT already made:\n\n> \"Staff should log in with a magic link instead of a password \u2014 but only engineering staff\n> should be able to sign in to the internal tools portal at all. Everyone else's link should\n> just not work.\"\n\nA Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`.\nIt starts with the container and takes a few seconds to come up; `wait-for-services` blocks\nuntil it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.\n\nRealm `acme` has one browser application registered, the public client `acme-portal`, whose\nredirect URI is `http://localhost:9999/callback`. It has two staff accounts, both with a\nverified email address on file:\n\n- `priya` (`priya@acme-internal.example`) \u2014 she is engineering staff and should be let in.\n- `morgan` (`morgan@acme-internal.example`) \u2014 he is not engineering staff and should be turned\n  away.\n\nNeither account belongs to any organization yet, and no organization exists yet. There is no\nreal mail provider here \u2014 a local mail-capture server accepts whatever the realm sends and\nwrites each message to `/var/mail-capture/`; connection details are in\n`/root/mail_server_details.txt`.\n\nThe application will send a real login request to `acme-portal` carrying\n`account_hint=engineering` (the value it will use to mean \"the engineering team\") \u2014 it will not\nsend `prompt=select_account`, and this is the only signal available to distinguish \"let this\nperson in\" from \"turn this person away.\"\n\nConfigure the `acme` realm so that all of the following hold, for a browser authorization-code\nlogin against `acme-portal` carrying `account_hint=engineering`, where the person entering their\nemail is never asked for a password at any point:\n\n1. `priya` entering her email address receives a real email, through the realm's configured\n   mail settings, containing a login link. Opening that link, with nothing else entered,\n   completes the login: the browser arrives back at `http://localhost:9999/callback` with an\n   authorization code.\n2. `morgan` entering his email address does **not** receive any email at all \u2014 the security\n   requirement is \"his link should just not work,\" and the strongest, correct reading of that is\n   that no link is ever sent to him in the first place, not merely that a link he somehow\n   obtained would fail if used.\n3. A login carrying an `account_hint` that matches no real organization at all does not produce\n   any email either, for anyone \u2014 including `priya` \u2014 the gate must actually check membership in\n   a real, specific organization, not merely require the presence of any `account_hint` value.\n4. Every other realm on the server is untouched, and no realm other than `master` and `acme`\n   exists."
+    }
+  ],
+  "final_metrics": {
+    "total_steps": 1,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_cached_tokens": 0
+  }
+}
