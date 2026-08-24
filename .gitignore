@@ -15,7 +15,7 @@
 benchmarks/**/jobs-local*/
 
 # Local skillsbench oracle/agent batch runs across all benchmark items (run from repo root)
-/jobs-oracle*/
+/jobs-*/
 
 # Python bytecode cache (e.g. from running skillsaw's custom rules.py)
 __pycache__/

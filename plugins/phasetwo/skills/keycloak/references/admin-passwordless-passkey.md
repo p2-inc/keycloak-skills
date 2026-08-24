@@ -90,24 +90,43 @@ curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
 #    409ing, and the flow may already have both (e.g. pre-authored via realm import).
 curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" -H "$H"
 
-# 4. Add whichever of these two providers is missing directly to the flow — leaf
-#    authenticators work fine on a bare top-level basic-flow, no sub-flow needed.
+# 4. auth-cookie ALTERNATIVE at the top level, and the passkey step REQUIRED inside its
+#    own ALTERNATIVE sub-flow. The sub-flow is NOT decoration: a REQUIRED step and an
+#    ALTERNATIVE step at the SAME level make Keycloak erase the alternative bucket
+#    (DefaultAuthenticationFlow.fillListsOfExecutions -> alternativeList.clear()), so a
+#    bare two-leaf flow silently never runs auth-cookie at all. See
+#    flow-execution-order.md's "Shape" section.
 # These calls APPEND: with no "priority" the server assigns (last sibling + 1), so the
 # order is simply the order you call them in. Send it explicitly - auth-cookie must be
 # first, so an existing SSO session is consulted before the passkey step runs.
 curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
   -H "$H" -H 'Content-Type: application/json' -d '{"provider":"auth-cookie","priority":0}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless","priority":1}'
+curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/flow" \
+  -H "$H" -H 'Content-Type: application/json' \
+  -d '{"alias":"Passkey Only forms","provider":"basic-flow","type":"basic-flow","priority":1}'
+curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only%20forms/executions/execution" \
+  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless","priority":0}'
 
 # 5. List executions again to get each one's own id, then set requirements:
-#    auth-cookie -> ALTERNATIVE (an existing SSO session still works),
-#    webauthn-authenticator-passwordless -> REQUIRED (the only path otherwise -
-#    this is what makes it "no password, ever", not just deprioritized).
+#    auth-cookie                        -> ALTERNATIVE  (top level)
+#    Passkey Only forms (the sub-flow)  -> ALTERNATIVE  (top level stays all-ALTERNATIVE)
+#    webauthn-authenticator-passwordless -> REQUIRED    (alone on its own level - this is
+#      what makes it "no password, ever", not just deprioritized)
 curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<auth-cookie-execution-id>","requirement":"ALTERNATIVE"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<auth-cookie-execution-id>","requirement":"ALTERNATIVE","priority":0}'
 curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<webauthn-execution-id>","requirement":"REQUIRED"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<sub-flow-execution-id>","requirement":"ALTERNATIVE","priority":1}'
+curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only%20forms/executions" \
+  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<webauthn-execution-id>","requirement":"REQUIRED","priority":0}'
+```
+
+Resulting shape — note the top level is **all-ALTERNATIVE**:
+
+```
+Passkey Only                              (top level)
+├── auth-cookie                            ALTERNATIVE
+└── Passkey Only forms                     ALTERNATIVE   (sub-flow)
+    └── webauthn-authenticator-passwordless REQUIRED
 ```
 
 Then confirm the order actually landed — nothing errors if it didn't:

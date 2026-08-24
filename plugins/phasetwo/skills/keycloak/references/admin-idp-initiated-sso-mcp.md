@@ -12,7 +12,7 @@ Okta/Entra ID" request here — that's `admin:idp-federation` (ordinary SP-initi
 login button serving every client). Only use this intent for a portal tile / app-embed link
 targeting **one** downstream client.
 
-## Read this first: what the MCP surface can and cannot do here
+## Read this first: which tool covers which case
 
 | Purpose | Tool | Status |
 |---|---|---|
@@ -21,23 +21,29 @@ targeting **one** downstream client.
 | Create a **new SAML** client with IdP-initiated SSO enabled | `createSamlClient` (`idpInitiatedSsoUrlName`, `idpInitiatedSsoRelayState`, `brokeredIdpAlias`, `forcePostBinding`) | ✅ |
 | Confirm what exists | `listClients` | ✅ |
 | Cleanup / re-create | `deleteClient` | ✅ |
-| **Add IdP-initiated SSO to an EXISTING client** | — | ❌ **no tool** |
-| **Target an OIDC client** (needs REDIRECT-binding attributes) | — | ❌ **not possible** |
+| **Add IdP-initiated SSO to an EXISTING client** | `configureIdpInitiatedSso` | ✅ |
+| **Target an OIDC/SPA client** (needs REDIRECT binding) | `configureIdpInitiatedSso(targetIsOidcClient=true, landingUrl=…)` | ✅ |
 
-Both gaps are real and verified against the server source (`ClientTools.java`), not guesses:
+`createSamlClient` covers exactly one case: a **brand-new SAML** client. It always writes
+`assertionConsumerServiceUrl` into `saml_assertion_consumer_url_post` and always sets
+`protocol: saml`, and since a POST ACS URL outranks the redirect one in Keycloak's binding
+priority, it can never produce the REDIRECT shape an OIDC target needs. For anything else — an
+existing client of either protocol, or any OIDC/SPA target — use **`configureIdpInitiatedSso`**,
+which reads the client's full representation and merges (Keycloak's client update is a
+full-representation PUT that blanks whatever you omit).
 
-- The only client-mutating tools are `createOidcClient`, `createSamlClient`, `deleteClient`,
-  `setClientLoginTheme`, `clearClientLoginTheme`. There is **no** update-client-attributes tool, so
-  IdP-initiated SSO can only be set at **creation** time, on a **new** client.
-- `createSamlClient` always writes `assertionConsumerServiceUrl` into
-  `saml_assertion_consumer_url_post` (and requires either that or `spMetadataXml`), and always sets
-  `protocol: saml`. Since a POST ACS URL outranks the redirect one in Keycloak's binding priority,
-  the tool **cannot** produce the REDIRECT-binding configuration an OIDC target requires.
+### What an OIDC/SPA target actually gets — say this out loud
 
-So: if the developer's target is an existing client, or an OIDC client, **say so plainly and switch
-to `admin-idp-initiated-sso.md`'s REST steps** (or the admin console). Don't silently pretend
-`createSamlClient` covers it, and don't hand-roll REST while claiming you're using the MCP tools —
-tell them which path you're on and why.
+`targetIsOidcClient=true` is not "OIDC IdP-initiated SSO". Keycloak still builds and sends a real
+SAML artifact to the landing URL, and an OIDC app cannot consume it — **the landing request hands
+the app nothing: no code, no token.** What makes the experience work is that the Keycloak **SSO
+session cookie is already set** by the time the browser arrives, so the app's own ordinary OIDC
+redirect, issued a moment later, completes silently with no login prompt.
+
+It is a **session-bootstrap trick, not a native OIDC IdP-initiated flow.** Tell the developer that
+in those terms. Implying the tile click delivers tokens to the SPA is a materially different
+security and architecture claim from what is actually happening, and it will shape how they build
+the app's startup path.
 
 ## Two different endpoints — pick the right one first
 
@@ -68,7 +74,7 @@ Both are **client** attributes; the IdP contributes only its `alias` in the URL.
 |---|---|---|
 | `saml_idp_initiated_sso_url_name` | `idpInitiatedSsoUrlName` | **Mandatory.** The `{urlName}` segment; Keycloak resolves the target client by matching exactly this attribute. Omit ⇒ IdP-initiated login stays disabled. |
 | `saml_idp_initiated_sso_relay_state` | `idpInitiatedSsoRelayState` | Optional **outgoing** RelayState handed to the downstream SP (a deep-link hint). Not routing — see below. |
-| `saml.force.post.binding` | `forcePostBinding` | Must be `false` for an OIDC target (which this tool can't produce anyway — see the gaps above). |
+| `saml.force.post.binding` | `forcePostBinding` | Must be `false` for an OIDC target — `createSamlClient` can't produce that; `configureIdpInitiatedSso(targetIsOidcClient=true)` sets it for you. |
 
 ### RelayState: what it does and does not do
 
@@ -83,7 +89,7 @@ reads the inbound `RelayState`** the vendor sent; `samlIdpInitiatedSSO` passes `
   path segment — so **one vendor-side app/tile serves exactly one client**; a second client needs
   its own vendor-side app whose ACS/Reply URL bakes in that client's own `{urlName}`.
 
-## Binding selection (for context, and why OIDC needs REST)
+## Binding selection (for context, and what the OIDC switch actually changes)
 
 `SamlService.getUrlAndBindingForIdpInitiatedSso`, strict priority:
 
@@ -95,9 +101,9 @@ reads the inbound `RelayState`** the vendor sent; `samlIdpInitiatedSSO` passes `
 And at response-build time `SamlProtocol.isPostBinding()` is
 `POST.equals(clientNote(SAML_BINDING)) || samlClient.forcePostBinding()` — so `forcePostBinding=true`
 silently overrides a REDIRECT choice. An OIDC target therefore needs case 3 with cases 1–2 unset
-*and* `forcePostBinding=false`; `createSamlClient` can't express that, hence the REST fallback.
+*and* `forcePostBinding=false`; `createSamlClient` can't express that, which is what `configureIdpInitiatedSso(targetIsOidcClient=true)` exists to do — it clears both POST-forcing settings (`saml_assertion_consumer_url_post` and the client's `adminUrl`) and sets `saml.force.post.binding=false`.
 
-## Steps (new SAML client, the case MCP does cover)
+## Steps — A. a brand-new SAML client
 
 1. `whoAmI` — confirm caller and control-plane realm.
 2. Confirm `deploymentId` + `deploymentRealm`, and the vendor IdP's `alias` via
@@ -112,6 +118,27 @@ silently overrides a REDIRECT choice. An OIDC target therefore needs case 3 with
 6. Do the vendor-side configuration — read exactly one:
    `references/idp/okta-idp-initiated.md` or `references/idp/entra-idp-initiated.md`.
 
+## Steps — B. an existing client (either protocol, including OIDC/SPA)
+
+1. `whoAmI`; confirm `deploymentId` + `deploymentRealm`.
+2. `listIdentityProviders` → confirm a `providerId: "saml"` entry for the vendor, note its `alias`.
+3. `listClients` → confirm the target client exists, and note its `protocol`.
+4. Agree the `urlName` with the developer. **One tile targets exactly one client** — routing is the
+   `{urlName}` path segment alone, never RelayState — so a second client needs its own vendor-side
+   tile.
+5. `configureIdpInitiatedSso(deploymentId, deploymentRealm, clientId, urlName, …)`:
+   - **SAML target** — that's all; POST binding is correct and expected.
+   - **OIDC/SPA target** — also pass `targetIsOidcClient=true` and `landingUrl=<the app's own home
+     URL>`. The tool clears `saml_assertion_consumer_url_post` and the client's `adminUrl` (either
+     one would win and force POST) and sets `saml.force.post.binding=false`.
+6. Hand the vendor the tile URL, built from the alias in step 2:
+   `{base}/realms/{realm}/broker/{alias}/endpoint/clients/{urlName}`.
+7. **For an OIDC target, state plainly what the developer is getting** — see "What an OIDC/SPA
+   target actually gets" above. The tile click delivers no code and no token; the app still runs
+   its own OIDC redirect, which then completes silently against the freshly-set SSO session.
+8. Do the vendor-side configuration — read exactly one:
+   `references/idp/okta-idp-initiated.md` or `references/idp/entra-idp-initiated.md`.
+
 ## Verify
 
 `listClients` to confirm the client exists and is enabled. Then have the developer click the tile:
@@ -119,10 +146,13 @@ the user should land in the target app already authenticated, having never visit
 
 ## Re-running / fixing
 
-Because there's no update-attributes tool, a wrong `idpInitiatedSsoUrlName` means
-`deleteClient` + re-run `createSamlClient` — or a targeted REST `PUT` per
-`admin-idp-initiated-sso.md`, which is less destructive for a client that already has other
-config on it. Prefer the REST fix if the client is in use; say which you're doing.
+A wrong `urlName`, or a target that turns out to be OIDC, is now a re-run of
+`configureIdpInitiatedSso` with the corrected arguments — it merges into the client's existing
+representation, so it is safe on a client already in use and does **not** need `deleteClient`.
+Never delete and re-create a live client to fix an attribute.
+
+Re-running is also the fix when the app receives a POST it can't handle: call it again with
+`targetIsOidcClient=true` and the app's home URL as `landingUrl`.
 
 ## Common errors
 
@@ -131,6 +161,7 @@ config on it. Prefer the REST fix if the client is in use; say which you're doin
 - **"Wrong client protocol."** — the *direct* endpoint was used against an OIDC client; only the
   **broker** endpoint skips that check. Ensure `brokeredIdpAlias` was passed.
 - **App gets a POST it can't handle** — POST binding won via case 1/2 or `forcePostBinding`. For an
-  OIDC target this is the expected `createSamlClient` outcome; use the REST path instead.
+  OIDC target this is the expected `createSamlClient` outcome — reconfigure with
+  `configureIdpInitiatedSso(targetIsOidcClient=true)`, which targets the broker endpoint shape.
 - **A second tile for a second client doesn't work** — expected; RelayState can't route. One
   vendor-side app per client.

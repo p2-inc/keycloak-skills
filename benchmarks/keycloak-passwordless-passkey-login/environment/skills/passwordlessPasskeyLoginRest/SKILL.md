@@ -22,7 +22,6 @@ description: >-
   cryptographic ceremony involved).
 ---
 
-# Passkey-only passwordless login — via raw Admin REST
 
 ## What makes this different from magic-link
 
@@ -82,8 +81,22 @@ the usual choice (a PIN or biometric check on the authenticator itself, not just
 
 ## Author the flow — Keycloak ships no built-in one
 
-Unlike magic-link, there is no auto-created flow to bind here. Confirm none already exists,
-then build one from an empty shell:
+Unlike magic-link, there is no auto-created flow to bind here — one has to be authored. Two
+paths do that, and a third that looks obvious does not work at all:
+
+| Path | Cost | Requires |
+|---|---|---|
+| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow **and** applies bindings (`browserFlowBinding`, `clientFlowBinding`) in one call | **One call** | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed on the target Keycloak |
+| The manual sequence below — create flow → add each execution → set each requirement → attach config → bind | Many calls, easy to get subtly wrong | Nothing beyond stock Admin REST |
+| ~~`POST /admin/realms/{realm}/partialImport`~~ | — | **Does not work.** It has no handler for authentication flows and silently ignores them: HTTP 200, `added: 0`, no error, nothing created. The admin console's "Partial import" action and `kcadm.sh create partialImport` fail the same way. |
+
+**Offer the extension when it isn't installed** (it 404s clearly) — one jar collapses the whole
+sequence into a single call that also binds. The manual path below is perfectly legitimate if the
+user can't add it; just say upfront that it's substantially more calls. Note the extension
+hash-prefixes the alias it creates, so read the real name back rather than assuming the one you
+supplied.
+
+If taking the manual path, confirm none already exists, then build one from an empty shell:
 
 ```bash
 # 1. Confirm no existing flow already does this.
@@ -100,22 +113,57 @@ curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
 #    409ing, and the flow may already have both (e.g. pre-authored via realm import).
 curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" -H "$H"
 
-# 4. Add whichever of these two providers is missing directly to the flow — leaf
-#    authenticators work fine on a bare top-level basic-flow, no sub-flow needed.
+# 4. auth-cookie ALTERNATIVE at the top level, and the passkey step REQUIRED inside its
+#    own ALTERNATIVE sub-flow. The sub-flow is NOT decoration: a REQUIRED step and an
+#    ALTERNATIVE step at the SAME level make Keycloak erase the alternative bucket
+#    (DefaultAuthenticationFlow.fillListsOfExecutions -> alternativeList.clear()), so a
+#    bare two-leaf flow silently never runs auth-cookie at all. See
+#    flow-execution-order.md's "Shape" section.
+# These calls APPEND: with no "priority" the server assigns (last sibling + 1), so the
+# order is simply the order you call them in. Send it explicitly - auth-cookie must be
+# first, so an existing SSO session is consulted before the passkey step runs.
 curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"auth-cookie"}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"auth-cookie","priority":0}'
+curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/flow" \
+  -H "$H" -H 'Content-Type: application/json' \
+  -d '{"alias":"Passkey Only forms","provider":"basic-flow","type":"basic-flow","priority":1}'
+curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only%20forms/executions/execution" \
+  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless","priority":0}'
 
 # 5. List executions again to get each one's own id, then set requirements:
-#    auth-cookie -> ALTERNATIVE (an existing SSO session still works),
-#    webauthn-authenticator-passwordless -> REQUIRED (the only path otherwise -
-#    this is what makes it "no password, ever", not just deprioritized).
+#    auth-cookie                        -> ALTERNATIVE  (top level)
+#    Passkey Only forms (the sub-flow)  -> ALTERNATIVE  (top level stays all-ALTERNATIVE)
+#    webauthn-authenticator-passwordless -> REQUIRED    (alone on its own level - this is
+#      what makes it "no password, ever", not just deprioritized)
 curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<auth-cookie-execution-id>","requirement":"ALTERNATIVE"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<auth-cookie-execution-id>","requirement":"ALTERNATIVE","priority":0}'
 curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<webauthn-execution-id>","requirement":"REQUIRED"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<sub-flow-execution-id>","requirement":"ALTERNATIVE","priority":1}'
+curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only%20forms/executions" \
+  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<webauthn-execution-id>","requirement":"REQUIRED","priority":0}'
 ```
+
+Resulting shape — note the top level is **all-ALTERNATIVE**:
+
+```
+Passkey Only                              (top level)
+├── auth-cookie                            ALTERNATIVE
+└── Passkey Only forms                     ALTERNATIVE   (sub-flow)
+    └── webauthn-authenticator-passwordless REQUIRED
+```
+
+Then confirm the order actually landed — nothing errors if it didn't:
+
+```bash
+curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions" -H "$H" \
+  | jq -r '.[] | "\(.index) pri=\(.priority) \(.requirement) \(.providerId)"'
+```
+
+`priority` in the body is honoured only from **Keycloak 25** onward (added 2024-05-29); on 24 and
+older it is ignored and calls append regardless. There, add them in order and repair with
+`POST .../authentication/executions/<exec-id>/raise-priority`, which swaps an execution with one
+adjacent sibling per call. The `authentication-flow/import` path carries its own `priority`
+values, so it gets this right for free.
 
 **Do not add a Username Password Form, and do not add it to a copy of the stock `browser`
 flow without stripping that step out first** — a copied `browser` flow keeps Kerberos, the
@@ -218,20 +266,12 @@ programmatically needs a real browser with a **CDP virtual authenticator**
 true`), the standard technique for testing WebAuthn flows headlessly — there is no way to
 fake this exchange with a plain HTTP client.
 
-## Common errors
+## Troubleshooting
 
-- **Ceremony fails immediately in the browser, generic error, nothing useful server-side**
-  — almost always `webAuthnPolicyPasswordlessRpId` mismatched to the actual serving
-  hostname. Re-check the policy step.
-- **`execute-actions-email` returns success but nothing arrives** — that only confirms
-  Keycloak queued the send; check the realm's actual mail settings and the capture point /
-  provider, the same trap as magic-link.
-- **Login page still shows a password field** — the bound flow still has a Username
-  Password Form execution somewhere (often from copying `browser` instead of building
-  fresh) — re-check the flow's contents, don't assume ALTERNATIVE-vs-REQUIRED is enough if
-  the step exists at all.
-- **No `#registerWebAuthn` / `#authenticateWebAuthnButton` control on the page** — the
-  required action isn't wired up, or the flow isn't actually bound to the client being
-  tested; re-check the binding.
-- **`POST .../executions/execution` appears to duplicate a step** — the endpoint doesn't
-  dedupe; check existing executions before adding, don't assume a fresh flow.
+| Symptom | Cause |
+| --- | --- |
+| Ceremony fails immediately in the browser, generic error, nothing useful server-side | `webAuthnPolicyPasswordlessRpId` mismatched to the actual serving hostname |
+| `execute-actions-email` returns success but nothing arrives | Realm SMTP settings are unconfigured or wrong — same trap as magic-link |
+| Login page still shows a password field | The bound flow still has a Username Password Form execution somewhere (often from copying `browser` instead of building fresh) |
+| No `#registerWebAuthn` / `#authenticateWebAuthnButton` control on the page | The required action isn't wired up, or the flow isn't actually bound to the client being tested |
+| `POST .../executions/execution` appears to duplicate a step | The endpoint doesn't dedupe — check existing executions before adding, don't assume a fresh flow |
