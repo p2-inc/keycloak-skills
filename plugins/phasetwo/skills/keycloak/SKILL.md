@@ -5,12 +5,11 @@ description: >-
   OTP, passkey WebAuthn, or passkey-or-magic-link "0 password required"); email OTP as a 2FA second
   factor; org-membership login restriction (password, federated, or magic-link); cluster/deployment
   provisioning. Also identity brokering: domain-routed corporate SSO ("route by email domain");
-  social login buttons ("log in with Google/GitHub/Microsoft/Facebook"); enterprise IdP
-  federation — Entra ID, Okta, Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Oracle, Duo,
-  CyberArk, JumpCloud, LastPass, Salesforce, or Cloudflare Access as a login button; and IdP-initiated
-  SSO tiles into one app. Triggers: "2FA by email", "passkeys", "restrict login to org X",
-  "spin up a cluster", "connect Okta/Entra ID/Auth0", "add an identity provider",
-  "SAML/OIDC SSO", "Okta/Entra tile". Cluster/deployment is MCP-only.
+  social login buttons ("log in with Google/GitHub/Microsoft"); enterprise IdP federation — Entra ID,
+  Okta, Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Duo, JumpCloud, Salesforce and other
+  OIDC/SAML IdPs as a login button; and IdP-initiated SSO tiles. Triggers: "2FA by email", "passkeys",
+  "restrict login to org X", "spin up a cluster", "connect Okta/Entra ID", "add an identity provider",
+  "SAML/OIDC SSO". Cluster/deployment is MCP-only.
   Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
 license: Apache-2.0
 metadata:
