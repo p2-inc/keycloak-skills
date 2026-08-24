@@ -122,8 +122,22 @@ can pick from and what the engine buckets are two different lists.)
 - **Conditions are identified by type, not by name.** The engine tests
   `instanceof ConditionalAuthenticator`; the `conditional-*` prefix is a stock naming convention.
   Phase Two ships `ext-auth-condition-known-user`, which gates identically despite the name.
-- **All conditions in the sub-flow are AND-ed**, position is irrelevant, and only `DISABLED` takes a
-  condition out of play.
+- **All conditions in the sub-flow are AND-ed**, and only `DISABLED` takes a condition out of play.
+- **Position is irrelevant to the engine, but put the condition first anyway.**
+  `isConditionalSubflowDisabled` scans the sub-flow's whole child list and evaluates every condition
+  *before* any child runs, so a condition sitting last gates exactly as well as one sitting first.
+  Put it first regardless: a gate rendered below the steps it gates reads as dead config to anyone
+  reviewing the flow, and stock Keycloak puts its own `conditional-user-configured` first
+  (priority 10 in `Browser - Conditional 2FA`). `addConditional` positions it for you.
+- **`conditional-user-configured` evaluates its SIBLING steps, and that is easy to misread as
+  per-user gating when it isn't.** It asks whether the user has those siblings' credentials
+  configured — `anyMatch` when the siblings are ALTERNATIVE, `allMatch` when REQUIRED. So a single
+  sibling whose `configuredFor` is unconditionally `true` makes the gate always match and the
+  sub-flow run for **every** user. `ext-email-otp` is exactly such a step (it needs no stored
+  credential: `configuredFor` returns `true`), so a "second factor only if the user has one"
+  sub-flow that offers email OTP as one of its alternatives is not conditional at all in practice —
+  everyone gets the branch. That may be what you want (email OTP as a universal fallback); just
+  don't describe it as conditional.
 - **It occupies the required bucket**, so a CONDITIONAL sub-flow purges ALTERNATIVE siblings exactly
   as a REQUIRED one would.
 
