@@ -68,28 +68,42 @@ no handler for authentication flows and silently ignores them — HTTP 200, noth
 Otherwise, the component path — **still entirely through MCP tools**, no raw REST and no
 credentials needed from the user:
 
-1. `addFlow(alias="Passkey Only")` — a bare top-level flow; leaf authenticators
-   work fine on it directly, no sub-flow needed.
-2. `addAuthenticator(flowAlias="Passkey Only", provider="auth-cookie", priority=0)`
-3. `addAuthenticator(flowAlias="Passkey Only", provider="webauthn-authenticator-passwordless", priority=1)`
+1. `addFlow(alias="Passkey Only")`
+2. `addAuthenticator(flowAlias="Passkey Only", provider="auth-cookie", priority=0,
+   requirement="ALTERNATIVE")`
+3. `addSubFlow(parentFlowAlias="Passkey Only", alias="Passkey Only forms", priority=1,
+   requirement="ALTERNATIVE")`
+4. `addAuthenticator(flowAlias="Passkey Only forms",
+   provider="webauthn-authenticator-passwordless", priority=0, requirement="REQUIRED")`
 
-   **Pass `priority` explicitly on both** — the call appends when it's omitted, at
-   `(last sibling's priority + 1)`, so call order alone decides the outcome. `priority` in the
-   body is honoured only from Keycloak 25 onward; on older versions add them in this order anyway
-   and repair with `raiseExecutionPriority`/`lowerExecutionPriority` if it lands wrong.
-4. `listFlowExecutions(flowAlias="Passkey Only")` to get each execution's own id, then
-   `setExecutionRequirement` twice:
-   - `auth-cookie` → `ALTERNATIVE` (an existing SSO session still works)
-   - `webauthn-authenticator-passwordless` → `REQUIRED` (the only path otherwise — this is what
-     makes it "no password, ever," not just deprioritized)
+**The sub-flow is load-bearing, not decoration.** Putting the passkey step REQUIRED next to
+`auth-cookie` ALTERNATIVE at the same level makes Keycloak erase the alternative bucket outright
+(`fillListsOfExecutions` → `alternativeList.clear()`), so `auth-cookie` never runs and SSO session
+resume is silently dead — a full WebAuthn ceremony on every authorization request, with nothing in
+the console or the API to show for it. The sub-flow keeps the top level all-ALTERNATIVE. See
+[`flow-execution-order.md`](flow-execution-order.md)'s "Shape" section.
 
-Read the order back with `listFlowExecutions` before moving on — nothing errors on a wrong order.
+```
+Passkey Only                              (top level — all ALTERNATIVE)
+├── auth-cookie                            ALTERNATIVE
+└── Passkey Only forms                     ALTERNATIVE   (sub-flow)
+    └── webauthn-authenticator-passwordless REQUIRED
+```
+
+**Pass `priority` and `requirement` explicitly on every call** — the add calls append when
+`priority` is omitted, at `(last sibling's priority + 1)`, so call order alone decides the outcome;
+and a step added without `requirement` is created `DISABLED` and does nothing. `priority` in the
+body is honoured only from Keycloak 25 onward; on older versions add them in this order anyway and
+repair with `reorderFlowExecutions` (or `raiseExecutionPriority`/`lowerExecutionPriority`).
+
+Read it back with `listFlowExecutions` before moving on — nothing errors on a wrong shape or order.
+Assert no level mixes `ALTERNATIVE` with `REQUIRED`/`CONDITIONAL`.
 
 **Do not add a Username Password Form, and do not add it to a copy of the stock
 `browser` flow without stripping that step out first** — a copied `browser` flow keeps
 Kerberos, the IdP redirector, and (critically) the password form as ALTERNATIVE steps,
 which defeats "no password, ever." Building the flow from an empty shell with exactly
-these two executions is simpler and avoids that trap entirely.
+these executions is simpler and avoids that trap entirely.
 
 ## Stage 4 — Bind it
 

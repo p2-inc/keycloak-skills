@@ -310,3 +310,83 @@ def test_only_the_acme_realm_was_added(config, admin_headers):
     assert names == {"master", config["realm"]}, (
         f"realms are {sorted(names)}; expected exactly master and {config['realm']}"
     )
+
+
+def _effective_browser_flow_alias(config, admin_headers):
+    """The flow acme-portal actually authenticates with: a client-level browser override
+    if one is set, otherwise the realm's browserFlow."""
+    clients = requests.get(
+        f"{config['base']}/admin/realms/{config['realm']}/clients",
+        headers=admin_headers, params={"clientId": config["client_id"]}, timeout=TIMEOUT,
+    ).json()
+    assert clients, f"client {config['client_id']} not found"
+    override = (clients[0].get("authenticationFlowBindingOverrides") or {}).get("browser")
+
+    flows = requests.get(
+        f"{config['base']}/admin/realms/{config['realm']}/authentication/flows",
+        headers=admin_headers, timeout=TIMEOUT,
+    ).json()
+    if override:
+        for f in flows:
+            if f.get("id") == override:
+                return f["alias"]
+        raise AssertionError(f"client browser override {override} matches no flow")
+
+    realm_rep = requests.get(
+        f"{config['base']}/admin/realms/{config['realm']}", headers=admin_headers, timeout=TIMEOUT,
+    ).json()
+    return realm_rep["browserFlow"]
+
+
+def _direct_children(config, admin_headers, flow_alias):
+    execs = requests.get(
+        f"{config['base']}/admin/realms/{config['realm']}/authentication/flows"
+        f"/{urllib.parse.quote(flow_alias)}/executions",
+        headers=admin_headers, timeout=TIMEOUT,
+    ).json()
+    return [e for e in execs if e.get("level", 0) == 0]
+
+
+def test_no_flow_level_mixes_required_and_alternative(config, admin_headers):
+    """Bucket purity, checked on whatever flow the client actually uses.
+
+    Keycloak sorts a level's children into a required bucket (REQUIRED + CONDITIONAL) and an
+    alternative bucket (ALTERNATIVE). If both are non-empty, DefaultAuthenticationFlow's
+    fillListsOfExecutions calls alternativeList.clear() - the ALTERNATIVE executions are
+    discarded before anything runs, reported only as a server-log WARN.
+
+    For this task that is the difference between auth-cookie resuming an SSO session and
+    auth-cookie never executing at all, which no login assertion here would notice: passkey
+    login succeeds either way. Solution-agnostic - asserts the invariant, not a flow shape.
+    """
+    root = _effective_browser_flow_alias(config, admin_headers)
+
+    pending, seen, checked = [root], set(), 0
+    while pending:
+        alias = pending.pop()
+        if alias in seen:
+            continue
+        seen.add(alias)
+        children = _direct_children(config, admin_headers, alias)
+        if not children:
+            continue
+        checked += 1
+
+        required, alternative = [], []
+        for e in children:
+            req = e.get("requirement")
+            name = e.get("displayName") or e.get("providerId")
+            if req in ("REQUIRED", "CONDITIONAL"):
+                required.append(f"{name}({req})")
+            elif req == "ALTERNATIVE":
+                alternative.append(f"{name}({req})")
+            if e.get("authenticationFlow") and e.get("displayName"):
+                pending.append(e["displayName"])
+
+        assert not (required and alternative), (
+            f"flow '{alias}' mixes buckets at one level: required={required} "
+            f"alternative={alternative}. Keycloak discards the ALTERNATIVE ones outright, so "
+            f"{alternative} never run. Put one group in its own sub-flow."
+        )
+
+    assert checked, f"no executions found under '{root}'"

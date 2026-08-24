@@ -10,11 +10,20 @@ Four pieces, all through the Admin REST API:
 
   2. A brand-new top-level "Passkey Only" flow. Unlike magic-link, Keycloak
      ships NO built-in flow containing the WebAuthn passwordless step - it
-     has to be authored: create an empty basic-flow, add auth-cookie
-     (ALTERNATIVE, so an existing SSO session still works) and
-     webauthn-authenticator-passwordless (REQUIRED, no other alternative -
-     this is what makes it "no password, ever", not just "password
-     deprioritized").
+     has to be authored:
+
+         Passkey Only                              (top level, all ALTERNATIVE)
+         |-- auth-cookie                            ALTERNATIVE
+         `-- Passkey Only forms                     ALTERNATIVE  (sub-flow)
+             `-- webauthn-authenticator-passwordless REQUIRED
+
+     The sub-flow is load-bearing. Keycloak discards a level's ALTERNATIVE
+     bucket entirely when that level also holds a REQUIRED execution, so
+     auth-cookie ALTERNATIVE beside the passkey step REQUIRED would mean
+     auth-cookie never runs - SSO resume silently dead, full WebAuthn ceremony
+     on every request. Wrapping the passkey step keeps the top level
+     bucket-pure. REQUIRED and alone inside the sub-flow is what makes this
+     "no password, ever", not just "password deprioritized".
 
   3. Binding that flow to the acme-portal client (client-level, not
      realm-wide, so other realm clients like the admin/account consoles keep
@@ -44,6 +53,7 @@ from playwright.sync_api import sync_playwright
 
 CREDS_PATH = "/root/admin_credentials.txt"
 FLOW_ALIAS = "Passkey Only"
+FORMS_ALIAS = "Passkey Only forms"
 CAPTURE_DIR = "/var/mail-capture"
 TIMEOUT = 30
 
@@ -94,6 +104,29 @@ def set_smtp_settings(base_url, realm, token):
     resp.raise_for_status()
 
 
+def _set_requirements(base_url, realm, token, flow_alias, wanted_by_key):
+    """Set requirements on one flow's direct children, preserving each one's priority."""
+    executions = requests.get(
+        f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(flow_alias)}/executions",
+        headers=auth(token), timeout=TIMEOUT,
+    ).json()
+    for exe in executions:
+        if exe.get("level", 0) != 0:
+            continue
+        key = exe.get("providerId") or exe.get("displayName")
+        wanted = wanted_by_key.get(key)
+        if not wanted or exe.get("requirement") == wanted:
+            continue
+        body = {"id": exe["id"], "requirement": wanted}
+        if isinstance(exe.get("priority"), int):
+            body["priority"] = exe["priority"]
+        resp = requests.put(
+            f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(flow_alias)}/executions",
+            headers=auth(token), json=body, timeout=TIMEOUT,
+        )
+        resp.raise_for_status()
+
+
 def create_passkey_only_flow(base_url, realm, token):
     resp = requests.post(
         f"{base_url}/admin/realms/{realm}/authentication/flows", headers=auth(token),
@@ -111,31 +144,67 @@ def create_passkey_only_flow(base_url, realm, token):
         f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(FLOW_ALIAS)}/executions",
         headers=auth(token), timeout=TIMEOUT,
     ).json()
-    existing_providers = {exe["providerId"] for exe in executions}
+    existing = {exe.get("providerId") or exe.get("displayName") for exe in executions}
 
-    for provider in ("auth-cookie", "webauthn-authenticator-passwordless"):
-        if provider in existing_providers:
-            continue
+    # auth-cookie sits at the top level; the passkey step goes in its own sub-flow.
+    #
+    # The sub-flow is NOT cosmetic. Keycloak buckets a level's children into required
+    # (REQUIRED + CONDITIONAL) and alternative (ALTERNATIVE), and if BOTH buckets are
+    # non-empty it discards the alternative one outright:
+    #
+    #   DefaultAuthenticationFlow.fillListsOfExecutions:
+    #     if (!requiredList.isEmpty() && !alternativeList.isEmpty()) { ... alternativeList.clear(); }
+    #
+    # So a bare top-level flow holding auth-cookie ALTERNATIVE beside
+    # webauthn-authenticator-passwordless REQUIRED silently never runs auth-cookie:
+    # SSO session resume is dead and every authorization request re-runs the full
+    # WebAuthn ceremony. Only a server-log WARN reports it. Wrapping the passkey step
+    # keeps the top level all-ALTERNATIVE, which is what makes the cookie branch live.
+    if "auth-cookie" not in existing:
         resp = requests.post(
             f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(FLOW_ALIAS)}/executions/execution",
-            headers=auth(token), json={"provider": provider}, timeout=TIMEOUT,
+            headers=auth(token), json={"provider": "auth-cookie", "priority": 0}, timeout=TIMEOUT,
         )
         if resp.status_code not in (201, 409):
             resp.raise_for_status()
 
-    executions = requests.get(
-        f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(FLOW_ALIAS)}/executions",
+    if FORMS_ALIAS not in existing:
+        resp = requests.post(
+            f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(FLOW_ALIAS)}/executions/flow",
+            headers=auth(token),
+            json={"alias": FORMS_ALIAS, "provider": "basic-flow", "type": "basic-flow", "priority": 1},
+            timeout=TIMEOUT,
+        )
+        if resp.status_code not in (201, 409):
+            resp.raise_for_status()
+
+    sub_executions = requests.get(
+        f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(FORMS_ALIAS)}/executions",
         headers=auth(token), timeout=TIMEOUT,
     ).json()
-    for exe in executions:
-        wanted = "ALTERNATIVE" if exe["providerId"] == "auth-cookie" else (
-            "REQUIRED" if exe["providerId"] == "webauthn-authenticator-passwordless" else None)
-        if wanted and exe["requirement"] != wanted:
-            resp = requests.put(
-                f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(FLOW_ALIAS)}/executions",
-                headers=auth(token), json={"id": exe["id"], "requirement": wanted}, timeout=TIMEOUT,
-            )
+    if "webauthn-authenticator-passwordless" not in {e.get("providerId") for e in sub_executions}:
+        resp = requests.post(
+            f"{base_url}/admin/realms/{realm}/authentication/flows/{urllib.parse.quote(FORMS_ALIAS)}/executions/execution",
+            headers=auth(token),
+            json={"provider": "webauthn-authenticator-passwordless", "priority": 0}, timeout=TIMEOUT,
+        )
+        if resp.status_code not in (201, 409):
             resp.raise_for_status()
+
+    # Top level: auth-cookie and the sub-flow are BOTH ALTERNATIVE (bucket-pure).
+    # Inside the sub-flow: the passkey step is REQUIRED and alone, so it is the only
+    # way through that branch - which is what makes this "no password, ever".
+    #
+    # Keycloak's update endpoint takes the whole execution representation and priority
+    # is a primitive int on it, so a body omitting priority resets it to 0. Send the
+    # execution's current priority back with the requirement.
+    _set_requirements(base_url, realm, token, FLOW_ALIAS, {
+        "auth-cookie": "ALTERNATIVE",
+        FORMS_ALIAS: "ALTERNATIVE",
+    })
+    _set_requirements(base_url, realm, token, FORMS_ALIAS, {
+        "webauthn-authenticator-passwordless": "REQUIRED",
+    })
 
     return next(f["id"] for f in requests.get(
         f"{base_url}/admin/realms/{realm}/authentication/flows", headers=auth(token), timeout=TIMEOUT

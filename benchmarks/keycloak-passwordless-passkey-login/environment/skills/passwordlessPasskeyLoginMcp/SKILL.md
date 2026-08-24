@@ -24,7 +24,6 @@ description: >-
   involved).
 ---
 
-# Passkey-only passwordless login — via the Keycloak MCP server
 
 ## What makes this different from magic-link
 
@@ -55,8 +54,8 @@ needs a real browser, not a curl call.
 Capture **`deploymentId`** and **`deploymentRealm`** and reuse them on every call below.
 `setWebAuthnPasswordlessPolicy`, `findUser`, and `sendRequiredActionEmail` are newer
 additions to the MCP server, added specifically to cover this flow — if any are missing
-from the tool list, that gap is real; fall back to the raw REST calls this skill
-documents for whichever piece is missing.
+from the tool list, that gap is real; say so and fall back to
+`admin-passwordless-passkey.md`'s REST instructions for whichever piece is missing.
 
 ## Stage 1 — Establish identity and target realm
 
@@ -80,47 +79,56 @@ authenticator present itself without the user typing anything first.
 `userVerificationRequirement="preferred"` or `"required"` is the usual choice (a PIN or
 biometric check on the authenticator itself, not just presence).
 
-## Stage 3 — Author the flow (no MCP tool does this — raw REST)
+## Stage 3 — Author the flow
 
 Confirm with `listAuthenticationFlows` that no existing flow already does this (there is
-no built-in one). Authoring a flow is not covered by any current MCP tool — same
-situation `bindingAuthenticationFlow` already documents for ITS custom flows ("no MCP
-tool performs [this] itself — applying/authoring is a manual step"). The steps, against
-the deployment's Keycloak Admin REST API directly:
+no built-in one).
 
-```bash
-BASE=<deployment base_url>/auth   # adjust if the deployment has no /auth relative path
-H="Authorization: Bearer $ADMIN_TOKEN"
-REALM=<deploymentRealm>
+**If the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+extension is installed**, `importAuthenticationFlow` authors the whole flow — and binds it —
+in a single call; prefer that over the manual sequence below, and offer installing the
+extension if it 404s. (Keycloak's own `partialImport` endpoint is *not* an alternative: it has
+no handler for authentication flows and silently ignores them — HTTP 200, nothing created.)
 
-# 1. Create an empty top-level flow.
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
-  -H 'Content-Type: application/json' \
-  -d '{"alias":"Passkey Only","providerId":"basic-flow","topLevel":true,"builtIn":false}'
+Otherwise, the component path — **still entirely through MCP tools**, no raw REST and no
+credentials needed from the user:
 
-# 2. Add two executions directly to it (leaf authenticators work fine on a
-#    bare top-level basic-flow — no sub-flow needed).
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"auth-cookie"}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"provider":"webauthn-authenticator-passwordless"}'
+1. `addFlow(alias="Passkey Only")`
+2. `addAuthenticator(flowAlias="Passkey Only", provider="auth-cookie", priority=0,
+   requirement="ALTERNATIVE")`
+3. `addSubFlow(parentFlowAlias="Passkey Only", alias="Passkey Only forms", priority=1,
+   requirement="ALTERNATIVE")`
+4. `addAuthenticator(flowAlias="Passkey Only forms",
+   provider="webauthn-authenticator-passwordless", priority=0, requirement="REQUIRED")`
 
-# 3. List executions to get each one's own id, then set requirements:
-#    Cookie -> ALTERNATIVE (an existing SSO session still works),
-#    WebAuthn Passwordless Authenticator -> REQUIRED (the only path otherwise -
-#    this is what makes it "no password, ever", not just deprioritized).
-curl -s "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions" -H "$H"
-curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<cookie-execution-id>","requirement":"ALTERNATIVE"}'
-curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/Passkey%20Only/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<webauthn-execution-id>","requirement":"REQUIRED"}'
+**The sub-flow is load-bearing, not decoration.** Putting the passkey step REQUIRED next to
+`auth-cookie` ALTERNATIVE at the same level makes Keycloak erase the alternative bucket outright
+(`fillListsOfExecutions` → `alternativeList.clear()`), so `auth-cookie` never runs and SSO session
+resume is silently dead — a full WebAuthn ceremony on every authorization request, with nothing in
+the console or the API to show for it. The sub-flow keeps the top level all-ALTERNATIVE. See
+[`flow-execution-order.md`](flow-execution-order.md)'s "Shape" section.
+
 ```
+Passkey Only                              (top level — all ALTERNATIVE)
+├── auth-cookie                            ALTERNATIVE
+└── Passkey Only forms                     ALTERNATIVE   (sub-flow)
+    └── webauthn-authenticator-passwordless REQUIRED
+```
+
+**Pass `priority` and `requirement` explicitly on every call** — the add calls append when
+`priority` is omitted, at `(last sibling's priority + 1)`, so call order alone decides the outcome;
+and a step added without `requirement` is created `DISABLED` and does nothing. `priority` in the
+body is honoured only from Keycloak 25 onward; on older versions add them in this order anyway and
+repair with `reorderFlowExecutions` (or `raiseExecutionPriority`/`lowerExecutionPriority`).
+
+Read it back with `listFlowExecutions` before moving on — nothing errors on a wrong shape or order.
+Assert no level mixes `ALTERNATIVE` with `REQUIRED`/`CONDITIONAL`.
 
 **Do not add a Username Password Form, and do not add it to a copy of the stock
 `browser` flow without stripping that step out first** — a copied `browser` flow keeps
 Kerberos, the IdP redirector, and (critically) the password form as ALTERNATIVE steps,
 which defeats "no password, ever." Building the flow from an empty shell with exactly
-these two executions is simpler and avoids that trap entirely.
+these executions is simpler and avoids that trap entirely.
 
 ## Stage 4 — Bind it
 
