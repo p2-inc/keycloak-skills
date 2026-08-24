@@ -88,6 +88,12 @@ If the answer is ambiguous, ask — don't guess and don't default to either side
 
 ## Step 3: Load reference files
 
+Authoring or editing a flow (any intent below whose reference file creates, binds, or reorders
+authentication executions)? Also read
+[`references/flow-execution-order.md`](references/flow-execution-order.md) — shared across those
+intents: it covers how to get the order actually onto the server and prove it stuck, which none of
+the create calls guarantee on their own.
+
 ### admin:passwordless-magic-link
 ```
 Read: references/admin-passwordless-magic-link-{tooling}.md
