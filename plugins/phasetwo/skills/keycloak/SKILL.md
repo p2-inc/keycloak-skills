@@ -7,14 +7,13 @@ description: >-
   provisioning. Also identity brokering: domain-routed corporate SSO ("route by email domain");
   social login buttons ("log in with Google/GitHub/Microsoft"); enterprise IdP federation — Entra ID,
   Okta, Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Duo, JumpCloud, Salesforce and other
-  OIDC/SAML IdPs as a login button; and IdP-initiated SSO tiles. Triggers: "passwordless", "magic
-  link", "email OTP", "2FA by email", "passkeys", "0 password required", "restrict login to org X",
-  "spin up a cluster", "corporate SSO", "connect Okta/Entra ID", "add an identity provider",
-  "SAML/OIDC SSO", "IdP-initiated SSO". Cluster/deployment is MCP-only. Not WebAuthn/TOTP as a
-  second factor, not LDAP/AD user federation.
+  OIDC/SAML IdPs as a login button; and IdP-initiated SSO tiles. Triggers: "2FA by email", "passkeys",
+  "restrict login to org X", "spin up a cluster", "connect Okta/Entra ID", "add an identity provider",
+  "SAML/OIDC SSO". Cluster/deployment is MCP-only.
+  Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
 license: Apache-2.0
 metadata:
-  version: '0.14.0'
+  version: '0.14.1'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -42,7 +41,7 @@ instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load re
 | Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
 | Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone with no domain routing (that's `admin:idp-federation`, next row) and not restricting login to organization members (a different mechanism — see the two rows after that). | **admin:corporate-sso** |
 | Add a built-in **consumer social login** button — "log in with Google", "add a GitHub login button", "sign in with Microsoft/Facebook", "social login", "OAuth login with \[Google/GitHub/Microsoft/Facebook/...\]". Client ID + secret only, no discovery/metadata URL. Not a company's own Workspace/Entra ID/Okta tenant (that's enterprise federation, next row — "Google" as a company SSO source means Google **Workspace SAML**, not this) and not domain-routed (`admin:corporate-sso` above). | **admin:social-login** |
-| Broker a company's own enterprise identity provider as a login option — "connect Okta/Entra ID/Auth0/ADFS/PingOne/...", "set up SAML SSO with \[vendor\]", "add \[vendor\] as an identity provider", "OIDC/SAML federation with our IdP". Covers Entra ID, Auth0, ADFS, AWS SSO, Google Workspace, CyberArk, JumpCloud, OneLogin, Oracle, PingOne, Duo, Salesforce, LastPass, Cloudflare Access, Okta, and any other generic OIDC/SAML 2.0 IdP. Not domain-auto-routing (`admin:corporate-sso` — this intent creates the button, that one decides who gets redirected automatically) and not a consumer social button (`admin:social-login` above) and not LDAP/AD user federation (reading users from a directory — no MCP tool for that, point at the Phase Two console). | **admin:idp-federation** |
+| Broker a company's own enterprise identity provider as a login option — "connect Okta/Entra ID/Auth0/ADFS/PingOne/...", "set up SAML SSO with \[vendor\]", "add \[vendor\] as an identity provider", "OIDC/SAML federation with our IdP" — Entra ID, Auth0, ADFS, AWS SSO, Google Workspace, CyberArk, JumpCloud, OneLogin, Oracle, PingOne, Duo, Salesforce, LastPass, Cloudflare Access, Okta, or any other generic OIDC/SAML 2.0 IdP. Not domain-auto-routing (`admin:corporate-sso` — this intent creates the button, that one decides who gets redirected automatically), not a consumer social button (`admin:social-login` above), and not LDAP/AD user federation — that's a directory read via `createLdapUserStorage`, an uncovered intent in this router, not a missing tool. | **admin:idp-federation** |
 | Start login from an external portal **tile** so a user lands in ONE specific app already logged in — "Okta dashboard tile into my app", "Entra ID / My Apps tile", "IdP-initiated SSO", "unsolicited SAML login", "start login from Okta/Entra instead of the app". Advanced and opt-in: the tile targets a single client, chosen by a `{urlName}` path segment on the client (NOT by RelayState, which Keycloak discards on this path). Requires that vendor to already be brokered as a SAML IdP. Not plain "log in with Okta/Entra" (`admin:idp-federation` — one button, every client, app-initiated) and not domain routing (`admin:corporate-sso`). | **admin:idp-initiated-sso** |
 | Restrict login so only members of a specific organization can complete it — "only let members of this org log in", "gate login by organization membership", "restrict access to org X". Not domain-based auto-routing (that's `admin:corporate-sso` — a user can be routed to an IdP without any membership restriction at all) and not a login that "just works" once bound — it only activates when the request carries `account_hint` or `prompt=select_account`. This row is for **local password** logins; if the user authenticates at an external IdP, see the next row. | **admin:org-restrict-login** |
 | Restrict **federated/SSO** login so only members of a specific organization get in — "corporate organization restriction", "restrict SSO login to a team/tenant", "only let this customer's staff into their own org", "organization-restricted corporate login", "gate IdP login by org membership", "post-broker organization check". The user signs in at an external identity provider and the membership check runs *afterwards*, bound to the IdP's post-broker login flow. Not domain-based routing (`admin:corporate-sso` sends users to their IdP but restricts nobody) and not the local-password gate (`admin:org-restrict-login`). | **admin:idp-org-restrict-login** |
@@ -87,6 +86,12 @@ If the answer is ambiguous, ask — don't guess and don't default to either side
 ---
 
 ## Step 3: Load reference files
+
+Authoring or editing a flow (any intent below whose reference file creates, binds, or reorders
+authentication executions)? Also read
+[`references/flow-execution-order.md`](references/flow-execution-order.md) — shared across those
+intents: it covers how to get the order actually onto the server and prove it stuck, which none of
+the create calls guarantee on their own.
 
 ### admin:passwordless-magic-link
 ```
@@ -201,8 +206,9 @@ Step 1 table maps to the matching per-vendor file under `references/idp/`: `entr
 `onelogin.md`, `oracle.md`, `pingone.md`, `salesforce.md`, `cloudflare.md`. Read exactly the one
 matching the developer's vendor — these are console click-paths, not tooling-specific, so the same
 file serves both `mcp` and `rest` tooling. If asked about **LDAP/Active Directory** as a login
-source, that's user federation, not brokering — say plainly this skill doesn't cover it (no MCP tool
-exists for it) rather than routing it into a SAML/OIDC vendor file.
+source, that's user federation, not brokering — say plainly this router has no chapter for it yet
+(MCP tools exist: `createLdapUserStorage`, `testLdapConnection`, `syncLdapUsers`) rather than
+routing it into a SAML/OIDC vendor file or claiming no tool exists.
 
 ### admin:idp-initiated-sso
 ```
