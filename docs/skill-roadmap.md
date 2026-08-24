@@ -107,26 +107,58 @@ per mechanism, and intent rows that state what they are *not*.
 
 ### Where it breaks at this scale
 
-Three problems, in order of severity:
+Three problems were raised for this draft. One doesn't survive checking against the live
+tooling; one is real but was mis-stated as a Keycloak-taxonomy problem when it's a work-shape
+problem; one stands as written.
 
-**1. The frontmatter `description` is a hard wall, and we're already against it.**
-`docs/skill-building-lessons.md` records that it's ~1024 chars / ~500 tokens hard, ~200 tokens
-soft-warned, and that it "needed trimming twice as intents were added" — at **13** intents. The
-current description is 994 characters. The backlog below is 132 ideas across 16 categories. There
-is no honest trimming that fits 132 capabilities into 994 characters, and a skill whose description
-omits an intent's trigger vocabulary simply never activates for it — a silent no-op, per the same
-doc.
-`adding-a-skill.md` §1 already names this exact signal: *"if adding it pushes the router's
-frontmatter description past skillsaw's length limit even after honest trimming, that's the router
-telling you it's doing too many unrelated things — split it, don't compress harder."*
+**1. ~~The frontmatter `description` is a hard wall, and we're already against it.~~ — checked,
+and it isn't.** Running `skillsaw lint .` against the shipped router today:
 
-**2. Several categories don't fit the intent + `{mcp|rest}` shape at all.**
-`adding-a-skill.md` §1 already carves out extension development. The same argument applies to
-server installation (`kc.sh build`, env vars, `keycloak.conf` — no Admin REST involved), Kubernetes
-deployment (CRs and Helm values), theme development (FreeMarker/React source), and app integration
-(where the meaningful axis is *which framework*, not mcp-vs-rest). Forcing these through a
-"tooling = mcp or rest" question makes the router incoherent, because for them the answer is
-neither.
+```
+⚠ WARNING (agentskill-description): Description exceeds 1024 characters (1113)
+Errors: 0    Grade: A
+```
+
+The description is **1113 characters right now** — already past the "994 of ~1024" this draft
+opened with, and past the limit entirely — and it lints clean at grade A, because the rule is a
+**warning**, not the hard wall the draft called it. The real, *error-eligible* budget problem the
+same lint run surfaces is different and sharper:
+
+```
+⚠ WARNING (context-budget): Estimated 5,001 tokens exceeds skill warn limit of 3,000
+```
+
+The router is 67% over its context budget, and the cause is the **intent table**, not the
+frontmatter — each row is a full paragraph of sibling-disambiguation prose. Splitting into more
+skills copies that bloat into more files with more frontmatters; it doesn't shrink a single row.
+
+The "132 ideas can't fit in 994 characters" arithmetic also assumes cost is linear per idea. It
+isn't — the 13 shipped intents are expensive specifically because "magic link" / "email OTP" /
+"passkey" / "0 password" are semantically crowded and must be disambiguated against each other line
+by line. Ideas outside that neighborhood (LDAP federation, cluster provisioning) cost the
+description almost nothing to add, because nothing nearby competes with them. And of the current
+1113 characters, **37% is an explicit quoted-trigger-phrase list** and **16% is enumerating 19
+IdP vendor names** — real slack that honest trimming hasn't touched yet.
+
+`adding-a-skill.md` §1's rule — *"if adding it pushes the description past the limit even after
+honest trimming, that's the router doing too many **unrelated** things — split it"* — is a
+coherence heuristic, not a capacity law, and the word carrying the rule is *unrelated*. Thirteen
+passwordless-and-brokering intents are tightly related; that reads as a coherent router over
+budget, not a router that's outgrown itself. Converting this into a 14-way split also trades a
+loud, CI-visible failure (a lint warning) for a silent one: sibling skills mis-selecting at
+routing time, which is exactly the failure class this repo's benchmark suite exists to catch, and
+whose blast radius nobody has measured.
+
+**2. Several categories don't fit the intent + `{mcp|rest}` shape — because `{mcp|rest}` was never
+a work-shape axis.** `adding-a-skill.md` §1 already carves out extension development on this
+ground, and the same reasoning extends to server installation, Kubernetes deployment, theme
+source, and app integration — but the common thread isn't "the tooling menu needs more options,"
+it's that **`mcp` vs `rest` is an access question, not a work-shape question**: both are just ways
+of reaching a live realm. The categories this problem names aren't touching a live realm at all —
+they're operating on the server process, on the developer's own application source, or on
+Keycloak's own source. Once the cut is made on **target of the work** rather than on Keycloak's
+documentation table of contents, this stops being five special cases needing five bespoke tooling
+menus and becomes one rule with four outcomes — see the next section.
 
 **3. The `admin-` prefix and flat namespace carry no information.**
 24 files all starting `admin-` in one directory, already with two exceptions (`cluster-*-mcp.md`).
@@ -172,27 +204,43 @@ worked example — its two cited traps are already dead, killed by `createLdapUs
 
 ### Proposed layout
 
-Six skills, not fourteen. Five of the category routers the previous draft proposed —
-`keycloak-users`, `keycloak-access-control`, `keycloak-clients`, `keycloak-realm-ops`,
-`keycloak-organizations` — dissolve almost entirely into §4.2 tool gaps rather than skills.
+**Four skills, not fourteen, not six.** A second pass folded the six-skill draft further once it
+was checked against the same operation-vs-flow filter category by category: `keycloak-hardening`
+and `keycloak-operations` share one target (the server process — whoever operates it doesn't care
+whether the chapter is about a threat mitigation or a hostname flag), and `keycloak-theming`
+mostly evaporates into a button (`setRealmThemes`) with three source-writing chapters left, which
+belong next to extension development for the same reason — both write Java/FreeMarker/React source
+against Keycloak's own codebase, not against a running realm.
 
-| Skill | Routing axis | Chapters | Status |
+What's left is one rule — **split where the target of the work changes** — with four outcomes:
+
+| Target of the work | Skill | Routing axis | Chapters |
 |---|---|---|---|
-| `keycloak` | `{mcp\|rest}` | 13 shipped + A8, A13, A14, B7, B8, F6, F10 | exists · +7 |
-| `securing-apps` | `{framework}` | H1–H14, plus G5 and H13 | planned separately |
-| `keycloak-operations` | `{cli\|conf-file\|container}` | J1, J3, J4, J7, J9, J10, K9 | new |
-| `keycloak-hardening` | `{rest\|cli}` | G1, O1, O3, O6, H12 (O2, O4 as sections) | new |
-| `keycloak-extension-dev` | none | L1–L9 | new |
-| `keycloak-theming` | none | M2, M3, M4 | new · low priority |
+| a live realm | `keycloak` | `{mcp\|rest}` | 13 shipped + A8, A13, A14, B7, B8, F6, F10 |
+| your own application's source | `securing-apps` | `{framework}` | H1–H14, plus G5 and H13 (planned separately) |
+| the server process / its deployment | `keycloak-operations` | `{cli\|conf-file\|container}` | J1, J3, J4, J7, J9, J10, K9, G1, O1, O3, O6, H12 (O2, O4 as sections) |
+| Keycloak's own source | `keycloak-extension-dev` | none | L1–L9, M2, M3, M4 |
+
+Applying the filter to all 14 previously proposed category routers, not just the five already
+called out as tool gaps: `keycloak-organizations`, `keycloak-users`, `keycloak-realm-ops` and
+`phasetwo-platform` evaporate almost entirely (§4.2 already accounts for their content);
+`keycloak-federation` merges into `keycloak`, since it's the same target and the same shipped
+router; `keycloak-deployment` merges into `keycloak-server-config` (both target the server
+process); `keycloak-theming` merges into `keycloak-extension-dev` (both target Keycloak's own
+source); `keycloak-access-control` and `keycloak-clients` are almost entirely §4.2. Fourteen
+categories inherited from how Red Hat organizes its documentation tree; four skills fall out of
+how the work actually divides.
 
 Retired as skills because tools absorb them: **A7, A9, A11, A12, A16, A18, B5, B6, C5–C8, D1–D5,
 D9, E1, E2, E4, F1–F5, F7–F9, F11, G2, G3, G6, G8, I1–I6, I9, M1, M5, N3, N4** — plus the hosted
 halves of **J6**, **J9** and **O5**.
 
-This also retires problem 1 above as a constraint. Six focused descriptions discriminate cleanly,
-and the existing router's intent list grows by **7**, not 119 — comfortably inside the 994-character
-budget it already occupies. Problems 2 and 3 stand: the surviving non-API skills each get their own
-tooling axis, and reference files move into subdirectories, dropping the dead `admin-` prefix.
+This also settles problem 1 above without needing to be the reason for the split: four focused
+descriptions discriminate at least as cleanly as six, the existing router's intent list still grows
+by only **7** (absorbing B), and the description-length argument was never load-bearing to begin
+with — see the correction above. What was load-bearing is problem 2's real form: target-of-work
+mismatch. Problem 3 stands: reference files move into subdirectories, dropping the dead `admin-`
+prefix.
 
 ```
 keycloak/
@@ -200,27 +248,37 @@ keycloak/
 ├── references/
 │   ├── README.md
 │   ├── passwordless/magic-link-mcp.md, ...
-│   ├── brokering/first-login-linking.md, federated-logout.md, ...
+│   ├── brokering/corporate-sso.md, first-login-linking.md, federated-logout.md, ...
 │   └── idp/<vendor>.md          ← unchanged, tooling-agnostic
 └── assets/
 ```
 
-`references/idp/` stays where it is. With `keycloak-federation` and `keycloak-organizations` no
-longer being separate skills, the cross-skill sharing problem the previous draft had to solve
-disappears.
+`references/idp/` stays where it is. With brokering (**B**) and organizations (**C1**) folded into
+the same `keycloak` skill rather than split across `keycloak-federation` and
+`keycloak-organizations`, the cross-skill reference-sharing mechanism the six-skill draft still
+needed (`plugins/phasetwo/shared/`, or a cross-skill `Read:`) is never required at all.
+
+The tooling axis simplifies the same way. `{mcp|rest}` was never a work-shape question (see the
+correction to problem 2) — under the MCP-first decision it collapses from a pair of parallel
+`-mcp`/`-rest` files into one reference file with a fallback-REST column (§4.2's table format).
+`{cli|conf-file|container}` in `keycloak-operations` isn't three branches either; it's three
+spellings of one setting, stated inline in the chapter. Of the four skills, only `securing-apps`
+keeps a real branching axis, because *which framework* actually changes which library and which
+trap applies.
 
 ### Migration cost
 
-Lower than the previous draft's estimate, because the moves are far fewer. The 13 existing intents
-all stay in the `keycloak` router — no reshuffling — and reference files move only into
-subdirectories. `keycloak-operations` and `keycloak-hardening` are new directories created when
-their first chapter is written, not up front.
+Lower again than the six-skill estimate. The 13 existing intents all stay in the `keycloak` router
+— no reshuffling — and reference files move only into subdirectories. `keycloak-operations` and
+`keycloak-extension-dev` are new directories created when their first chapter is written, not up
+front, and each now absorbs what would have been a second, thinner skill (`keycloak-hardening`,
+`keycloak-theming`) rather than standing them up separately.
 
-The real cost moves to `phasetwo-mcp`: ~55 tools, staged in waves (§4.2). Most need only a `@Tool`
-annotation and a DTO, since the REST calls are already wired. **This is the plan's main risk** — it
-is Java work in a different repo on a different release cycle, and if it is not resourced those
-capabilities end up covered by nothing at all, which is worse than the previous draft's position of
-promising prose.
+The real cost stays where it was: `phasetwo-mcp`, ~55 tools, staged in waves (§4.2). Most need only
+a `@Tool` annotation and a DTO, since the REST calls are already wired. **This is still the plan's
+main risk** — it is Java work in a different repo on a different release cycle, and if it is not
+resourced those capabilities end up covered by nothing at all, which is worse than the original
+draft's position of promising prose.
 
 **Recommendation**: land Wave 1 tools and the two factual corrections (**B5**, **J9/N3**) before
 writing any new reference file. The corrections are a live mis-route — `SKILL.md`'s frontmatter
@@ -259,7 +317,7 @@ filled, the row belongs in §4.2 instead.
 | B8 federated logout & SLO | `keycloak` | G1 | Partial logout looks like success and is a security finding |
 | F6 standard vs legacy token exchange | `keycloak` | G2, G4 | v2 is `DEFAULT` and v1 `PREVIEW` — the reverse of every older tutorial |
 | F10 offline & transient sessions | `keycloak` | G2, G1 | Transient sessions are widely mis-stated as configurable; the only lever is a client switch that *disables* the optimization |
-| G1 authorization-services vocabulary | `keycloak-hardening` | G2 | Four concepts whose names each collide with something else in Keycloak; the CRUD beneath is a Wave 3 tool set |
+| G1 authorization-services vocabulary | `keycloak-operations` | G2 | Four concepts whose names each collide with something else in Keycloak; the CRUD beneath is a Wave 3 tool set |
 | J1 first production configuration | `keycloak-operations` | G2 | The build-time vs runtime option split, plus `start-dev` in production |
 | J3 truststore & outgoing TLS | `keycloak-operations` | G5 | `PKIX path building failed` is fixed in Keycloak's truststore, not the JVM's |
 | J4 hostname & reverse proxy | `keycloak-operations` | G5 | Manifests as a token-validation 401, so the wrong layer gets debugged; reworked in v26, making pre-26 advice actively wrong |
@@ -267,16 +325,16 @@ filled, the row belongs in §4.2 instead.
 | J9 extension install (self-managed) | `keycloak-operations` | G6 | The hosted half is a Wave 1 tool; `kc.sh build` + `providers/` is not an API |
 | J10 bootstrap admin & recovery | `keycloak-operations` | — | Emergency procedure whose alternative is editing the database |
 | K9 version upgrades | `keycloak-operations` | — | 117 files of upgrade notes; the work is finding the few changes that affect a given config |
-| O1 security hardening checklist | `keycloak-hardening` | G4 | 21 mitigations, individually easy, collectively never all applied |
-| O3 OAuth 2.1 compliance | `keycloak-hardening` | G4 | Prerequisite for H12 |
-| O6 token & key compromise response | `keycloak-hardening` | G4 | Composed from four mechanisms under time pressure, and must state plainly that a live access token cannot be un-issued |
+| O1 security hardening checklist | `keycloak-operations` | G4 | 21 mitigations, individually easy, collectively never all applied |
+| O3 OAuth 2.1 compliance | `keycloak-operations` | G4 | Prerequisite for H12 |
+| O6 token & key compromise response | `keycloak-operations` | G4 | Composed from four mechanisms under time pressure, and must state plainly that a live access token cannot be un-issued |
 
 Demoted to short sections or dropped — advice rather than mechanism, so no gate fires:
 **C4** organizations vs `keycloak-orgs` (becomes a tool-description job, see §4.2 rule 7) ·
 **E3** groups-vs-roles · **E5** master realm vs per-realm admin · **D10** GDPR posture ·
 **H1** integration decision guide.
 
-**H12** (Keycloak as an MCP authorization server) is a chapter in `keycloak-hardening`, gated G5:
+**H12** (Keycloak as an MCP authorization server) is a chapter in `keycloak-operations`, gated G5:
 four MCP spec revisions with different mandatory standards, and the one capability here we can
 verify against our own deployment.
 
@@ -1867,7 +1925,8 @@ and a DTO, since `PUT /admin/realms/{realm}` and `PUT /clients/{id}` are already
 5. **O3** OAuth 2.1 → **H12** Keycloak as an MCP authorization server — self-relevant and verifiable
    against our own deployment.
 6. **F6** standard vs legacy token exchange, **F10** offline & transient sessions.
-7. Then `keycloak-extension-dev` (**L**) and `keycloak-theming` (**M2–M4**), narrower.
+7. Then `keycloak-extension-dev` — **L1–L9** plus **M2–M4** (theming folded in as a target-of-work
+   match: both write source against Keycloak itself), narrower.
 
 ### Process notes
 
@@ -1897,10 +1956,17 @@ tool surface: surfaces the upstream error body, reports resolved rather than par
 
 **Resolved since the first draft** (see §3, §4):
 
-1. ~~**Do we do the structural split now?**~~ **Yes, but into six skills, not fourteen** — five of
-   the proposed category routers turned out to be tool gaps. The existing 13 intents all stay in the
-   `keycloak` router, so the move is far smaller than "~24 file moves": reference files go into
-   subdirectories, and the two new skill directories are created when their first chapter is written.
+1. ~~**Do we do the structural split now?**~~ **Yes, but into four skills, not fourteen and not
+   six.** Most of the proposed category routers turned out to be tool gaps (§4.2); the two that
+   remained separate in an earlier pass (`keycloak-hardening`, `keycloak-theming`) merge into
+   `keycloak-operations` and `keycloak-extension-dev` respectively once the cut is made on **target
+   of the work** — a live realm, your own application's source, the server process, or Keycloak's
+   own source — rather than on Keycloak's documentation table of contents. The existing 13 intents
+   all stay in the `keycloak` router, so the move is far smaller than "~24 file moves": reference
+   files go into subdirectories, and the three new skill directories are created when their first
+   chapter is written. This also retires the description-length argument as the split's
+   justification — checked against a live `skillsaw lint` run, it was never the hard wall it was
+   presented as (see the correction in §3); the real justification is target-of-work mismatch.
 2. ~~**Scope of the repo — stock Keycloak or Phase Two?**~~ **Both, MCP-first.** Stock-Keycloak users
    are served by the **fallback REST column** in §4.2 rather than by paired prose files. This follows
    the measurement that REST-prose guidance bought nothing, and it means we stop writing
