@@ -85,6 +85,36 @@ explicitly on every call, since both add calls append when it's omitted) →
 `setExecutionRequirement` on each → bind. Read the order back with `listFlowExecutions` before
 calling it done.
 
+## Variant — the second factor is a CHOICE of methods (e.g. email OTP or a recovery code)
+
+If the ask is "password, then either email OTP or a recovery code" (or any other set of
+alternative second-factor methods), **do not** make the alternatives siblings of the REQUIRED
+password step. Keycloak's flow semantics don't express "always require X, then let any of Y/Z
+satisfy the rest" that way — a REQUIRED execution and ALTERNATIVE executions sharing one level is
+not the same thing as "REQUIRED, then a choice."
+
+**Wrap the alternative methods in their own REQUIRED sub-flow**, sibling to the REQUIRED password
+step, exactly the way the built-in `browser` flow nests its own Conditional OTP sub-flow:
+
+```
+Email OTP forms (ALTERNATIVE, under the top-level flow)
+├── Username Password Form              REQUIRED
+└── Email OTP forms 2nd Factor           REQUIRED   (sub-flow)
+    ├── ext-email-otp                    ALTERNATIVE
+    └── auth-recovery-authn-code-form    ALTERNATIVE
+```
+
+Build it with `addSubFlow` (REQUIRED, as a step of `Email OTP forms`) then `addAuthenticator` for
+each alternative method inside that new sub-flow (each ALTERNATIVE). This generalizes to any
+number of alternative second-factor methods, not just these two — the pattern is what matters,
+not the specific authenticators.
+
+A recovery-code alternative also has its own precondition worth surfacing to whoever asked: there
+is no admin-side way to pre-provision the `RECOVERY_AUTHN_CODES` credential — a user only has a
+working recovery-code option after completing the `Generate Recovery Authentication Codes`
+required action themselves. A user with no codes on file will only ever see the other alternative
+(e.g. email OTP) as usable, even though both are configured.
+
 ## Stage 3 — The one config option
 
 Same shared key as plain email OTP: `ext-magic-create-nonexistent-user`. It matters less here — a
@@ -139,4 +169,7 @@ values alone won't show it.
 - **`ext-email-otp` not offered** — the `keycloak-magic-link` extension isn't installed.
 - **A fresh test user hits an unrelated profile screen after the correct code** —
   `VERIFY_PROFILE`, not a flow bug.
+- **An alternative second-factor method (recovery code, WebAuthn, etc.) never seems to be offered,
+  or the flow behaves inconsistently** — the alternatives were added as siblings of the REQUIRED
+  password step instead of nested in their own REQUIRED sub-flow. See the Variant section above.
 - **A required MCP tool is missing** — report it and stop; do not switch to REST unsolicited.
