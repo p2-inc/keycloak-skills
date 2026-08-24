@@ -28,6 +28,48 @@ flow done.**
 This holds on all three authoring paths and on every Keycloak version. Treat "I passed `priority`"
 as a request, not a result.
 
+## The other way a flow can be wrong without any ordering bug: shape
+
+Order and priority assume the executions at a level are the right *kind* already. One shape gets
+built wrong often enough to be its own rule, independent of everything above:
+
+**"A REQUIRED step, then a CHOICE of what satisfies the rest" is not expressed by putting the
+choices as ALTERNATIVE siblings of the REQUIRED step.** That reads naturally in English and is
+wrong in Keycloak — a REQUIRED execution and ALTERNATIVE executions sharing one level don't compose
+into "always do this, then pick one of these." Concretely: password gating a choice of email OTP
+or a recovery code, WebAuthn gating a choice of second factors, any "step X, then either Y or Z."
+
+**Wrap the alternatives in their own REQUIRED sub-flow**, sibling to the REQUIRED gating step —
+the same nesting the built-in `browser` flow uses for its own Conditional OTP:
+
+```
+Parent forms sub-flow (ALTERNATIVE, under the top-level flow)
+├── <gating step, e.g. Username Password Form>     REQUIRED
+└── <alternatives sub-flow>                          REQUIRED
+    ├── <method A, e.g. ext-email-otp>               ALTERNATIVE
+    └── <method B, e.g. auth-recovery-authn-code-form> ALTERNATIVE
+```
+
+Build it with `addSubFlow` (REQUIRED, as a step of the parent) then `addAuthenticator` for each
+alternative inside that new sub-flow (each ALTERNATIVE). This generalizes to any number of
+alternative methods and any gating step — the nesting is what matters, not which authenticators
+fill it in.
+
+**A related but different shape: CONDITIONAL, not a choice.** "Run this step only if the user has
+it configured, otherwise skip the whole thing" (e.g. an org's own `Conditional OTP` sub-flow, gated
+on `conditional-user-configured`) is a *different* nested sub-flow — CONDITIONAL, whose first child
+is a `conditional-*` provider (REQUIRED, no config for `conditional-user-configured`), followed by
+the gated step(s) (REQUIRED). Don't reach for CONDITIONAL when the ask is "let them pick one of
+several methods" (that's the REQUIRED-sub-flow-of-ALTERNATIVEs shape above), and don't reach for a
+flat ALTERNATIVE sub-flow when the ask is "skip entirely if not configured" (that needs
+CONDITIONAL). `addConditional` builds this second shape in one call.
+
+A credential-backed alternative (a recovery code, a second WebAuthn key) also carries its own
+precondition worth surfacing to whoever asked: there is usually no admin-side way to pre-provision
+it — a user only has a working option after completing the matching required action themselves
+(e.g. `Generate Recovery Authentication Codes`). A user with none on file will only ever see their
+other alternative(s) as usable, even though every method is correctly configured on the flow.
+
 ## Path 1 — `importAuthenticationFlow` (one shot, correct by construction)
 
 The [keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension's
@@ -114,6 +156,9 @@ everywhere.
 - [ ] `listFlowExecutions` output matches the intent's order table, at **every** level.
 - [ ] Requirements are right too (`ALTERNATIVE` vs `REQUIRED` vs `DISABLED`) — order and requirement
       are independent, and a correct order with the wrong requirement fails just as silently.
+- [ ] If a REQUIRED step is followed by a choice of methods, the choices are nested in their own
+      REQUIRED sub-flow — not flat ALTERNATIVE siblings of the REQUIRED step. See "the other way a
+      flow can be wrong" above.
 - [ ] The flow is bound to the surface the intent names (realm `browser`, a client override, or the
       IdP's post-broker/first-broker login flow — these are different surfaces).
 - [ ] Behaviour verified by an actual login, not by reading configuration back. Order bugs are

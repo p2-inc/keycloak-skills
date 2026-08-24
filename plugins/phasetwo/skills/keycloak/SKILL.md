@@ -90,8 +90,10 @@ If the answer is ambiguous, ask — don't guess and don't default to either side
 Authoring or editing a flow (any intent below whose reference file creates, binds, or reorders
 authentication executions)? Also read
 [`references/flow-execution-order.md`](references/flow-execution-order.md) — shared across those
-intents: it covers how to get the order actually onto the server and prove it stuck, which none of
-the create calls guarantee on their own.
+intents: how to get the order actually onto the server and prove it stuck, plus the shape rule for
+"a REQUIRED step, then a choice of methods" (e.g. a password gating a choice of second factors),
+which is easy to build as flat ALTERNATIVE siblings and wrong that way. None of this is guaranteed
+by the create calls on their own.
 
 ### admin:passwordless-magic-link
 ```
