@@ -90,10 +90,11 @@ If the answer is ambiguous, ask — don't guess and don't default to either side
 Authoring or editing a flow (any intent below whose reference file creates, binds, or reorders
 authentication executions)? Also read
 [`references/flow-execution-order.md`](references/flow-execution-order.md) — shared across those
-intents: how to get the order actually onto the server and prove it stuck, plus the shape rule for
-"a REQUIRED step, then a choice of methods" (e.g. a password gating a choice of second factors),
-which is easy to build as flat ALTERNATIVE siblings and wrong that way. None of this is guaranteed
-by the create calls on their own.
+intents. It carries the **shape** rule (every level must be all-ALTERNATIVE or all-REQUIRED/
+CONDITIONAL; mixing them makes Keycloak silently erase the alternatives, which is how "primary
+login, then a choice of second factors" gets built wrong) and the **order** rule (the create calls
+do not establish order — read it back and repair). Neither is guaranteed by the create calls, and
+both fail without an error.
 
 ### admin:passwordless-magic-link
 ```
