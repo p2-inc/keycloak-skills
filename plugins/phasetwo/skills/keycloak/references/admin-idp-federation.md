@@ -52,6 +52,14 @@ certificate itself:
 ```bash
 BASE=http://localhost:8080
 REALM=myrealm
+# Self-managed Keycloak: mint $ADMIN_TOKEN from the built-in admin-cli client in `master`
+# (skip if you already have a token). Does NOT apply to Phase Two hosted deployments — there
+# is no self-service admin REST credential of any kind there (confirmed with Phase Two).
+# Without MCP, use the dashboard instead; raw REST is a dead end here, not a fallback.
+ADMIN_TOKEN=$(curl -s -X POST "$BASE/realms/master/protocol/openid-connect/token" \
+  -d client_id=admin-cli -d grant_type=password \
+  -d username=<admin-user> -d password=<admin-password> \
+  | jq -r .access_token)
 H="Authorization: Bearer $ADMIN_TOKEN"
 
 # Import config from the vendor's metadata URL (or POST raw XML as a file if the vendor only

@@ -13,7 +13,7 @@ description: >-
   Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
 license: Apache-2.0
 metadata:
-  version: '0.14.1'
+  version: '0.14.2'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -78,7 +78,7 @@ context. Don't ask twice in the same conversation once it's established.
 
 | Answer | Tooling |
 |---|---|
-| **Yes — Phase Two hosted Keycloak.** | **mcp.** If the `keycloak` MCP server isn't connected yet, prompt for it now: `mcp add --transport http keycloak https://mcp-staging.phasetwo.io/mcp`. If the developer declines, fall back to `rest` and say upfront what can't be verified as a result. |
+| **Yes — Phase Two hosted Keycloak.** | **mcp.** If the `keycloak` MCP server isn't connected yet, prompt for it now: `mcp add --transport http keycloak https://mcp-staging.phasetwo.io/mcp`. If the developer declines, say plainly that `rest` is not a real substitute here: a Phase Two hosted deployment has no self-service admin REST credential of any kind (no admin user, no mintable service-account client), so the `rest` reference files fail at their very first step — there is nothing to put in `$ADMIN_TOKEN`. Point them at reconnecting MCP or using the dashboard, not at the `rest` files. |
 | **No — self-managed Keycloak** (bare metal, Docker, Kubernetes; the developer has direct Admin REST access). | **rest.** |
 
 If the answer is ambiguous, ask — don't guess and don't default to either side.
