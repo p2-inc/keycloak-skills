@@ -38,7 +38,7 @@
         "zero-password",
         "idp-initiated-sso"
       ],
-      "category": "authentication"
+      "category": "security"
     }
   ]
 }
