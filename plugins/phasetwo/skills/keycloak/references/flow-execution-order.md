@@ -173,6 +173,39 @@ The purge is invariant-checkable without a login: group the output by `level` **
 and assert no group contains both an `ALTERNATIVE` and a `REQUIRED`/`CONDITIONAL` entry. Any group
 that does has already lost its alternatives.
 
+## When raise-priority does nothing: duplicate priorities
+
+`raise-priority` swaps the two executions' **priority values** with the preceding sibling. If both
+already hold the *same* value, that writes the same numbers back — HTTP 204, nothing moved. And
+`ExecutionComparator` is a bare `o1.priority - o2.priority` with **no tie-break**, so a level whose
+siblings share a priority has no stable order to bubble through in the first place.
+
+This is not a hypothetical or a Keycloak version quirk. The built-in **`post org broker login`**
+flow (and the asset mirroring it) ships **three executions at priority 0**:
+
+```
+priority=0  REQUIRED   ext-auth-org-note
+priority=0  DISABLED   ext-auth-org-id-verifier
+priority=0  REQUIRED   ext-auth-validate-idp
+priority=1  REQUIRED   ext-auth-org-add-user
+priority=3  REQUIRED   ext-select-org
+```
+
+Copy that flow to make it editable, add `ext-select-org`, then try to reorder, and every
+`raise-priority` call returns success while the order never changes. It reads exactly like an API
+or version bug; it is arithmetic.
+
+**The fix is to assign the priorities outright** rather than swap toward them — `PUT
+.../executions` with `{id, requirement, priority}` per step, distinct values (0, 10, 20 …). That
+breaks the ties and fixes the whole level in one pass. `reorderFlowExecutions` does this first and
+only falls back to swaps if the server ignored the assignment. Sending `priority` on that PUT is
+honoured from **Keycloak 25** onward; on 24 and older a tied level genuinely cannot be reordered
+through the API at all, and the only route is deleting and re-adding the executions in order.
+
+**Always send the execution's current `requirement` back with it.** That endpoint takes the whole
+execution representation, and `priority` is a primitive `int` on it — a body that omits either
+field resets it (requirement is likewise re-read from the body).
+
 ## Path 1 — `importAuthenticationFlow` (one shot, correct by construction)
 
 The [keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension's
