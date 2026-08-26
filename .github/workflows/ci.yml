@@ -1,0 +1,61 @@
+name: CI
+
+# No paths-ignore here, deliberately: in this repo the Markdown *is* the payload.
+# Skills, reference docs and manifests are exactly what needs linting, so the
+# '**.md' filter used in sibling repos would skip almost every real change.
+on:
+  pull_request:
+    branches:
+      - 'main'
+  push:
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  skillsaw:
+    name: Lint skills
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # Pinned to the version .skillsaw.yaml targets, which is also the latest
+      # release on PyPI. Config, baseline and CI therefore all agree.
+      - name: Install skillsaw
+        run: pip install "skillsaw==0.18.0"
+      # Reads .skillsaw.yaml (strict: true, so warnings fail), the custom rules
+      # in .skillsaw/rules.py, and .skillsaw-baseline.json. The baseline records
+      # the two known context-budget violations as ceilings, so this passes today
+      # but fails if SKILL.md grows past its current size.
+      - name: Run skillsaw
+        run: skillsaw
+
+  manifests:
+    name: Validate manifests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+      # Manifest validation is a local file check — verified to run with no
+      # credentials present, so this job needs no secrets.
+      - name: Validate marketplace manifest
+        run: claude plugin validate . --strict
+      - name: Validate plugin manifest and skills
+        run: claude plugin validate plugins/phasetwo --strict
+      # Catches plugin.json and the marketplace entry disagreeing on version,
+      # which blocks a release tag. --dry-run so nothing is created here.
+      - name: Check release tag consistency
+        run: claude plugin tag --dry-run plugins/phasetwo
