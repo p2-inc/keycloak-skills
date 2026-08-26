@@ -9,6 +9,21 @@ does (email verification, password reset) — it is not a bespoke security model
 that is worth saying if anyone asks whether it is "as secure" as a password: it is
 exactly as strong as email delivery and the token's own lifespan.
 
+```bash
+BASE=http://localhost:8080/auth       # include the relative path if one is configured
+REALM=<realm>
+
+# Self-managed Keycloak: mint $ADMIN_TOKEN from the built-in admin-cli client in `master`
+# (skip if you already have a token). Does NOT apply to Phase Two hosted deployments — there
+# is no self-service admin REST credential of any kind there (confirmed with Phase Two).
+# Without MCP, use the dashboard instead; raw REST is a dead end here, not a fallback.
+ADMIN_TOKEN=$(curl -s -X POST "$BASE/realms/master/protocol/openid-connect/token" \
+  -d client_id=admin-cli -d grant_type=password \
+  -d username=<admin-user> -d password=<admin-password> \
+  | jq -r .access_token)
+H="Authorization: Bearer $ADMIN_TOKEN"
+```
+
 ## Check the provider is actually installed, first
 
 This capability comes from the **p2-inc `keycloak-magic-link` provider**
@@ -40,9 +55,6 @@ This is the detail that makes the task look harder than it is: there is no custo
 flow to author, only a binding to make.
 
 ```bash
-BASE=http://localhost:8080/auth       # include the relative path if one is configured
-H="Authorization: Bearer $ADMIN_TOKEN"
-
 # Bind realm-wide...
 curl -s "$BASE/admin/realms/$REALM" -H "$H" > /tmp/realm.json
 # set "browserFlow": "magic link" in /tmp/realm.json, then PUT it back
