@@ -102,8 +102,6 @@ It is a remote server behind OAuth, so the first tool call prompts you to author
 claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp
 ```
 
-Staging is at `https://mcp-staging.phasetwo.io/mcp` if you need to point at it instead. Keep the name `keycloak` either way — the skill addresses the server by that name.
-
 ## Linting
 
 This repo uses [skillsaw](https://github.com/stbenjam/skillsaw) to enforce Agent Skills structure and marketplace conventions. Config is in [`.skillsaw.yaml`](.skillsaw.yaml); repo-specific rules are in [`.skillsaw/rules.py`](.skillsaw/rules.py).
