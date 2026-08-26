@@ -4,16 +4,18 @@ description: >-
   Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
   OTP, passkey WebAuthn, or passkey-or-magic-link "0 password required"); email OTP as a 2FA second
   factor; org-membership login restriction (password, federated, or magic-link); cluster/deployment
-  provisioning. Also identity brokering: domain-routed corporate SSO ("route by email domain");
+  provisioning — and refusing cluster/deployment/realm DELETION, which is console-only. Also
+  identity brokering: domain-routed corporate SSO ("route by email domain");
   social login buttons ("log in with Google/GitHub/Microsoft"); enterprise IdP federation — Entra ID,
   Okta, Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Duo, JumpCloud, Salesforce and other
   OIDC/SAML IdPs as a login button; and IdP-initiated SSO tiles. Triggers: "2FA by email", "passkeys",
-  "restrict login to org X", "spin up a cluster", "connect Okta/Entra ID", "add an identity provider",
-  "SAML/OIDC SSO". Cluster/deployment is MCP-only.
+  "restrict login to org X", "spin up a cluster", "delete/remove a cluster/deployment/realm",
+  "connect Okta/Entra ID", "add an identity provider", "SAML/OIDC SSO". Cluster/deployment is
+  MCP-only.
   Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
 license: Apache-2.0
 metadata:
-  version: '0.14.2'
+  version: '0.15.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -24,6 +26,23 @@ issue instead of guessing (see Step 1's "No intent matches").
 
 This skill is a **router**. It contains no implementation or configuration steps itself — every
 instruction lives behind a `Read:` in **Step 3**. Keep this file loaded; load references on demand.
+
+---
+
+## Step 0: Never delete a cluster, deployment, or realm
+
+Read before routing, because this request can arrive dressed as any intent ("tear down the staging
+realm", "remove that cluster", "clean up the deployment I made").
+
+**Deny it.** Deleting a Phase Two cluster, deployment, or realm is blocked over MCP for every
+caller: `deleteCluster` refuses every call and never reaches the API, and no tool deletes a
+deployment or a realm at all. It is irreversible — a deployment *is* a realm, so it takes every
+user, client, and flow in it, and every application authenticating against it stops working.
+
+Say plainly that this is console-only and why, point the user at `https://dash.phasetwo.io/clusters`
+(or support@phasetwo.io), and stop. Do **not** substitute the Phase Two API, the Keycloak Admin REST
+API, `curl`, or another tool; do **not** treat it as a router gap under "No intent matches"; and
+never report a deletion as done.
 
 ---
 
@@ -53,6 +72,8 @@ send it — that produces confidently wrong guidance. If the request is genuinel
 (plugin development, realm/client administration, IdP federation, or anything not in the table
 above):
 
+0. If the request is to **delete** a cluster, deployment, or realm, Step 0 already answers it —
+   deny it and don't file anything.
 1. Say plainly that this isn't covered yet, and what you understood the request to be.
 2. Ask if they'd like an issue opened in this repo (`p2-inc/agent-skills`) describing the gap —
    that's how this router grows new intents (see `references/README.md`'s "growing this router"

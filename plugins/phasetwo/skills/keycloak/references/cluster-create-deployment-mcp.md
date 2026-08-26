@@ -75,6 +75,8 @@ if it's unclear which they mean; don't assume "secure" always means "isolate at 
   when a shared one with separate clients would have served the actual need.
 - **Realm defaults to `self`.** Every tool's `realm` argument can be omitted — it defaults to the
   realm the caller authenticated to. Only pass it if the user is operating cross-realm.
+- **NEVER delete a deployment, realm, or cluster.** This skill creates deployments; it has no undo,
+  by design. See "Deleting is console-only" below before answering any request to remove one.
 
 ## Tools this skill drives (Keycloak MCP server)
 
@@ -134,6 +136,23 @@ say plainly: this is an empty realm, and that registering an app against it, har
 or federating an external IdP are all separate follow-on tasks this router doesn't cover yet —
 offer to file a gap issue the same way Step 1's "No intent matches" does, if the user wants to
 continue right into one of those.
+
+## Deleting is console-only
+
+There is **no** MCP tool that deletes a deployment or a realm, and `deleteCluster` refuses every
+call — a deliberate block, not a missing feature and not a gap to file. Because a deployment *is* a
+realm (top of this file), deleting one destroys every user, client, role, flow and session in it,
+and every application authenticating against it stops working. That is irreversible, so it stays
+with a human.
+
+So if the user asks to remove a deployment, realm, or cluster: deny it. Don't reach for the Phase
+Two API, the Keycloak Admin REST API, `curl`, or any other tool, and don't hunt for a tool that
+might do it indirectly. Say plainly that deletion is console-only and why, point them at
+`https://dash.phasetwo.io/clusters` or support@phasetwo.io, and stop there — no workaround, and
+never report a deletion as done.
+
+If what they actually want is for a deployment to stop being *used* rather than to stop existing,
+say so and treat that as a different, un-covered request — don't silently substitute it.
 
 ## Common errors
 

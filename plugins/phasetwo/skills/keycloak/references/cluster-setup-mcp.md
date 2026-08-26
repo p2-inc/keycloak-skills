@@ -28,6 +28,11 @@ The person running this may be doing it for the first time. So:
   browser tool is available, opening a tab to that link for the user is fine (Stage 4) — but stop
   there. Filling in card or billing details, or clicking to submit/pay, is the human's step,
   always, with or without a browser tool available.
+- **NEVER delete a cluster, deployment, or realm.** Not with a tool, not with `curl`, not with the
+  Admin REST API — there is no path to it here and you must not go looking for one. `deleteCluster`
+  refuses every call, and no tool deletes a deployment or a realm at all. Deletion is irreversible
+  and takes every application authenticating against the target offline, so it is the human's step,
+  in the console. See "Deleting is console-only" below.
 - **Realm defaults to `self`.** Every tool's `realm` argument can be omitted — it defaults to the
   realm the caller authenticated to. Only pass it if the user is operating cross-realm.
 
@@ -44,7 +49,7 @@ The person running this may be doing it for the first time. So:
 | Poll status | `getCluster` | Watch status until `ACTIVE` (BILLING_SETUP → PENDING_PAYMENT → PROVISIONING → ACTIVE) |
 | First realm | `checkDeploymentNameAvailable`, `createClusterDeployment` | Optionally create the first deployment (a realm) |
 | Custom domain | `updateClusterDomain` | Optionally set a custom domain |
-| Cleanup | `deleteCluster` | Remove a cluster (immediate if still BILLING_SETUP, else scheduled) |
+| Deletion | — | **Not available.** `deleteCluster` always refuses; there is no deployment- or realm-delete tool. Console-only, see below |
 
 ## Stage 1 — Establish identity
 
@@ -132,10 +137,28 @@ first **deployment** (id + name) if one was created.
 
 ## Re-running / fixing
 
-- To abandon a cluster, call `deleteCluster` with its `clusterId`. If it's still in
-  `BILLING_SETUP` it's deleted immediately; otherwise it's scheduled for deletion at the end of
-  the billing cycle (`PENDING_DELETION`).
+- To abandon a cluster, don't try to delete it — see "Deleting is console-only" below and hand the
+  user the console link.
 - If `createCluster` reported multiple organizations, re-run it with an explicit `orgId`.
+
+## Deleting is console-only
+
+Deleting a **cluster**, a **deployment**, or a **realm** is denied over MCP, for every caller,
+whatever the arguments. This is a deliberate block, not a missing feature and not a permissions
+problem to work around:
+
+- `deleteCluster` returns `{"denied":true,...}` and never calls the Phase Two API. The underlying
+  DELETE was removed from the server, so retrying, passing a different `clusterId` or `realm`, or
+  calling it as a different user changes nothing.
+- There is **no** MCP tool that deletes a deployment or a realm. That absence is the design, so
+  don't report it as a gap or file it as a missing intent.
+- Do **not** substitute the Phase Two API, the Keycloak Admin REST API, `curl`, or any other tool.
+  A deployment is a realm (see `cluster-create-deployment-mcp.md`), so a realm delete destroys every
+  user, client, and flow in it, and every application authenticating against it stops working.
+
+What to do instead: say plainly that deletion is console-only and why, then point the user at
+`https://dash.phasetwo.io/clusters` to do it themselves, or at support@phasetwo.io. Stop there —
+don't offer a workaround, and never report a deletion as done.
 
 ## Common errors
 
