@@ -19,21 +19,21 @@
           "authenticator": "ext-auth-org-id-verifier",
           "authenticatorFlow": false,
           "requirement": "DISABLED",
-          "priority": 0,
+          "priority": 10,
           "userSetupAllowed": false
         },
         {
           "authenticator": "ext-auth-validate-idp",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
-          "priority": 0,
+          "priority": 20,
           "userSetupAllowed": false
         },
         {
           "authenticator": "ext-auth-org-add-user",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
-          "priority": 1,
+          "priority": 30,
           "userSetupAllowed": false
         },
         {
@@ -41,7 +41,7 @@
           "authenticatorConfig": "match-by-org-name",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
-          "priority": 3,
+          "priority": 40,
           "userSetupAllowed": false
         }
       ]

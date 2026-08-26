@@ -19,13 +19,13 @@
           "authenticator": "identity-provider-redirector",
           "authenticatorFlow": false,
           "requirement": "ALTERNATIVE",
-          "priority": 0,
+          "priority": 10,
           "userSetupAllowed": false
         },
         {
           "authenticatorFlow": true,
           "requirement": "ALTERNATIVE",
-          "priority": 1,
+          "priority": 20,
           "flowAlias": "Select organization magic link magic link forms",
           "userSetupAllowed": false
         }
