@@ -8,8 +8,10 @@ Agent skills for Keycloak: configuring behaviors from real p2-inc extensions, fo
 
 ## Dependency
 
-This plugin's skill relies on the Keycloak MCP server to check deployment targets and verify changes against a live Keycloak:
+This plugin's skill relies on the Keycloak MCP server to check deployment targets and verify changes against a live Keycloak. The plugin declares it in [`.mcp.json`](.mcp.json) at the plugin root, so installing the plugin connects `keycloak` → `https://mcp.phasetwo.io/mcp` for you. It sits behind OAuth: the first tool call prompts you to authorize, and `/mcp` shows the connection state.
+
+Only add it by hand if you are running the skill outside the plugin:
 
 ```bash
-mcp add --transport http keycloak https://mcp-staging.phasetwo.io/mcp
+claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp
 ```

@@ -37,12 +37,13 @@ worth a look before merging.
 ## 1. Where do I go to write the skill? What directories are important?
 
 ```
-agent-skills/
+keycloak-skills/
 ├── .claude-plugin/marketplace.json       ← lists every plugin (name, version, description, ...)
 ├── plugins/
 │   └── phasetwo/                         ← one plugin
 │       ├── plugin.json                   ← plugin metadata (kept in sync with the one below)
 │       ├── .claude-plugin/plugin.json    ← canonical Claude plugin manifest
+│       ├── .mcp.json                      ← MCP servers the plugin connects (NOT plugin.json)
 │       ├── README.md                     ← must list every skill in this plugin
 │       └── skills/
 │           └── keycloak/                 ← one skill = one router

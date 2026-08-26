@@ -1,5 +1,5 @@
 {
-  "name": "phasetwo-agent-skills",
+  "name": "keycloak-skills",
   "metadata": {
     "description": "Agent skills for configuring Keycloak/Phase Two extension behaviors, for vanilla Keycloak and Phase Two hosted Keycloak."
   },
@@ -12,7 +12,7 @@
       "name": "phasetwo",
       "source": "./plugins/phasetwo",
       "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link, email OTP, passkey-only WebAuthn, or a combined passkey-or-magic-link \"0 password required\" flow, corporate/enterprise SSO by email domain, social login and enterprise identity-provider federation (Entra ID, Okta, Auth0, and more), organization-membership login restriction for both local and federated logins, and Phase Two cluster/deployment provisioning.",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "repository": "https://github.com/p2-inc/keycloak-skills.git",
       "license": "Apache-2.0",
       "author": {

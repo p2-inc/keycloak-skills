@@ -15,7 +15,7 @@ description: >-
   Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
 license: Apache-2.0
 metadata:
-  version: '0.15.0'
+  version: '0.15.1'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -75,7 +75,7 @@ above):
 0. If the request is to **delete** a cluster, deployment, or realm, Step 0 already answers it —
    deny it and don't file anything.
 1. Say plainly that this isn't covered yet, and what you understood the request to be.
-2. Ask if they'd like an issue opened in this repo (`p2-inc/agent-skills`) describing the gap —
+2. Ask if they'd like an issue opened in this repo (`p2-inc/keycloak-skills`) describing the gap —
    that's how this router grows new intents (see `references/README.md`'s "growing this router"
    note) instead of silently mis-routing.
 3. If they say yes, draft the issue with:
@@ -99,7 +99,7 @@ context. Don't ask twice in the same conversation once it's established.
 
 | Answer | Tooling |
 |---|---|
-| **Yes — Phase Two hosted Keycloak.** | **mcp.** If the `keycloak` MCP server isn't connected yet, prompt for it now: `mcp add --transport http keycloak https://mcp-staging.phasetwo.io/mcp`. If the developer declines, say plainly that `rest` is not a real substitute here: a Phase Two hosted deployment has no self-service admin REST credential of any kind (no admin user, no mintable service-account client), so the `rest` reference files fail at their very first step — there is nothing to put in `$ADMIN_TOKEN`. Point them at reconnecting MCP or using the dashboard, not at the `rest` files. |
+| **Yes — Phase Two hosted Keycloak.** | **mcp.** The `phasetwo` plugin declares this server, so it should already be there as `keycloak` (`https://mcp.phasetwo.io/mcp`). If its tools aren't available, that is usually an unauthorized OAuth connection rather than a missing server — have the developer check `/mcp`. Running the skill outside the plugin, add it with `claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp`. If the developer declines, say plainly that `rest` is not a real substitute here: a Phase Two hosted deployment has no self-service admin REST credential of any kind (no admin user, no mintable service-account client), so the `rest` reference files fail at their very first step — there is nothing to put in `$ADMIN_TOKEN`. Point them at reconnecting MCP or using the dashboard, not at the `rest` files. |
 | **No — self-managed Keycloak** (bare metal, Docker, Kubernetes; the developer has direct Admin REST access). | **rest.** |
 
 If the answer is ambiguous, ask — don't guess and don't default to either side.
