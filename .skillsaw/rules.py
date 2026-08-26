@@ -600,3 +600,165 @@ class SkillOpenclawMetadataRule(Rule):
             return None
 
         return yaml.safe_load(content[3:end])
+
+
+class AuthenticationFlowAssetRule(Rule):
+    """
+    Validate bundled authentication-flow assets against Keycloak's execution semantics.
+
+    These are silent failures: Keycloak accepts every shape below, the admin console renders
+    the flow, and the damage only appears as wrong behaviour at login.
+
+    1. TIED PRIORITIES. ExecutionComparator is `o1.priority - o2.priority` with no tie-break,
+       so siblings sharing a priority have no defined order - and raise-priority swaps priority
+       VALUES, so swapping equal values is a no-op. A tied level is both unordered and
+       unrepairable through the API.
+    2. MIXED BUCKETS. DefaultAuthenticationFlow.fillListsOfExecutions clears the ALTERNATIVE
+       bucket outright when a level also holds REQUIRED/CONDITIONAL executions. The alternatives
+       are erased, reported only as a server-log WARN.
+    3. CONDITIONAL WITHOUT AN ENABLED CONDITION. isConditionalSubflowDisabled treats an empty
+       conditional-authenticator list as "condition not met", so the whole sub-flow is skipped
+       on every login.
+    """
+
+    # Authenticators implementing ConditionalAuthenticator: they gate their enclosing sub-flow
+    # and sit in NEITHER requirement bucket. The engine tests the type; these are the ids in
+    # play across stock Keycloak and the p2-inc extensions.
+    CONDITIONAL_AUTHENTICATORS = {
+        'conditional-user-configured', 'conditional-user-role', 'conditional-user-attribute',
+        'conditional-client-scope', 'conditional-level-of-authentication',
+        'conditional-credential', 'conditional-sub-flow-executed',
+        'ext-auth-conditional-org-attribute', 'conditional-org-client-attr',
+        'ext-auth-condition-known-user',
+    }
+
+    @property
+    def rule_id(self) -> str:
+        return "auth-flow-asset-valid"
+
+    @property
+    def description(self) -> str:
+        return ("Bundled authentication-flow assets must have distinct sibling priorities, "
+                "bucket-pure levels, and an enabled condition in every CONDITIONAL sub-flow")
+
+    def default_severity(self) -> Severity:
+        return Severity.ERROR
+
+    @classmethod
+    def _is_conditional(cls, authenticator: Optional[str]) -> bool:
+        if not authenticator:
+            return False
+        return (authenticator in cls.CONDITIONAL_AUTHENTICATORS
+                or authenticator.startswith('conditional-')
+                or authenticator.startswith('ext-auth-condition'))
+
+    def check(self, context: RepositoryContext) -> List[RuleViolation]:
+        import json
+
+        violations = []
+        for plugin_path in context.plugins:
+            skills_dir = plugin_path / "skills"
+            if not skills_dir.exists():
+                continue
+            for skill_dir in skills_dir.iterdir():
+                assets_dir = skill_dir / "assets"
+                if not assets_dir.is_dir():
+                    continue
+                for asset in sorted(assets_dir.glob("*.json")):
+                    violations.extend(self._check_asset(asset))
+        return violations
+
+    def _check_asset(self, asset: Path) -> List[RuleViolation]:
+        import json
+
+        violations = []
+        try:
+            data = json.loads(asset.read_text())
+        except (OSError, ValueError):
+            return violations
+        if not isinstance(data, dict):
+            return violations
+        flows = data.get("authenticationFlows")
+        if not isinstance(flows, list) or not flows:
+            return violations
+
+        by_alias = {f.get("alias"): f for f in flows if isinstance(f, dict)}
+
+        for flow in flows:
+            if not isinstance(flow, dict):
+                continue
+            alias = flow.get("alias", "<unnamed>")
+            execs = [e for e in flow.get("authenticationExecutions", []) if isinstance(e, dict)]
+
+            # 1. tied priorities
+            priorities = [e.get("priority") for e in execs]
+            tied = sorted({p for p in priorities if priorities.count(p) > 1})
+            if tied:
+                violations.append(self.violation(
+                    f"Flow '{alias}' has siblings sharing priority {tied} (priorities={priorities}). "
+                    f"Keycloak sorts executions by priority with no tie-break, so their order is "
+                    f"undefined - and raise-priority swaps priority values, which is a no-op between "
+                    f"equal ones, so the order cannot be repaired through the API either. "
+                    f"Give every sibling a distinct, increasing priority (space them 0, 10, 20 ...).",
+                    file_path=asset))
+
+            # 2. bucket purity - conditional authenticators sit in neither bucket
+            required, alternative = [], []
+            for e in execs:
+                authenticator = e.get("authenticator")
+                if self._is_conditional(authenticator):
+                    continue
+                name = e.get("flowAlias") or authenticator or "<step>"
+                requirement = e.get("requirement")
+                if requirement in ("REQUIRED", "CONDITIONAL"):
+                    required.append(name)
+                elif requirement == "ALTERNATIVE":
+                    alternative.append(name)
+            if required and alternative:
+                violations.append(self.violation(
+                    f"Flow '{alias}' mixes requirement buckets at one level: "
+                    f"required/conditional={required} alternative={alternative}. "
+                    f"DefaultAuthenticationFlow clears the ALTERNATIVE bucket when both are "
+                    f"non-empty, so {alternative} never run. Move one group into its own sub-flow.",
+                    file_path=asset))
+
+            # 3. CONDITIONAL sub-flows need an enabled condition inside
+            for e in execs:
+                if e.get("requirement") != "CONDITIONAL" or not e.get("authenticatorFlow"):
+                    continue
+                target = e.get("flowAlias")
+                child = by_alias.get(target)
+                if child is None:
+                    violations.append(self.violation(
+                        f"Flow '{alias}' has a CONDITIONAL execution referencing sub-flow "
+                        f"'{target}', which is not defined in this asset.",
+                        file_path=asset))
+                    continue
+                child_execs = [c for c in child.get("authenticationExecutions", [])
+                               if isinstance(c, dict)]
+                conditions = [c for c in child_execs
+                              if self._is_conditional(c.get("authenticator"))]
+                enabled = [c for c in conditions if c.get("requirement") != "DISABLED"]
+                if not conditions:
+                    violations.append(self.violation(
+                        f"CONDITIONAL sub-flow '{target}' contains no conditional authenticator. "
+                        f"Keycloak treats an empty condition list as 'condition not met', so this "
+                        f"sub-flow is skipped on every login.",
+                        file_path=asset))
+                elif not enabled:
+                    violations.append(self.violation(
+                        f"CONDITIONAL sub-flow '{target}' has only DISABLED conditions "
+                        f"({[c.get('authenticator') for c in conditions]}). A disabled condition is "
+                        f"filtered out, leaving an empty condition list, so the whole sub-flow is "
+                        f"skipped on every login.",
+                        file_path=asset))
+
+            # dangling sub-flow references
+            for e in execs:
+                if e.get("authenticatorFlow") and e.get("flowAlias") not in by_alias:
+                    violations.append(self.violation(
+                        f"Flow '{alias}' references sub-flow '{e.get('flowAlias')}', "
+                        f"which is not defined in this asset.",
+                        file_path=asset))
+
+        return violations

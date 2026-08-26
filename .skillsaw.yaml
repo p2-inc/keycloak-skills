@@ -69,6 +69,14 @@ rules:
     enabled: false
 
 # Custom rules for marketplace-specific validation
+  # Bundled authentication-flow assets: distinct sibling priorities, bucket-pure
+  # levels, and an enabled condition inside every CONDITIONAL sub-flow. All three
+  # are silent failures at runtime - Keycloak accepts the shape and misbehaves at
+  # login - so they are errors here.
+  auth-flow-asset-valid:
+    enabled: true
+    severity: error
+
 custom-rules:
   - ./.skillsaw/rules.py
 

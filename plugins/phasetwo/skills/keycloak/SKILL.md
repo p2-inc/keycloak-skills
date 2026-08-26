@@ -226,11 +226,14 @@ Prerequisite: the vendor must ALREADY be brokered as a **SAML** identity provide
 `admin:idp-federation` first if not. This mechanism is SAML-only; there is no OIDC-broker
 equivalent. The two settings developers most often expect on the identity provider
 (`IDP Initiated SSO URL Name`, `IDP Initiated SSO Relay State`) do **not** exist there — verified
-against `SAMLIdentityProviderConfig`; both are **client** attributes. On tooling=mcp, note up front
-that `createSamlClient` can only set them on a **newly created SAML** client: there is no
-update-client tool, so an existing client — or an OIDC client, which needs REDIRECT-binding
-attributes the tool can't produce — has to go through the `rest` file's steps instead. Say which
-path you're on rather than switching silently.
+against `SAMLIdentityProviderConfig`; both are **client** attributes.
+
+The tile target is a **SAML client in both variants** — an OIDC/SPA app gets a dedicated SAML shim
+client beside its real OIDC client, which is never modified. So `createSamlClient` covers both on
+tooling=mcp; the SPA variant differs only by `forcePostBinding=false` and a REDIRECT-binding ACS
+(supplied via `spMetadataXml`, since the tool has no direct argument for it). Only one case has no
+MCP path: adding a tile to an **already-existing** client, which needs the `rest` file's
+read-merge-PUT. Say which path you're on rather than switching silently.
 
 ### admin:idp-org-restrict-login
 ```

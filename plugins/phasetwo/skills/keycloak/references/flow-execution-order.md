@@ -173,6 +173,62 @@ The purge is invariant-checkable without a login: group the output by `level` **
 and assert no group contains both an `ALTERNATIVE` and a `REQUIRED`/`CONDITIONAL` entry. Any group
 that does has already lost its alternatives.
 
+## Give every execution a distinct priority — ties are unorderable
+
+`ExecutionComparator` is a bare `o1.priority - o2.priority` with **no tie-break**. Two siblings
+holding the same priority therefore have *no defined order* — whatever the query returns that day.
+
+Worse, they cannot be fixed afterwards. `raise-priority` swaps the two executions' priority
+**values** with the preceding sibling; swapping equal values writes the same numbers back. HTTP 204,
+nothing moved. Every repair call succeeds and the order never changes, which reads exactly like an
+API or Keycloak-version bug and is neither.
+
+**This starts at flow creation, not at repair.** A flow is born tied if the payload that created it
+had ties — and both paths inherit them:
+
+- **Atomic import / any `*.partial-import.json`** — the `priority` values in the asset are written
+  through verbatim.
+- **The manual REST sequence** — replaying an asset step by step and passing its `priority` values
+  reproduces the ties exactly.
+
+Keycloak's own built-in **`post org broker login`** flow ships three executions at priority 0, so a
+copy of it made in the admin console starts unorderable. That is the one case here you cannot fix
+by authoring: copy it, then assign distinct priorities before doing anything else.
+
+### How a flow ends up tied without anyone asking for it
+
+The add calls space priorities correctly on their own (`getNextPriority` = last sibling + 1). The
+usual way a flow collapses to all-zeros is the **requirement-setting call afterwards**:
+
+```bash
+# WRONG - resets this execution's priority to 0
+curl -X PUT .../executions -d '{"id":"<id>","requirement":"ALTERNATIVE"}'
+
+# RIGHT - send the priority back with it
+curl -X PUT .../executions -d '{"id":"<id>","requirement":"ALTERNATIVE","priority":10}'
+```
+
+`PUT .../executions` takes a whole `AuthenticationExecutionInfoRepresentation`, and `priority` is a
+primitive `int` on it — a body that omits the field deserializes it as **0**, and the server applies
+it. Set requirements on four steps that way and all four end up at priority 0: tied, unordered, and
+now unfixable by `raise-priority`. That is usually what has happened when reorder calls "return 204
+and do nothing".
+
+Observed live: a hand-built password+2FA flow came out with all seven executions at priority 0 for
+exactly this reason.
+
+So, when authoring: **distinct, increasing priorities on every sibling** — space them (0, 10, 20 …)
+so a later insertion doesn't force a renumber. Every asset in `../assets/` now does this; two of
+them (`post-org-broker-login-select-organization`, `select-organization-magic-link`) shipped ties
+until it was caught this way.
+
+And when repairing a flow that is *already* tied: **assign the priorities outright** rather than
+swapping toward them — `PUT .../executions` with `{id, requirement, priority}` per step, distinct
+values. Send the execution's current `requirement` back alongside: that endpoint takes the whole
+execution representation, and both fields reset when omitted. This is honoured from **Keycloak 25**
+onward; on 24 and older a tied level cannot be reordered through the API at all, and the executions
+have to be deleted and re-added in the order you want.
+
 ## Path 1 — `importAuthenticationFlow` (one shot, correct by construction)
 
 The [keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension's

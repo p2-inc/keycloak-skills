@@ -147,7 +147,7 @@ curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/<urlencoded-flow
 # 3. List executions to get each id, then PUT each one's requirement.
 curl -s "$BASE/admin/realms/$REALM/authentication/flows/<urlencoded-flow>/executions" -H "$H"
 curl -s -X PUT "$BASE/admin/realms/$REALM/authentication/flows/<urlencoded-flow>/executions" \
-  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<exec-id>","requirement":"REQUIRED"}'
+  -H "$H" -H 'Content-Type: application/json' -d '{"id":"<exec-id>","requirement":"REQUIRED","priority":<its current priority>}'
 
 # 4. Attach the authenticator config to the ext-select-org execution.
 curl -s -X POST "$BASE/admin/realms/$REALM/authentication/executions/<exec-id>/config" \

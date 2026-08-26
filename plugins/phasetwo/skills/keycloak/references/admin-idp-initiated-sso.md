@@ -23,9 +23,13 @@ Verified against Keycloak's source (`org.keycloak.protocol.saml.SamlService` and
 | **Keycloak itself** (no external IdP; a bookmark or portal link straight into Keycloak) | `{BASE}/realms/{REALM}/protocol/saml/clients/{urlName}` | **SAML clients only** — `SamlService.idpInitiatedSSO` calls `isClientProtocolCorrect()` and rejects anything else with "Wrong client protocol." |
 | **An external SAML IdP** (Okta/Entra tile) POSTing an unsolicited SAML response through Keycloak | `{BASE}/realms/{REALM}/broker/{IDP_ALIAS}/endpoint/clients/{urlName}` | **any enabled client, including OIDC** — `SAMLEndpoint.samlIdpInitiatedSSO` filters only on `ClientModel::isEnabled`; it does **not** perform the protocol check the direct path does |
 
-That asymmetry is the single most useful fact in this document: **it is the reason an
-OIDC application can be the target of an Okta/Entra tile at all.** The broker path is the one
-these vendor walkthroughs use.
+Use the **broker** endpoint. That is decided by *who initiates* — an Okta/Entra tile POSTs an
+unsolicited SAML response, which only the broker endpoint accepts — not by the target client's
+protocol.
+
+> **Do not read the "including OIDC" cell as "so make the tile target an OIDC client."** It is a
+> true fact about the endpoint and a useful one for debugging, but it is **not** how the OIDC case
+> is built here — see the next section. The tile target is a SAML client either way.
 
 ## Prerequisite: the vendor must already be brokered as a SAML IdP
 
@@ -76,21 +80,47 @@ Then, when the response is actually built, `SamlProtocol.isPostBinding()` return
 `POST.equals(clientNote(SAML_BINDING)) || samlClient.forcePostBinding()` — so **`forcePostBinding=true`
 silently overrides a REDIRECT choice from step 3.** That is why the OIDC recipe needs it `false`.
 
-### a. SAML client target
+### The tile target is a SAML client in BOTH cases
+
+**`"protocol": "saml"` either way.** "The app speaks OIDC" describes the *application*, not the
+Keycloak client you create for the tile. What differs between the two cases is two attributes:
+
+| | App speaks SAML | App speaks OIDC (SPA) |
+|---|---|---|
+| `protocol` | `saml` | `saml` — *same* |
+| `saml_idp_initiated_sso_url_name` | `myapp` | `myapp` — *same* |
+| `saml.force.post.binding` | `true` (default) | **`false`** |
+| ACS attribute carrying the app's URL | `saml_assertion_consumer_url_post` | **`saml_assertion_consumer_url_redirect`** |
+| `adminUrl` | unset | unset (it would force POST) |
+
+### a. The app speaks SAML
 
 Configure the SP side as normal (ACS URL, entity ID, signing cert). Set
 `saml_idp_initiated_sso_url_name`. POST binding via step 1 is correct and expected.
 
-### b. OIDC client target
+### b. The app speaks OIDC (a SPA)
+
+**Create a second, dedicated SAML client as the tile target. Do not put these attributes on the
+app's own OIDC client.** The SPA keeps its OIDC client, its `redirectUris`, its everything —
+untouched. The SAML client sits beside it purely to catch the tile click and set the SSO cookie.
 
 A plain web app cannot consume an incoming SAML POST body, but it *can* harmlessly ignore unknown
-query parameters on a GET. So force the REDIRECT branch:
+query parameters on a GET. So on that **SAML shim client**, force the REDIRECT branch:
 
-- set `saml_assertion_consumer_url_redirect` = the app's **home URL** (its main page),
+- set `saml_assertion_consumer_url_redirect` = the SPA's **home URL** (its main page),
 - leave `saml_assertion_consumer_url_post` **unset** and `adminUrl` **unset** (either one wins and
   forces POST),
 - set `saml.force.post.binding` = **`false`**,
 - set `saml_idp_initiated_sso_url_name`.
+
+> **Why not just add these attributes to the OIDC client?** It is not hard-broken — Keycloak forces
+> the auth session's protocol to `saml` (`SamlService.getOrCreateLoginSessionForIdpInitiatedSso`
+> calls `authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL)`), and the finish path resolves the
+> protocol from the *auth session*, not the client (`AuthenticationManager` line ~951) — so a SAML
+> response does get built. But it is the wrong shape and carries real cost: it mutates the app's
+> **live** client, leaves SAML attributes on a client whose `protocol` contradicts them, produces an
+> unsigned assertion (an OIDC client has no SAML signing keys), and makes "delete and re-create to
+> fix the tile" a destructive act against the real app. A separate shim is free to delete.
 
 **Be honest with the developer about what this is.** Keycloak still builds and sends a real (and
 ignored) SAML artifact to that URL. The app gets nothing usable from the landing request itself.
@@ -120,31 +150,91 @@ H="Authorization: Bearer $ADMIN_TOKEN"
    curl -s "$BASE/admin/realms/$REALM/identity-provider/instances" -H "$H" \
      | jq '.[] | select(.providerId=="saml") | {alias, enabled}'
    ```
-2. **Set the client attributes.** Keycloak's client update is a full-representation `PUT`, so read,
-   merge, write back — never `PUT` a hand-built partial representation, it will blank fields:
+2. **Create the tile-target client — `protocol: saml` in both cases.** Creating fresh is the normal
+   path: a new client has no `adminUrl` and no POST ACS unless you set one, so binding-priority
+   cases 1–2 are empty by construction and the REDIRECT branch is reachable.
+
+   **a. The app speaks SAML** — the app's real SAML client *is* the tile target:
+   ```bash
+   curl -s -X POST "$BASE/admin/realms/$REALM/clients" -H "$H" \
+     -H 'Content-Type: application/json' -d '{
+       "clientId": "my-app",
+       "protocol": "saml",
+       "enabled": true,
+       "attributes": {
+         "saml_idp_initiated_sso_url_name": "myapp",
+         "saml_assertion_consumer_url_post": "https://app.example.com/saml/acs",
+         "saml.force.post.binding": "true",
+         "saml.authnstatement": "true",
+         "saml_name_id_format": "username"
+       }
+     }'
+   ```
+
+   **b. The app speaks OIDC (a SPA)** — a **separate SAML shim** beside the SPA's own OIDC client,
+   which is not touched. Note `protocol: saml`, the *redirect* ACS, and no `adminUrl`:
+   ```bash
+   curl -s -X POST "$BASE/admin/realms/$REALM/clients" -H "$H" \
+     -H 'Content-Type: application/json' -d '{
+       "clientId": "my-app-tile",
+       "name": "Tile shim for my-app (SPA)",
+       "protocol": "saml",
+       "enabled": true,
+       "attributes": {
+         "saml_idp_initiated_sso_url_name": "myapp",
+         "saml_assertion_consumer_url_redirect": "https://app.example.com/",
+         "saml.force.post.binding": "false",
+         "saml.authnstatement": "true",
+         "saml_name_id_format": "username"
+       }
+     }'
+   ```
+   Give the shim its **own** `clientId`, distinct from the SPA's — they coexist in the same realm.
+
+3. **Only if the target client already exists**, read-merge-`PUT` instead of creating.
+
+   > ⚠️ **Two opposite rules in the same `PUT`, and this catches people.** Top-level fields
+   > (`redirectUris`, `rootUrl`, …) are **replaced** — omit one and it is blanked, which is why you
+   > read the full representation first. But `attributes` are **merged**: `RepresentationToModel`
+   > iterates only the keys *present* in the payload and calls `setAttribute` on each, with no
+   > removal pass. So **you cannot delete an attribute by leaving it out** — it survives. To remove
+   > one, send the key explicitly with a JSON `null` (verified against a live Keycloak: `null`
+   > removes it; `""` leaves an empty-string attribute behind, which still counts as "set" for
+   > binding-priority case 1).
    ```bash
    ID=$(curl -s "$BASE/admin/realms/$REALM/clients?clientId=$CLIENT_ID" -H "$H" | jq -r '.[0].id')
    curl -s "$BASE/admin/realms/$REALM/clients/$ID" -H "$H" > /tmp/client.json
 
-   # SAML client target:
-   jq '.attributes["saml_idp_initiated_sso_url_name"]="my-client"' /tmp/client.json > /tmp/c2.json
-
-   # OIDC client target (note: also clears the two POST-forcing settings):
-   jq '.attributes["saml_idp_initiated_sso_url_name"]="my-client"
-       | .attributes["saml_assertion_consumer_url_redirect"]="https://app.example.com/"
-       | .attributes["saml_assertion_consumer_url_post"]=""
-       | .attributes["saml.force.post.binding"]="false"
-       | .adminUrl=""' /tmp/client.json > /tmp/c2.json
+   jq '.attributes["saml_idp_initiated_sso_url_name"]="myapp"' /tmp/client.json > /tmp/c2.json
 
    curl -s -X PUT "$BASE/admin/realms/$REALM/clients/$ID" -H "$H" \
      -H 'Content-Type: application/json' --data-binary @/tmp/c2.json
    ```
-3. **Compute the URL to hand the vendor**:
+   This applies to an existing **SAML** client. For a SPA, don't retrofit its OIDC client — create
+   the shim in step 2b instead.
+
+4. **Read the attributes back and confirm the shape** — every failure on the OIDC path is a silent
+   fallback to POST, so don't skip this:
+   ```bash
+   curl -s "$BASE/admin/realms/$REALM/clients?clientId=my-app-tile" -H "$H" \
+     | jq '.[0] | {protocol, adminUrl, attributes: (.attributes | {
+         saml_idp_initiated_sso_url_name,
+         saml_assertion_consumer_url_redirect,
+         saml_assertion_consumer_url_post,
+         "saml.force.post.binding"})}'
+   ```
+   Expect `protocol: "saml"`, the redirect URL set, POST ACS and `adminUrl` absent/empty, and
+   `saml.force.post.binding: "false"`.
+
+5. **Compute the URL to hand the vendor**:
    ```
    {BASE}/realms/{REALM}/broker/{IDP_ALIAS}/endpoint/clients/{urlName}
    ```
-4. **Do the vendor-side configuration** — read exactly one:
+6. **Do the vendor-side configuration** — read exactly one:
    `references/idp/okta-idp-initiated.md` or `references/idp/entra-idp-initiated.md`.
+   The vendor side is **identical** for cases a and b, and identical between Okta and Entra ID: the
+   vendor always POSTs an unsolicited SAML response to that same broker URL. POST-vs-REDIRECT
+   concerns only the second hop (Keycloak → the app) and is invisible to the IdP.
 
 ## Verify
 
@@ -158,13 +248,25 @@ authenticated, with no visit to the app first. Then check the realm's login even
   match any client's `saml_idp_initiated_sso_url_name` (or that client is disabled). Re-read the
   attribute back from the client; don't trust the console form having been saved.
 - **"Wrong client protocol."** — the *direct* endpoint (`/protocol/saml/clients/...`) was used
-  against an OIDC client. Use the **broker** endpoint instead; only it skips the protocol check.
+  against a non-SAML client. Use the **broker** endpoint; only it skips the protocol check. If the
+  tile target was built per step 2 it is a SAML client anyway, so this points at the wrong endpoint
+  rather than the wrong client.
 - **"SAML assertion consumer url not set up" / `INVALID_REDIRECT_URI`** — none of the three
-  binding sources in the priority list is set. For an OIDC target, `saml_assertion_consumer_url_redirect`
+  binding sources in the priority list is set. For a SPA target, `saml_assertion_consumer_url_redirect`
   is the one you want.
-- **App receives a POST it can't handle, or a form-autopost page appears** — `forcePostBinding` is
+- **SPA receives a POST it can't handle, or a form-autopost page appears** — `forcePostBinding` is
   still `true`, or `saml_assertion_consumer_url_post`/`adminUrl` is still set and outranks the
-  redirect URL.
+  redirect URL. Re-run step 4 and compare against the expected shape.
+- **SAML attributes ended up on the app's own OIDC client** — the shim wasn't created; the tile
+  target must be its own `protocol: saml` client (step 2b). To undo, read the OIDC client and `PUT`
+  it back with each stray key set to **`null`** — deleting them from the JSON does nothing, per the
+  merge rule in step 3:
+  ```bash
+  jq '.attributes["saml_idp_initiated_sso_url_name"]=null
+      | .attributes["saml_assertion_consumer_url_redirect"]=null
+      | .attributes["saml_assertion_consumer_url_post"]=null
+      | .attributes["saml.force.post.binding"]=null' /tmp/client.json > /tmp/c2.json
+  ```
 - **Developer set "Home URL" (`baseUrl`) expecting it to matter** — it isn't read by this code path
   at all. The POST-forcing fallback is `adminUrl`.
 - **A second tile for a second client doesn't work** — expected; RelayState can't route. Each
