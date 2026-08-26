@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "generated_by": "skillsaw 0.18.0",
+  "generated_at": "2026-08-26T13:16:26.594242+00:00",
+  "violations": [
+    {
+      "fingerprint": "fa5e050a120419ff",
+      "rule_id": "context-budget",
+      "file_path": "plugins/phasetwo/skills/keycloak/SKILL.md",
+      "message": "Estimated 5,619 tokens exceeds skill warn limit of 3,000",
+      "severity": "warning",
+      "value": 5619,
+      "baseline_mode": "ceiling"
+    },
+    {
+      "fingerprint": "e9bfe9153fe628f8",
+      "rule_id": "context-budget",
+      "file_path": "plugins/phasetwo/skills/keycloak/SKILL.md",
+      "line": 3,
+      "message": "Frontmatter description is ~254 tokens (exceeds skill-description limit of 200)",
+      "severity": "warning",
+      "value": 254,
+      "baseline_mode": "ceiling"
+    }
+  ]
+}

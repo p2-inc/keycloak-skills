@@ -285,9 +285,16 @@ Before opening a PR:
 5. Open the PR against `main` with a description of the new intent/capability, which reference
    file(s) it added, and the results summary from step 4.
 
-If your organization wants a stricter, repeatable gate (required skillsaw CI check, a PR
-template enforcing the §3 checklist, required benchmark evidence), that should be set up as
-follow-up work — flag it rather than assuming it already exists.
+A skillsaw CI check now exists: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs
+`skillsaw` plus `claude plugin validate --strict` on every PR into `main`. The other gates in that
+family — a PR template enforcing the §3 checklist, required benchmark evidence — do **not** exist
+yet; flag them as follow-up work rather than assuming they do.
+
+The lint job reads [`.skillsaw-baseline.json`](../.skillsaw-baseline.json), which records the
+router's current context-budget violations as **ceilings**, not as exemptions. Growing `SKILL.md`
+past its current size fails CI; shrinking it always passes. If you hit that, trim the router rather
+than regenerating the baseline — regenerating silences the ratchet, which is the one thing keeping
+the always-loaded router from growing without limit.
 
 > **Known gap, called out honestly**: the `admin:cluster-setup` / `admin:cluster-create-deployment`
 > intents added earlier in this repo's history do **not** have a corresponding benchmark task yet
