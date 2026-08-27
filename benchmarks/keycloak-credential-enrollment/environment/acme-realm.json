@@ -67,6 +67,16 @@
       "requiredActions": []
     },
     {
+      "username": "dana",
+      "enabled": true,
+      "emailVerified": false,
+      "email": "dana@acme.example",
+      "firstName": "Dana",
+      "lastName": "Okonkwo",
+      "credentials": [],
+      "requiredActions": []
+    },
+    {
       "id": "774c31ec-1601-53e9-9f1d-fb10d61e7ca7",
       "username": "mcp-operator",
       "enabled": true,

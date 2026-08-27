@@ -18,8 +18,14 @@ metadata:
     needs realm SMTP that is deliberately absent. Third, the obvious shortcut
     for Marcus - set him a temporary password and let him log in - satisfies a
     naive reading of the goal while defeating its point, and is the exact
-    anti-pattern the task forbids. Keycloak's user PUT also replaces the whole
-    representation, so a partial update silently wipes profile fields.
+    anti-pattern the task forbids. A third user is credential-less like
+    Marcus but has an unverified address and must be left alone - Keycloak
+    sends an execute-actions email to an unverified address perfectly
+    happily (HTTP 204, message delivered), so that guard exists only if the
+    caller writes it, and the field that would identify who holds a
+    credential is not returned by a user search at all. Keycloak's user PUT
+    also replaces the whole representation, so a partial update silently
+    wipes profile fields.
   category: cybersecurity
   secondary_category: software-engineering
   subcategory: identity-access-management
@@ -61,14 +67,15 @@ sandbox:
 
 Acme is rolling out two-factor authentication. The brief from their IT lead:
 
-> "Everyone moves to an authenticator app. Priya can sort hers out next time she signs in. Marcus just joined and hasn't got any way to sign in yet, so whatever he needs has to be sent to him — and nobody on my team is picking a credential on his behalf. Anyone who joins from here on should get asked automatically."
+> "Everyone moves to an authenticator app. Priya can sort hers out next time she signs in. Marcus just joined and hasn't got any way to sign in yet, so whatever he needs has to be sent to him — and nobody on my team is picking a credential on his behalf. Dana's in the same boat except we've never confirmed her address is really hers, and I'm not having enrollment links go out to an address we haven't checked. Anyone who joins from here on should get asked automatically."
 
 A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme` with a public browser client, `acme-portal`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
 
 The two staff accounts differ in a way that matters:
 
 - `priya` (`priya@acme.example`) already signs in with a password.
-- `marcus` (`marcus@acme.example`) has no credentials of any kind.
+- `marcus` (`marcus@acme.example`) has no credentials of any kind, and his address is verified.
+- `dana` (`dana@acme.example`) has no credentials either, but her address has **not** been verified.
 
 There is no real mail provider here. A local mail-capture server accepts whatever a realm sends and writes each message to `/var/mail-capture/` as one JSON file per message — connection details are in `/root/mail_server_details.txt`.
 
@@ -76,5 +83,6 @@ Configure the `acme` realm so that all of the following hold:
 
 1. The next time `priya` signs in to `acme-portal` with her existing password, she is required to set up a TOTP authenticator before the login completes — she reaches that setup step rather than being returned to the application with an authorization code.
 2. `marcus` is sent an email that lets him set up his own TOTP authenticator. No administrator sets or chooses a credential for him: when you are done he must still have no password credential.
-3. Any user created in this realm from now on is asked to set up a TOTP authenticator as well, without an administrator touching that user.
-4. `priya`'s existing password still works unchanged, and every other realm on the server is untouched — no realm other than `master` and `acme` exists.
+3. No enrollment mail goes to an address that has not been verified. `dana` receives nothing at all, and her account is left without a credential rather than worked around.
+4. Any user created in this realm from now on is asked to set up a TOTP authenticator as well, without an administrator touching that user.
+5. `priya`'s existing password still works unchanged, and every other realm on the server is untouched — no realm other than `master` and `acme` exists.

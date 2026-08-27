@@ -9,7 +9,7 @@ Two variants, and the prerequisite is the thing that decides between them, not t
 
 | | Variant A — required action on the user | Variant B — enrollment email |
 |---|---|---|
-| **Prerequisite** | The user can already log in (any working credential) | Realm SMTP configured, user has an email address |
+| **Prerequisite** | The user can already log in (any working credential) | Realm SMTP configured, **and a VERIFIED email address** |
 | **Needs SMTP?** | **No** | Yes |
 | **Works for a zero-credential user?** | No — nothing to log in with | **Yes** — the link is the authentication |
 | **When they're prompted** | Next login, after authenticating, before returning to the app | Whenever they open the emailed link |
@@ -17,6 +17,24 @@ Two variants, and the prerequisite is the thing that decides between them, not t
 
 Pick A when the user already has a password and you're adding a second or replacement
 credential. Pick B when they have nothing, or you can't interrupt their next login.
+
+Both of those are **facts about the user, not judgement calls** — read them back rather than
+assuming:
+
+```bash
+USER_ID=$(curl -s "$BASE/admin/realms/$REALM/users?username=<username>&exact=true" -H "$H" | jq -r '.[0].id')
+
+# Does this user hold ANY credential? [] means Variant A cannot reach them.
+curl -s "$BASE/admin/realms/$REALM/users/$USER_ID/credentials" -H "$H" | jq '[.[].type]'
+
+# Is the address verified? false means Variant B must NOT be used - see below.
+curl -s "$BASE/admin/realms/$REALM/users/$USER_ID" -H "$H" | jq '{email, emailVerified}'
+```
+
+Use the dedicated `/credentials` endpoint, **not** the `credentials` field on a user search:
+`GET /users?username=...` does not populate it (verified against Keycloak 26 — the key is absent
+even for a user who demonstrably has a password), so anything deciding "has credentials" from a
+search result concludes "no" for everyone.
 
 ```bash
 BASE=http://localhost:8080/auth       # include the relative path if one is configured
@@ -104,6 +122,22 @@ common surprise here.
 Needs no existing credential at all: the link is an **action token**, the same mechanism
 behind magic-link login and password-reset mail. This is the correct way to bootstrap a
 credential-less account — not setting a temporary password on the user's behalf.
+
+> **Send only to a VERIFIED address. Keycloak will not stop you.** Verified live against Keycloak
+> 26: `execute-actions-email` to a user with `emailVerified: false` returns **204 and delivers the
+> message**. There is no server-side guard, so this one is entirely the caller's to enforce.
+>
+> It matters because of what the link *is*. The action token authenticates the person who opens
+> it — that is the whole point of it working for a credential-less account. Mailing it to an
+> address nobody has proven the account holder controls hands credential enrollment, and with it
+> the account, to whoever reads that mailbox. A typo'd or attacker-supplied address is an account
+> takeover path, not a delivery failure.
+>
+> If `emailVerified` is false, **stop and say so** rather than sending. Get the address confirmed
+> through a channel you already trust, then send. Do not simply prepend `VERIFY_EMAIL` to the same
+> call and consider it handled — both actions ride the same token, so the same unverified reader
+> completes both and the gate buys nothing. And do not "fix" it by setting `emailVerified: true`
+> from the admin API; that asserts a verification nobody performed.
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' \
@@ -194,3 +228,5 @@ authenticator** (`WebAuthn.enable` + `WebAuthn.addVirtualAuthenticator`).
 | `redirect_uri` rejected | Not a registered redirect URI for the supplied `client_id` |
 | User enrolled a key but passwordless login still fails | Enrolled `webauthn-register` (2FA) where the bound flow wants `webauthn-register-passwordless` |
 | Set `defaultAction`, existing users unaffected | Correct behaviour — `defaultAction` applies only to users created afterwards |
+| Enrollment mail sent to an unverified address | Nothing in Keycloak blocks this (204 + delivered). Check `emailVerified` yourself before every send |
+| "This user has no credentials" for a user who clearly does | Read from a user *search* result, whose `credentials` field is never populated. Use `GET /users/{id}/credentials` |

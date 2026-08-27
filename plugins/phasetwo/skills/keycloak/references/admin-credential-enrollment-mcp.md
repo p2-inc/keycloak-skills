@@ -9,7 +9,7 @@ Two variants, and the prerequisite decides between them, not taste.
 
 | | Variant A — required action on the user | Variant B — enrollment email |
 |---|---|---|
-| **Prerequisite** | The user can already log in (any working credential) | Realm SMTP configured, user has an email address |
+| **Prerequisite** | The user can already log in (any working credential) | Realm SMTP configured, **and a VERIFIED email address** |
 | **Needs SMTP?** | **No** | Yes |
 | **Works for a zero-credential user?** | No — nothing to log in with | **Yes** — the link is the authentication |
 | **When they're prompted** | Next login, after authenticating, before returning to the app | Whenever they open the emailed link |
@@ -24,7 +24,7 @@ Two variants, and the prerequisite decides between them, not taste.
 | Register + enable an action (does both) | `enableRequiredAction` |
 | Read/tune an action's own config, where it has any | `setRequiredActionConfig` |
 | Demand the action of **newly created** users | `setDefaultRequiredAction` |
-| Find the user's id, and whether they already hold a credential | `findUser` |
+| Find the user's id | `findUser` — but see the `hasCredentials` warning below |
 | **Variant B** — email an enrollment link | `sendRequiredActionEmail` |
 | Configure outgoing mail (Variant B only) | `setSmtpSettings` |
 
@@ -40,6 +40,21 @@ nowhere in the codebase at all.
 The near-miss that will look like the answer and isn't: `setDefaultRequiredAction`. It sets
 `defaultAction` on the *action*, which applies to users created **afterwards**. It is not
 retroactive and does nothing whatsoever to an account that already exists.
+
+**Do not trust `findUser`'s `hasCredentials` to pick the variant — it reports `false` for
+everyone.** The tool derives it from the `credentials` field of a user *search* result, and
+Keycloak's search endpoint never populates that field; verified against Keycloak 26, a user who
+demonstrably holds a password comes back from `GET /users?username=...` with no `credentials` key
+at all. So the one field that looks like it answers "which variant applies here" answers "no
+credentials" for every user, which would push every user onto the email variant — including users
+who should never have been mailed. Read the dedicated endpoint instead:
+
+```bash
+GET /admin/realms/{realm}/users/{id}/credentials   ->  [] means genuinely no credential
+```
+
+The same applies to `emailVerified`, which no tool surfaces either. Both checks are one small REST
+call each; make them rather than guessing.
 
 So for Variant A, say plainly that this one step needs the Admin REST API and follow
 [`admin-credential-enrollment.md`](admin-credential-enrollment.md)'s "Variant A" — a
@@ -84,6 +99,22 @@ credential-less account rather than an admin choosing a password on the user's b
    whether this account is genuinely credential-less.
 2. `setSmtpSettings` if the realm has no mail configured yet.
 3. `sendRequiredActionEmail(userId, actions=["webauthn-register-passwordless"], clientId, redirectUri)`.
+
+> **Send only to a VERIFIED address. Nothing in the stack stops you.** `sendRequiredActionEmail`'s
+> own description says the user should have a verified email, but neither the tool nor Keycloak
+> enforces it: verified live against Keycloak 26, `execute-actions-email` to a user with
+> `emailVerified: false` returns **204 and delivers the message**.
+>
+> It matters because of what the link *is*. The action token authenticates whoever opens it — that
+> is exactly why it works for a credential-less account. Mailing it to an address nobody has proven
+> the account holder controls hands credential enrollment, and with it the account, to whoever
+> reads that mailbox.
+>
+> If `emailVerified` is false, **stop and say so**. Get the address confirmed through a channel you
+> already trust first. Don't prepend `VERIFY_EMAIL` to the same call and call it handled — both
+> actions ride the same token, so the same unverified reader completes both. And don't set
+> `emailVerified: true` via `updateUser` to clear the check; that asserts a verification nobody
+> performed.
 
 `clientId` + `redirectUri` decide where the user lands afterwards — supply both, or they
 finish on a page with nowhere to go. `redirectUri` must be a registered redirect URI of
@@ -167,3 +198,8 @@ authenticator** (`WebAuthn.enable` + `WebAuthn.addVirtualAuthenticator`).
   `webauthn-register` (2FA) where the bound flow wants `webauthn-register-passwordless`.
 - **Looking for a tool to set a required action on one existing user** — there isn't one.
   See "Variant A has no MCP path" above; use the REST file rather than improvising.
+- **`findUser` says `hasCredentials: false` for a user who clearly has a password** — it is
+  derived from a field Keycloak's user search never populates, so it is `false` for everyone.
+  Read `GET /admin/realms/{realm}/users/{id}/credentials` instead.
+- **Enrollment mail reached an unverified address** — nothing blocks that; check `emailVerified`
+  before every send.

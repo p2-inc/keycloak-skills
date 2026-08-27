@@ -3,14 +3,15 @@ name: credentialEnrollmentMcp
 description: >-
   Enroll a NEW credential on a user who ALREADY exists in a Keycloak realm - a
   TOTP authenticator, a passkey, a replacement password, recovery codes -
-  driven through the Keycloak MCP server's tools where they exist, with the two
+  driven through the Keycloak MCP server's tools where they exist, with the
   genuine gaps covered by documented REST recipes. Use whenever someone wants
   users to "set up 2FA", "enroll in TOTP", "register an authenticator app",
   "set up my passkey", or asks how a user actually gets their first credential.
   Two variants, and the PREREQUISITE picks between them rather than preference:
   a required action set on the user reaches anyone who can already log in and
   needs no mail at all, while an emailed enrollment link is the only thing that
-  reaches a user with no credential - and needs realm SMTP. Both are silently
+  reaches a user with no credential - and needs realm SMTP AND a verified email
+  address, because the link authenticates whoever opens it. Both are silently
   inert unless the action is registered AND enabled, which is the single most
   common cause of "I configured it and nothing happened". Not authoring or
   binding a login flow - this is the step that makes such a flow usable.
@@ -25,7 +26,7 @@ Two variants, and the prerequisite decides between them, not taste.
 
 | | Variant A — required action on the user | Variant B — enrollment email |
 |---|---|---|
-| **Prerequisite** | The user can already log in (any working credential) | Realm SMTP configured, user has an email address |
+| **Prerequisite** | The user can already log in (any working credential) | Realm SMTP configured, **and a VERIFIED email address** |
 | **Needs SMTP?** | **No** | Yes |
 | **Works for a zero-credential user?** | No — nothing to log in with | **Yes** — the link is the authentication |
 | **When they're prompted** | Next login, after authenticating, before returning to the app | Whenever they open the emailed link |
@@ -40,7 +41,7 @@ Two variants, and the prerequisite decides between them, not taste.
 | Register + enable an action (does both) | `enableRequiredAction` |
 | Read/tune an action's own config, where it has any | `setRequiredActionConfig` |
 | Demand the action of **newly created** users | `setDefaultRequiredAction` |
-| Find the user's id, and whether they already hold a credential | `findUser` |
+| Find the user's id | `findUser` — but see the `hasCredentials` warning below |
 | **Variant B** — email an enrollment link | `sendRequiredActionEmail` |
 | Configure outgoing mail (Variant B only) | `setSmtpSettings` |
 
@@ -56,6 +57,21 @@ nowhere in the codebase at all.
 The near-miss that will look like the answer and isn't: `setDefaultRequiredAction`. It sets
 `defaultAction` on the *action*, which applies to users created **afterwards**. It is not
 retroactive and does nothing whatsoever to an account that already exists.
+
+**Do not trust `findUser`'s `hasCredentials` to pick the variant — it reports `false` for
+everyone.** The tool derives it from the `credentials` field of a user *search* result, and
+Keycloak's search endpoint never populates that field; verified against Keycloak 26, a user who
+demonstrably holds a password comes back from `GET /users?username=...` with no `credentials` key
+at all. So the one field that looks like it answers "which variant applies here" answers "no
+credentials" for every user, which would push every user onto the email variant — including users
+who should never have been mailed. Read the dedicated endpoint instead:
+
+```bash
+GET /admin/realms/{realm}/users/{id}/credentials   ->  [] means genuinely no credential
+```
+
+The same applies to `emailVerified`, which no tool surfaces either. Both checks are one small REST
+call each; make them rather than guessing.
 
 So for Variant A, say plainly that this one step needs the Admin REST API and follow
 the Admin REST API: a read-merge-`PUT` of the user's `requiredActions` — a
@@ -100,6 +116,22 @@ credential-less account rather than an admin choosing a password on the user's b
    whether this account is genuinely credential-less.
 2. `setSmtpSettings` if the realm has no mail configured yet.
 3. `sendRequiredActionEmail(userId, actions=["webauthn-register-passwordless"], clientId, redirectUri)`.
+
+> **Send only to a VERIFIED address. Nothing in the stack stops you.** `sendRequiredActionEmail`'s
+> own description says the user should have a verified email, but neither the tool nor Keycloak
+> enforces it: verified live against Keycloak 26, `execute-actions-email` to a user with
+> `emailVerified: false` returns **204 and delivers the message**.
+>
+> It matters because of what the link *is*. The action token authenticates whoever opens it — that
+> is exactly why it works for a credential-less account. Mailing it to an address nobody has proven
+> the account holder controls hands credential enrollment, and with it the account, to whoever
+> reads that mailbox.
+>
+> If `emailVerified` is false, **stop and say so**. Get the address confirmed through a channel you
+> already trust first. Don't prepend `VERIFY_EMAIL` to the same call and call it handled — both
+> actions ride the same token, so the same unverified reader completes both. And don't set
+> `emailVerified: true` via `updateUser` to clear the check; that asserts a verification nobody
+> performed.
 
 `clientId` + `redirectUri` decide where the user lands afterwards — supply both, or they
 finish on a page with nowhere to go. `redirectUri` must be a registered redirect URI of
@@ -183,3 +215,8 @@ authenticator** (`WebAuthn.enable` + `WebAuthn.addVirtualAuthenticator`).
   `webauthn-register` (2FA) where the bound flow wants `webauthn-register-passwordless`.
 - **Looking for a tool to set a required action on one existing user** — there isn't one.
   See "Variant A has no MCP path" above; use the Admin REST API rather than improvising.
+- **`findUser` says `hasCredentials: false` for a user who clearly has a password** — it is
+  derived from a field Keycloak's user search never populates, so it is `false` for everyone.
+  Read `GET /admin/realms/{realm}/users/{id}/credentials` instead.
+- **Enrollment mail reached an unverified address** — nothing blocks that; check `emailVerified`
+  before every send.

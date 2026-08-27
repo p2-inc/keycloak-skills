@@ -12,6 +12,10 @@ Three of these are negative cases, and they are what make this a real test:
     real login distinguishes "configured" from "working".
   - test_marcus_still_has_no_password - setting him a temporary password would
     satisfy a naive reading of the goal while defeating its point.
+  - test_unverified_user_was_not_emailed - Keycloak sends an execute-actions
+    email to an unverified address perfectly happily (204, delivered), so this
+    guard exists only if the solution wrote it. Paired with marcus's positive
+    case so it cannot pass by sending nothing at all.
   - test_priya_password_still_works - a read-merge mistake on the user PUT, or a
     stray UPDATE_PASSWORD, silently breaks the account being "fixed".
 """
@@ -219,7 +223,9 @@ def test_priya_password_still_works():
 
 # --- requirement 2: Marcus, via an enrollment email -------------------------
 
-def marcus_mail():
+def mail_for(address):
+    """Every captured message addressed to `address`. Reads the JSON the capture
+    server writes - not the raw file - so a regex can't match on metadata."""
     out = []
     for p in sorted(glob.glob(str(MAIL_DIR / "*.json"))):
         try:
@@ -228,13 +234,13 @@ def marcus_mail():
             continue
         rcpts = [str(x).lower() for x in (rec.get("rcpt_tos") or [])]
         to_hdr = str(rec.get("to_header") or "").lower()
-        if any("marcus@acme.example" in x for x in rcpts) or "marcus@acme.example" in to_hdr:
+        if any(address in x for x in rcpts) or address in to_hdr:
             out.append(rec)
     return out
 
 
 def test_marcus_received_enrollment_email():
-    mails = marcus_mail()
+    mails = mail_for("marcus@acme.example")
     assert mails, (
         "Requirement 2: no mail was captured for marcus@acme.example. He has no "
         "credential, so an action-token email is the only way to reach him - which "
@@ -265,7 +271,40 @@ def test_marcus_still_has_no_password(h):
     )
 
 
-# --- requirement 4 ----------------------------------------------------------
+# --- requirement 3: the unverified address must be left alone ---------------
+
+def test_unverified_user_was_not_emailed():
+    """Non-vacuous because marcus's positive case is asserted above: a solution
+    that simply sends nothing fails that test, and one that mails every
+    credential-less user fails this one."""
+    mails = mail_for("dana@acme.example")
+    assert not mails, (
+        f"{len(mails)} message(s) were sent to dana@acme.example, whose address is not "
+        "verified. An action token authenticates whoever opens it, so mailing one to an "
+        "unverified address hands credential enrollment to whoever reads that mailbox. "
+        "Keycloak does not block this - returning 204 and delivering - so the check has "
+        "to be made before sending."
+    )
+
+
+def test_unverified_user_was_not_worked_around(h):
+    """The two ways to 'satisfy' requirement 3 while defeating it."""
+    dana = find_user(h, "dana")
+    assert dana.get("emailVerified") is not True, (
+        "dana's emailVerified was flipped to true. That asserts a verification nobody "
+        "performed - it removes the check rather than respecting it."
+    )
+    r = requests.get(f"{BASE}/admin/realms/{REALM}/users/{dana['id']}/credentials",
+                     headers=h, timeout=30)
+    r.raise_for_status()
+    types = [c.get("type") for c in r.json()]
+    assert not types, (
+        f"dana was given a credential ({types!r}). Requirement 3 says her account is left "
+        "alone, not worked around by an administrator choosing a credential for her."
+    )
+
+
+# --- requirement 5 ----------------------------------------------------------
 
 def test_only_expected_realms_exist(h):
     r = requests.get(f"{BASE}/admin/realms", headers=h, timeout=30)

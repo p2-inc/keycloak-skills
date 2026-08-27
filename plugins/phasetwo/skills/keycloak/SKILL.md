@@ -192,7 +192,8 @@ Settle which variant applies first — the **prerequisite** decides it, not pref
 unless the action is registered AND enabled: the failure that reads as "I configured it and nothing
 happened". On tooling=mcp the required-action variant has **no tool** (nothing sets `requiredActions`
 on an existing user), so that one step routes to the `rest` file — say so rather than substituting
-the email variant or setting a password.
+the email variant or setting a password. The email variant goes **only to a verified
+address** — the token authenticates whoever opens it, and nothing enforces that.
 
 ### admin:cluster-setup
 ```
@@ -206,8 +207,8 @@ isn't a missing reference doc, it's a capability that doesn't exist for that too
 ```
 Read: references/cluster-create-deployment-mcp.md   (tooling=mcp only)
 ```
-Same tooling=rest handling as `admin:cluster-setup` immediately above — say plainly this doesn't
-apply to self-managed Keycloak, don't improvise a REST equivalent.
+Same tooling=rest handling as `admin:cluster-setup` above — doesn't apply to self-managed
+Keycloak, don't improvise a REST equivalent.
 
 ### admin:corporate-sso
 ```
@@ -276,5 +277,5 @@ Read: references/admin-org-restrict-login-{tooling}.md
   tooling=mcp  → references/admin-org-restrict-login-mcp.md
   tooling=rest → references/admin-org-restrict-login.md
 ```
-Both paths require the p2-inc `keycloak-orgs` extension on the target Keycloak — the reference
-files say so up front, because nothing in this intent works without it.
+Both paths require the p2-inc `keycloak-orgs` extension — nothing in this intent works
+without it.

@@ -12,8 +12,11 @@ The ordering matters and is the point of the task:
      her at next login. No mail involved.
   3. Marcus has no credential at all -> only an action-token email can reach
      him, which needs realm SMTP configured first.
-  4. defaultAction covers users created afterwards; it is NOT retroactive, so
-     it is not a substitute for either step above.
+  4. An action-token link authenticates whoever opens it, so it goes only to a
+     VERIFIED address. Keycloak does not enforce this - it returns 204 and
+     delivers the mail to an unverified address - so the caller must.
+  5. defaultAction covers users created afterwards; it is NOT retroactive, so
+     it is not a substitute for any step above.
 """
 import json
 import sys
@@ -93,22 +96,49 @@ def main():
     r.raise_for_status()
     print(f"priya requiredActions -> {priya['requiredActions']}")
 
-    # --- 4. Marcus: no credential exists, so nothing can be "added to his next
-    #        login". The action-token email IS his authentication. Note we never
-    #        set a password for him - that shortcut is what the task forbids. ---
-    mid = user_id("marcus")
+    # --- 4. Everyone else: decide per user from FACTS, not from names. A user
+    #        with no credential cannot be reached by step 3 at all; a user whose
+    #        address is unverified must not be mailed an action token, because
+    #        that token authenticates whoever opens it. We never set a password
+    #        for anyone - that shortcut is what the task forbids. ---
     q = urllib.parse.urlencode({
         "client_id": "acme-portal",
         "redirect_uri": "http://localhost:9999/callback",
     })
-    r = S.put(
-        f"{BASE}/admin/realms/{REALM}/users/{mid}/execute-actions-email?{q}",
-        headers=h, json=[ACTION], timeout=60,
-    )
-    r.raise_for_status()
-    print(f"enrollment email queued for marcus (HTTP {r.status_code})")
+    emailed, skipped = [], []
+    for username in ("marcus", "dana"):
+        uid = user_id(username)
+        user = S.get(f"{BASE}/admin/realms/{REALM}/users/{uid}", headers=h, timeout=30).json()
 
-    print(json.dumps({"ok": True, "action": ACTION}, indent=2))
+        # The dedicated credentials endpoint - a user SEARCH never populates
+        # `credentials`, so deciding this from search results says "none" for
+        # everyone, including users who plainly have a password.
+        creds = S.get(f"{BASE}/admin/realms/{REALM}/users/{uid}/credentials",
+                      headers=h, timeout=30).json()
+        has_credential = bool(creds)
+
+        if not user.get("emailVerified"):
+            skipped.append((username, "email not verified"))
+            continue
+        if has_credential:
+            # Could be reached by a required action instead; no mail needed.
+            skipped.append((username, "already holds a credential"))
+            continue
+
+        r = S.put(
+            f"{BASE}/admin/realms/{REALM}/users/{uid}/execute-actions-email?{q}",
+            headers=h, json=[ACTION], timeout=60,
+        )
+        r.raise_for_status()
+        emailed.append(username)
+
+    print(f"enrollment email sent to: {emailed}")
+    for username, why in skipped:
+        print(f"skipped {username}: {why}")
+
+    print(json.dumps({"ok": True, "action": ACTION,
+                      "emailed": emailed,
+                      "skipped": {u: w for u, w in skipped}}, indent=2))
 
 
 if __name__ == "__main__":
