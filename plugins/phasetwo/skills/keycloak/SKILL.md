@@ -1,21 +1,22 @@
 ---
 name: keycloak
 description: >-
-  Use when doing Keycloak/Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
+  Use when doing Keycloak / Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
   OTP, passkey WebAuthn, or passkey-or-magic-link "0 password required"); email OTP as a 2FA second
   factor; org-membership login restriction (password, federated, or magic-link); cluster/deployment
-  provisioning — and refusing cluster/deployment/realm DELETION, which is console-only. Also
-  identity brokering: domain-routed corporate SSO ("route by email domain");
-  social login buttons ("log in with Google/GitHub/Microsoft"); enterprise IdP federation — Entra ID,
-  Okta, Auth0, ADFS, AWS SSO, Workspace, PingOne, OneLogin, Duo, JumpCloud, Salesforce and other
-  OIDC/SAML IdPs as a login button; and IdP-initiated SSO tiles. Triggers: "2FA by email", "passkeys",
-  "restrict login to org X", "spin up a cluster", "delete/remove a cluster/deployment/realm",
-  "connect Okta/Entra ID", "add an identity provider", "SAML/OIDC SSO". Cluster/deployment is
-  MCP-only.
-  Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation.
+  provisioning; enrolling a credential (passkey/TOTP) onto users who already exist — and refusing
+  cluster/deployment/realm DELETION. Also identity brokering: domain-routed corporate SSO;
+  social login buttons (Google/GitHub/Microsoft); enterprise IdP federation — Entra ID,
+  Okta, Auth0, ADFS, AWS SSO, PingOne, Salesforce and other OIDC/SAML IdPs; and IdP-initiated
+  SSO tiles. Triggers: "2FA by email", "passkeys",
+  "restrict login to org X", "spin up a cluster", "delete a cluster/realm",
+  "set up my passkey", "enroll users in 2FA",
+  "connect Okta/Entra ID", "SAML/OIDC SSO".
+  Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation, not app-side login
+  code — that's `securing-apps`.
 license: Apache-2.0
 metadata:
-  version: '0.15.1'
+  version: '0.17.0'
   author: Phase Two <support@phasetwo.io>
 ---
 
@@ -56,6 +57,7 @@ never report a deletion as done.
 | Magic-link login, but only for members of a specific organization — "magic link restricted to org X", "passwordless login gated by organization membership", "only email the link to people on this team", "a user logs in with magic link and account_hint decides if they get in". This is the combination of the row above with the account_hint-gated org check `admin:org-restrict-login` uses for password logins — neither the plain `magic link` flow nor `Org Browser Flow` alone covers this; it needs a custom flow that runs the org check *before* the email goes out. Needs the keycloak-orgs extension, same as the org-restrict rows below. | **admin:passwordless-magic-link-org-restrict** |
 | Turn on passkey-only login — "passkey login", "no more passwords", "sign in with a passkey/security key/Face ID/Touch ID and nothing else", "remove password login entirely in favor of WebAuthn" (even just "passkeys" alone). Not WebAuthn as a second factor alongside a password (a different, simpler policy, not covered here) and not magic-link's email mechanism (no cryptographic ceremony involved). | **admin:passwordless-passkey** |
 | One login flow offering a passkey **OR** a magic link, with no password anywhere — "0 password required login", "zero password login", "passkeys or magic link", "let them use a passkey or email them a link", "passwordless with a fallback that isn't a password". Branded the "0 password required login flow". The two methods sit side by side as alternatives, which is also how a brand-new user with no passkey gets in at all (magic link *is* the passkey bootstrap path). Not passkey-only (`admin:passwordless-passkey`) and not magic-link-only (`admin:passwordless-magic-link`) — pick this only when **both** methods are wanted in one flow. | **admin:zero-password-login** |
+| Get a credential onto a user who ALREADY exists — "set up my passkey", "enroll users in TOTP/2FA", "how does a user get their first passkey", "force a password reset". Two variants, chosen by prerequisite rather than preference: a required action on the user (they must already be able to log in; no SMTP) or an emailed enrollment link (needs SMTP; works with no credential at all). The step that makes a passwordless flow usable — authoring/binding that flow is the rows above, not this one. | **admin:credential-enrollment** |
 | Provision a new dedicated Phase Two hosted Keycloak cluster — "spin up a cluster", "set up hosted Keycloak", "I need a new Phase Two instance", "get a managed Keycloak running". | **admin:cluster-setup** |
 | Create a new deployment (realm) in an existing cluster — "add a deployment", "new realm in my cluster", or phrased indirectly: "I want to secure/isolate this app", "give this app its own tenant/bounded security context", "separate environment for staging vs production". Not cluster provisioning itself (that's `admin:cluster-setup`, use it first if no cluster exists) and not realm-level settings on a deployment that already exists (not covered by this skill). | **admin:cluster-create-deployment** |
 | Route a user to their own company's identity provider based on their email domain, while everyone else keeps password login — "corporate SSO", "enterprise SSO", "let our customer log in with their company account", "redirect to my corporate IdP", "home realm discovery", "IdP discovery by email domain". Not a plain IdP button shown to everyone with no domain routing (that's `admin:idp-federation`, next row) and not restricting login to organization members (a different mechanism — see the two rows after that). | **admin:corporate-sso** |
@@ -99,7 +101,7 @@ context. Don't ask twice in the same conversation once it's established.
 
 | Answer | Tooling |
 |---|---|
-| **Yes — Phase Two hosted Keycloak.** | **mcp.** The `phasetwo` plugin declares this server, so it should already be there as `keycloak` (`https://mcp.phasetwo.io/mcp`). If its tools aren't available, that is usually an unauthorized OAuth connection rather than a missing server — have the developer check `/mcp`. Running the skill outside the plugin, add it with `claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp`. If the developer declines, say plainly that `rest` is not a real substitute here: a Phase Two hosted deployment has no self-service admin REST credential of any kind (no admin user, no mintable service-account client), so the `rest` reference files fail at their very first step — there is nothing to put in `$ADMIN_TOKEN`. Point them at reconnecting MCP or using the dashboard, not at the `rest` files. |
+| **Yes — Phase Two hosted Keycloak.** | **mcp.** The `phasetwo` plugin declares this server, so it should already be there as `keycloak` (`https://mcp.phasetwo.io/mcp`). If its tools aren't available, that is usually an unauthorized OAuth connection rather than a missing server — have the developer check `/mcp`; outside the plugin, `claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp`. If they decline, say plainly that `rest` is not a substitute here: a Phase Two hosted deployment has no self-service admin REST credential of any kind, so the `rest` files fail at their very first step — there is nothing to put in `$ADMIN_TOKEN`. Point them at reconnecting MCP or the dashboard. |
 | **No — self-managed Keycloak** (bare metal, Docker, Kubernetes; the developer has direct Admin REST access). | **rest.** |
 
 If the answer is ambiguous, ask — don't guess and don't default to either side.
@@ -133,9 +135,8 @@ Read: references/admin-email-otp-login-{tooling}.md
 Requires the p2-inc `keycloak-magic-link` extension (same jar as magic-link) for the
 `ext-email-otp` authenticator. Unlike magic-link there is **no auto-created flow** — one has to
 be authored, and its execution order AND identifier-step choice are load-bearing: an identifier
-step (`ext-auth-username-auth-note`, NOT stock `auth-username-form` — the latter leaks account
-existence via an "Invalid username or email" error) must run BEFORE `ext-email-otp`, which reads
-the attempted username off the auth session rather than collecting an address itself.
+step (`ext-auth-username-auth-note`, NOT stock `auth-username-form` — that one leaks account
+existence) must run BEFORE `ext-email-otp`.
 
 ### admin:password-email-otp-mfa
 ```
@@ -146,9 +147,9 @@ Read: references/admin-password-email-otp-mfa-{tooling}.md
 Requires the p2-inc `keycloak-magic-link` extension, same as `admin:email-otp-login`. The first
 step is deliberately `auth-username-password-form` (stock Keycloak) — the opposite choice from
 `admin:email-otp-login`'s identifier-only step, and correct here specifically: the password must
-gate the OTP, verified live to mean a wrong password never reaches `ext-email-otp` and never
-sends mail. Don't route a "2FA" or "second factor" request here to the passwordless intent just
-because both use `ext-email-otp` — check whether a password is supposed to remain required.
+gate the OTP, so a wrong password never reaches `ext-email-otp` and never sends mail. Don't
+route a "2FA" or "second factor" request here to the passwordless intent just because both
+use `ext-email-otp` — check whether a password is supposed to remain required.
 
 ### admin:passwordless-magic-link-org-restrict
 ```
@@ -179,25 +180,35 @@ Requires the p2-inc `keycloak-magic-link` extension for `ext-magic-form` (WebAut
 Keycloak), so **half** of this flow depends on a jar — check before authoring. Don't answer this
 with the auto-created `magic link` flow: that offers magic link only, no passkey path. The two
 authenticators are ALTERNATIVE siblings and their order is load-bearing — `ext-magic-form` must be
-the lower priority, or a user with no passkey lands on a ceremony they cannot complete. Verifying
-the passkey half needs a real browser with a CDP virtual authenticator; the magic-link half is
-scriptable over plain HTTP.
+the lower priority, or a user with no passkey lands on a ceremony they cannot complete.
+
+### admin:credential-enrollment
+```
+Read: references/admin-credential-enrollment-{tooling}.md
+  tooling=mcp  → references/admin-credential-enrollment-mcp.md
+  tooling=rest → references/admin-credential-enrollment.md
+```
+Settle which variant applies first — the **prerequisite** decides it, not preference. Both are inert
+unless the action is registered AND enabled: the failure that reads as "I configured it and nothing
+happened". On tooling=mcp the required-action variant has **no tool** (nothing sets `requiredActions`
+on an existing user), so that one step routes to the `rest` file — say so rather than substituting
+the email variant or setting a password. The email variant goes **only to a verified
+address** — the token authenticates whoever opens it, and nothing enforces that.
 
 ### admin:cluster-setup
 ```
 Read: references/cluster-setup-mcp.md   (tooling=mcp only)
 ```
 If tooling=rest (self-managed Keycloak), say plainly that cluster provisioning is a Phase Two
-SaaS control-plane capability with no self-managed equivalent — there is no cluster/deployment
-concept to provision outside Phase Two's hosted platform. Don't offer a REST workaround; this
+control-plane capability with no self-managed equivalent. Don't offer a REST workaround; this
 isn't a missing reference doc, it's a capability that doesn't exist for that tooling.
 
 ### admin:cluster-create-deployment
 ```
 Read: references/cluster-create-deployment-mcp.md   (tooling=mcp only)
 ```
-Same tooling=rest handling as `admin:cluster-setup` immediately above — say plainly this doesn't
-apply to self-managed Keycloak, don't improvise a REST equivalent.
+Same tooling=rest handling as `admin:cluster-setup` above — doesn't apply to self-managed
+Keycloak, don't improvise a REST equivalent.
 
 ### admin:corporate-sso
 ```
@@ -214,8 +225,8 @@ Read: references/admin-social-login-{tooling}.md
 ```
 Then, for the specific vendor asked for, also read the matching per-vendor console walkthrough:
 `references/idp/social-google.md`, `social-microsoft.md`, `social-github.md`, `social-facebook.md`.
-For any other built-in provider (GitLab, Bitbucket, Instagram, X/Twitter, LinkedIn, Stack Overflow,
-PayPal, OpenShift) there's no dedicated walkthrough yet — the mechanism is the same, say so plainly.
+Other built-in providers (GitLab, Bitbucket, X/Twitter, LinkedIn, PayPal, OpenShift...) have no
+dedicated walkthrough — the mechanism is the same, say so plainly.
 
 ### admin:idp-federation
 ```
@@ -225,12 +236,10 @@ Read: references/admin-idp-federation-{tooling}.md
 ```
 If the vendor is **Okta**, hand off to the `settingOktaIdentityProvider` skill instead — it's a
 complete guided workflow, don't duplicate it here. For every other vendor, the mechanics file's own
-Step 1 table maps to the matching per-vendor file under `references/idp/`: `entra-id.md`, `auth0.md`,
-`adfs.md`, `aws.md`, `google-workspace.md`, `cyberark.md`, `duo.md`, `jumpcloud.md`, `lastpass.md`,
-`onelogin.md`, `oracle.md`, `pingone.md`, `salesforce.md`, `cloudflare.md`. Read exactly the one
-matching the developer's vendor — these are console click-paths, not tooling-specific, so the same
-file serves both `mcp` and `rest` tooling. If asked about **LDAP/Active Directory** as a login
-source, that's user federation, not brokering — say plainly this router has no chapter for it yet
+Step 1 table maps it to a per-vendor file under `references/idp/` — read exactly the one matching
+the developer's vendor. Those are console click-paths, so the same file serves both toolings.
+If asked about **LDAP/Active Directory** as a login source, that's user federation, not
+brokering — say plainly this router has no chapter for it yet
 (MCP tools exist: `createLdapUserStorage`, `testLdapConnection`, `syncLdapUsers`) rather than
 routing it into a SAML/OIDC vendor file or claiming no tool exists.
 
@@ -245,16 +254,12 @@ Then read exactly one vendor file: `references/idp/okta-idp-initiated.md` or
 
 Prerequisite: the vendor must ALREADY be brokered as a **SAML** identity provider — do
 `admin:idp-federation` first if not. This mechanism is SAML-only; there is no OIDC-broker
-equivalent. The two settings developers most often expect on the identity provider
-(`IDP Initiated SSO URL Name`, `IDP Initiated SSO Relay State`) do **not** exist there — verified
-against `SAMLIdentityProviderConfig`; both are **client** attributes.
+equivalent. The two settings developers expect on the *identity provider* are **client** attributes
+instead — the refs name them.
 
-The tile target is a **SAML client in both variants** — an OIDC/SPA app gets a dedicated SAML shim
-client beside its real OIDC client, which is never modified. So `createSamlClient` covers both on
-tooling=mcp; the SPA variant differs only by `forcePostBinding=false` and a REDIRECT-binding ACS
-(supplied via `spMetadataXml`, since the tool has no direct argument for it). Only one case has no
-MCP path: adding a tile to an **already-existing** client, which needs the `rest` file's
-read-merge-PUT. Say which path you're on rather than switching silently.
+Both variants target a **SAML** client (an OIDC/SPA app gets a shim client beside its untouched
+OIDC one); the reference files carry the field-level detail. Retrofitting an **already-existing**
+client is the one case with no MCP path — it needs the `rest` file. Say which path you're on.
 
 ### admin:idp-org-restrict-login
 ```
@@ -262,10 +267,9 @@ Read: references/admin-idp-org-restrict-login-{tooling}.md
   tooling=mcp  → references/admin-idp-org-restrict-login-mcp.md
   tooling=rest → references/admin-idp-org-restrict-login.md
 ```
-Both paths require the p2-inc `keycloak-orgs` extension. Note this binds to the identity
-provider's **post-broker login flow** — a different surface from the realm/client browser flow
-the other org intent uses; Keycloak's stock post-broker flow contains no `ext-select-org`, so
-binding that one gates nothing.
+Both paths require the p2-inc `keycloak-orgs` extension. This binds the identity provider's
+**post-broker login flow**, not the realm/client browser flow the other org intent uses — and the
+stock post-broker flow has no `ext-select-org`, so binding that one gates nothing.
 
 ### admin:org-restrict-login
 ```
@@ -273,5 +277,5 @@ Read: references/admin-org-restrict-login-{tooling}.md
   tooling=mcp  → references/admin-org-restrict-login-mcp.md
   tooling=rest → references/admin-org-restrict-login.md
 ```
-Both paths require the p2-inc `keycloak-orgs` extension on the target Keycloak — the reference
-files say so up front, because nothing in this intent works without it.
+Both paths require the p2-inc `keycloak-orgs` extension — nothing in this intent works
+without it.
