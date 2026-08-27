@@ -70,7 +70,7 @@ account-level question.
 
 - **Step 1** picks an **intent** (today: `admin:passwordless-magic-link`, `admin:email-otp-login`, `admin:password-email-otp-mfa`,
   `admin:passwordless-magic-link-org-restrict`, `admin:passwordless-passkey`,
-  `admin:zero-password-login`,
+  `admin:zero-password-login`, `admin:credential-enrollment`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
   `admin:social-login`, `admin:idp-federation`, `admin:idp-initiated-sso`,
   `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
@@ -93,6 +93,8 @@ account-level question.
 | `admin-passwordless-passkey.md` | `admin:passwordless-passkey` (tooling=`rest`) — same outcome via raw Admin REST: realm-representation PUT for the WebAuthn PASSWORDLESS policy and SMTP, authoring/binding the flow, and `execute-actions-email` for credential bootstrap | ✅ done |
 | `admin-zero-password-login-mcp.md` | `admin:zero-password-login` (tooling=`mcp`) — the "0 password required login flow": one browser flow with `ext-magic-form` and `webauthn-authenticator-passwordless` as ALTERNATIVE siblings, so magic link doubles as the passkey bootstrap path. Drives `importAuthenticationFlow`, `setWebAuthnPasswordlessPolicy`, `setSmtpSettings`, `listFlowExecutions`/`setExecutionAuthenticatorConfig`, `bindRealmAuthenticationFlow`, `sendRequiredActionEmail` (all confirmed present on the server) | ✅ done |
 | `admin-zero-password-login.md` | `admin:zero-password-login` (tooling=`rest`) — same outcome via raw Admin REST: the atomic-flows import (or the manual sequence, where the two ALTERNATIVEs' `priority` is load-bearing), the WebAuthn PASSWORDLESS realm policy, SMTP, and `ext-magic-create-nonexistent-user=false` — which in a zero-password flow *is* the whole authentication boundary | ✅ done |
+| `admin-credential-enrollment-mcp.md` | `admin:credential-enrollment` (tooling=`mcp`) — getting a credential (passkey, TOTP, password) onto a user who ALREADY exists, the step every passwordless intent leaves dangling. Drives `listRequiredActions`/`enableRequiredAction` (the registered-vs-enabled distinction that makes both variants silently inert), `findUser` → `sendRequiredActionEmail` for the email variant, and `setDefaultRequiredAction` for new users. Documents two verified MCP gaps rather than improvising around them | ✅ done |
+| `admin-credential-enrollment.md` | `admin:credential-enrollment` (tooling=`rest`) — same outcome via raw Admin REST, and the only path for the required-action variant: a read-merge-`PUT` of `requiredActions` onto the user, plus `execute-actions-email` with `?lifespan=`. Also the `webauthn-register` vs `webauthn-register-passwordless` trap, which enrolls a real credential into the wrong bucket and fails at login with nothing in the logs | ✅ done |
 | `cluster-setup-mcp.md` | `admin:cluster-setup` (tooling=`mcp` only) — provisioning a dedicated Phase Two cluster: org/region/tier/billing selection, Stripe checkout handoff (never completes payment), polling to `ACTIVE`, optional first deployment and custom domain | ✅ done |
 | `cluster-create-deployment-mcp.md` | `admin:cluster-create-deployment` (tooling=`mcp` only) — creating a new deployment (realm) in an existing `ACTIVE` cluster, including recognizing "isolate/secure this app" as a request for a new realm | ✅ done |
 | `admin-corporate-sso-mcp.md` | `admin:corporate-sso` (tooling=`mcp`) — routing by email domain via organizations (`linkIdentityProviderToOrganization`), the `homeIdp`/`homeIdp with orgs-check` custom flows and `forwardToLinkedIdp`, why an IdP-redirector execution is the wrong answer | ✅ done |
@@ -172,6 +174,16 @@ by the [keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-au
 extension's `/authentication-flow/import` endpoint (which also binds, in the same call) or by a
 manual create-flow/add-execution REST sequence. Renaming the assets is worth doing but hasn't been,
 to avoid churning every reference that links them.
+
+Both `admin-credential-enrollment*.md` files record **two verified MCP gaps** — read from the MCP
+server's own source, not inferred from a failed call. (1) No tool puts a required action on an
+existing user: `updateUser` accepts only `email`/`firstName`/`lastName`/`enabled`/`emailVerified`,
+and the field `requiredActions` appears nowhere in the server. `setDefaultRequiredAction` is the
+near-miss that looks like the answer — it applies to users created *afterwards* and is not
+retroactive. (2) `sendRequiredActionEmail` exposes no `lifespan`, so links always use the realm's
+12-hour default. Both route to the `rest` file for that one step rather than substituting the other
+variant or setting a password. If either gap is closed on the server, delete this note — don't
+leave a stale gap documented.
 
 `admin:cluster-setup` and `admin:cluster-create-deployment` have **no `rest` reference file by
 design** — they're Phase Two SaaS control-plane capabilities (cluster/deployment lifecycle) with
