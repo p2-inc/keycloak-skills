@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "phasetwo",
-  "version": "0.11.0",
-  "description": "A unified Keycloak skill that routes requests to the right guidance for configuring Keycloak/Phase Two extension behaviors: passwordless login by magic link, email OTP, passkey-only WebAuthn, or a combined passkey-or-magic-link \"0 password required\" flow, corporate/enterprise SSO by email domain, social login and enterprise identity-provider federation (Entra ID, Okta, Auth0, and more), organization-membership login restriction for both local and federated logins, and Phase Two cluster/deployment provisioning.",
+  "version": "0.12.0",
+  "description": "Two Keycloak skills, split by what the work targets. `keycloak` routes realm-administration requests to the right guidance: passwordless login by magic link, email OTP, passkey-only WebAuthn, or a combined passkey-or-magic-link \"0 password required\" flow, corporate/enterprise SSO by email domain, social login and enterprise identity-provider federation (Entra ID, Okta, Auth0, and more), organization-membership login restriction for both local and federated logins, and Phase Two cluster/deployment provisioning. `securing-apps` covers the other direction — wiring Keycloak login into your own React, Angular, Vue, Next.js, mobile or backend application, validating its bearer tokens, and registering the OIDC client it needs.",
   "author": {
     "name": "Phase Two",
     "email": "support@phasetwo.io",
@@ -28,6 +28,17 @@
     "saml",
     "oidc",
     "zero-password",
-    "idp-initiated-sso"
+    "idp-initiated-sso",
+    "react",
+    "angular",
+    "vue",
+    "nextjs",
+    "spring-boot",
+    "mobile",
+    "oidc-spa",
+    "keycloak-js",
+    "jwt",
+    "resource-server",
+    "pkce"
   ]
 }
