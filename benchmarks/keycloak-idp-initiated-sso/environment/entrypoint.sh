@@ -24,7 +24,15 @@ python3 /opt/mcp/deployment_token_proxy.py > /var/log/deployment-token-proxy.log
       >/dev/null 2>&1 && break
     sleep 2
   done
-  java -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
+  # -Dquarkus.management.port: phasetwo-keycloak (26.6.4+) runs its own Quarkus management
+  # interface on :9000, and this MCP server is also Quarkus - co-located in one container
+  # they collide and the MCP server dies with
+  #   IllegalStateException: Unable to start the management interface on 0.0.0.0:9000
+  #   Caused by: java.net.BindException: Address already in use
+  # which surfaces only as "services did not become ready within 180s" from
+  # wait-for-services, because /mcp never answers. Set with -D on THIS jvm, not as an env
+  # var: QUARKUS_MANAGEMENT_PORT would move BOTH apps and reproduce the clash.
+  java -Dquarkus.management.port=9001 -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
 ) &
 
 exec "$@"

@@ -281,9 +281,18 @@ def test_correct_password_gets_a_code_that_completes_login(config):
         "unconfigured or wrong (the authenticator swallows its own send failure)"
     )
 
-    mail = record.read_text()
-    code_match = re.search(r"\b(\d{6})\b", re.sub(r"Message-ID:.*", "", mail))
-    assert code_match, f"no numeric one-time code found in the captured mail: {mail[:300]}"
+    # The capture server writes JSON, not .eml, and its `received_at` is a float whose
+    # fractional part is six digits - so a naive \b\d{6}\b over the WHOLE file returns the
+    # timestamp instead of the code, submits a wrong OTP, and fails with a misleading
+    # "the emailed code did not complete the login". Parse the JSON and read only the body.
+    raw = record.read_text()
+    try:
+        record_json = json.loads(raw)
+        body = record_json.get("body_plain") or record_json.get("body_html") or ""
+    except json.JSONDecodeError:
+        body = re.sub(r"Message-ID:.*", "", raw)
+    code_match = re.search(r"Code:\s*(\d{4,10})", body) or re.search(r"\b(\d{6})\b", body)
+    assert code_match, f"no numeric one-time code found in the captured mail body: {body[:300]}"
     code = code_match.group(1)
 
     status, html, headers = _post(opener, _form_action(html, "code"), {"otp": code})
