@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: passwordless login by an emailed one-time code.
 
 Four steps, all against the Admin REST API, then a self-check that drives real logins.

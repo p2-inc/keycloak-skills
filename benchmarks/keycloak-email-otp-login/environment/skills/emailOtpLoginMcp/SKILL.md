@@ -10,6 +10,9 @@ description: >-
   Keycloak's TOTP/HOTP authenticator apps, and not magic link.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # emailOtpLoginMcp
 
 ## What this is, and what it isn't

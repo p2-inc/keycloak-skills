@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: a "0 password required" login flow for the acme realm.
 
 One browser flow offering TWO passwordless methods side by side, with no

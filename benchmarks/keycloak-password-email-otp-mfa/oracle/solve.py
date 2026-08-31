@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: password login with an emailed one-time code as a SECOND factor.
 
 Same extension as the passwordless email-OTP task, but a deliberately different first

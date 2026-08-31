@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Passkey-only passwordless login — via raw Admin REST
 
 ## What makes this different from magic-link

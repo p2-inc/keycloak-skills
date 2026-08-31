@@ -15,6 +15,9 @@ description: >-
   execution order, and the `account_hint`/`prompt=select_account` trigger requirement.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Magic-link login restricted to one organization's members — via raw Admin REST
 
 ## What this is, and what it isn't

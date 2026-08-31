@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: gates FEDERATED (brokered) login on organization membership.
 
 This is the post-broker counterpart to keycloak-org-restrict-login. That task gates a

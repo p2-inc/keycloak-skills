@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Registering the app's OIDC client — self-managed Keycloak (Admin REST)
 
 ## What this is

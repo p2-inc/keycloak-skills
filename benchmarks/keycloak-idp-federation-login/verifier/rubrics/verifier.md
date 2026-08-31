@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # keycloak-idp-federation-login Verifier Rubric
 
 - `task_success`: the `acme` realm offers a plain, unconditional "log in with Contoso"

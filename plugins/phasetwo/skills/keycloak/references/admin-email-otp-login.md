@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Passwordless login by emailed one-time code (email OTP) — via raw Admin REST
 
 ## What this is, and what it isn't

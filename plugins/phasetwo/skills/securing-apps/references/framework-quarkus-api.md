@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Quarkus — bearer-JWT resource server where `quarkus-oidc` already understands Keycloak's roles
 
 ## What this is

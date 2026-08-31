@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: wires up "Sign in with GitHub" on the acme realm.
 
 Three pieces, all through the Admin REST API:

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: gives the acme realm corporate SSO for Contoso staff.
 
 "Corporate SSO login" means: pick an identity provider from the domain of the

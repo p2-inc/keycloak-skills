@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Building authentication flows — shape and execution order
 
 Shared by every intent in this router that authors or edits a flow. Read it alongside the intent's

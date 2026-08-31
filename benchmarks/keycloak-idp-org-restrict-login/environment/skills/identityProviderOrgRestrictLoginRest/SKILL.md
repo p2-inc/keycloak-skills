@@ -4,6 +4,9 @@ description: >-
   Restrict FEDERATED (external identity provider) login to members of one organization on a self-managed Keycloak - the user authenticates at their own company's IdP and only gets in when they belong to the organization the application named in account_hint - using the Admin REST API only (no MCP server involved). Use this whenever someone asks for "corporate organization restriction", "restrict SSO login to a team/tenant", "only let this customer's staff into their own org", "organization-restricted corporate login", "gate IdP login by org membership", or a "post-broker organization check". Covers the organization-owned IdP link that makes the gate work at all, authoring and binding a post-broker login flow containing ext-select-org (the stock post-broker flow has none, so binding it gates nothing), the match_by_org_name name-vs-ID choice, and verifying by driving real brokered logins. Requires the p2-inc keycloak-orgs extension. Not domain-based routing to an IdP (that restricts nobody) and not the local-password organization gate.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Restrict federated (IdP) login to members of one organization — via raw Admin REST
 
 ## What this is, and what it isn't

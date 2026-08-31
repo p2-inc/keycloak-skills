@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 # Launches Keycloak, the deployment-token proxy, and the MCP server, then hands
 # straight over to the container's command. It deliberately does not block on
 # readiness: the sandbox runs commands via exec regardless of what this script

@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Pytest-based verifier. Run by BenchFlow after the agent completes.
 
 Everything is checked by performing real browser authorization-code logins against

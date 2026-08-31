@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Creating a Phase Two deployment (a hosted Keycloak realm) — via the Keycloak MCP server
 
 This guides a user, one step at a time, through creating a **deployment** — a hosted Keycloak

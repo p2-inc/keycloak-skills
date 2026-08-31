@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 # Verifier script - writes reward to /logs/verifier/reward.txt (float 0.0-1.0).
 # Exit 0 after writing it; nonzero exit means verifier infrastructure failure.
 

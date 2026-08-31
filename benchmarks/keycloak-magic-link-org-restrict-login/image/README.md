@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Environment image for `keycloak-magic-link-org-restrict-login`
 
 This directory is **not part of the test**. It is the recipe that produces the prebuilt

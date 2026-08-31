@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Verifier for keycloak-app-add-login.
 
 Asserts the distinguishing properties, not the happy path:

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: restricts login to members of one organization.
 
 Five steps, all through the real p2-inc keycloak-orgs extension's REST API

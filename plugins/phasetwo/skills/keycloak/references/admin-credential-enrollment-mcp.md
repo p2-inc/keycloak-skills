@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Enrolling a credential on an existing user — via the Keycloak MCP server
 
 Getting a **new credential onto a user who already exists**: a passkey, a TOTP

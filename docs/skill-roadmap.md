@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Keycloak skills — categories and skill backlog
 
 A survey of what Keycloak's own documentation covers, organised into **categories** of work, with a

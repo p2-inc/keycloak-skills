@@ -20,6 +20,9 @@ verifier:
         task_success: 1.0
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 ## verifier intent
 
 The verifier reads no agent-produced files. It discovers whatever flow is actually bound to

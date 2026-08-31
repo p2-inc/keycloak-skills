@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # `keycloak` router — reference manifest
 
 The [`../SKILL.md`](../SKILL.md) router dispatches to the files below. Each is loaded **on demand**

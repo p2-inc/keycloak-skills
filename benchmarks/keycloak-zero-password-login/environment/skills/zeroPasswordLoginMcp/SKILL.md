@@ -18,6 +18,9 @@ metadata:
   author: Phase Two <support@phasetwo.io>
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 ## What this is
 
 One browser flow offering **two passwordless methods side by side**, with no password

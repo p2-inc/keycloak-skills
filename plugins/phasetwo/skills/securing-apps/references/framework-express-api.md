@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Express — bearer-JWT resource server with `jose`, and role middleware for Keycloak's nested claims
 
 ## What this is

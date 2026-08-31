@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: portal tiles into one specific app, IdP-initiated.
 
 The whole task lives on the two **clients**, not on the two identity providers. A SAML

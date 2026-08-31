@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """A minimal SMTP capture server.
 
 Realm SMTP settings point Keycloak's own mail sender at this process. Every

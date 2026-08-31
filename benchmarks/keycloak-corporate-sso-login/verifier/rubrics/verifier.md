@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # keycloak-corporate-sso-login Verifier Rubric
 
 - `task_success`: the `acme` realm sends the customer's staff to the customer's identity

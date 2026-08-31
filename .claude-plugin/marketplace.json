@@ -13,9 +13,9 @@
       "displayName": "PhaseTwo Keycloak",
       "source": "./plugins/phasetwo",
       "description": "Two Keycloak skills, split by what the work targets. `keycloak` routes realm-administration requests to the right guidance: passwordless login by magic link, email OTP, passkey-only WebAuthn, or a combined passkey-or-magic-link \"0 password required\" flow, corporate/enterprise SSO by email domain, social login and enterprise identity-provider federation (Entra ID, Okta, Auth0, and more), organization-membership login restriction for both local and federated logins, credential enrollment for existing users (passkey/TOTP via required actions or an emailed link), and Phase Two cluster/deployment provisioning. `securing-apps` covers the other direction — wiring Keycloak login into your own React, Angular, Vue, Next.js, mobile or backend application, validating its bearer tokens, and registering the OIDC client it needs.",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "repository": "https://github.com/p2-inc/keycloak-skills.git",
-      "license": "Apache-2.0",
+      "license": "CC-BY-SA-4.0 AND Apache-2.0",
       "author": {
         "name": "Phase Two",
         "email": "support@phasetwo.io"

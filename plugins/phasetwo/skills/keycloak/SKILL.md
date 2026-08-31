@@ -14,11 +14,14 @@ description: >-
   "connect Okta/Entra ID", "SAML/OIDC SSO".
   Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation, not app-side login
   code — that's `securing-apps`.
-license: Apache-2.0
+license: CC-BY-SA-4.0
 metadata:
   version: '0.17.0'
   author: Phase Two <support@phasetwo.io>
 ---
+
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 
 # Keycloak
 

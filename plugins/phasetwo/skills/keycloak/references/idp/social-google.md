@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Google (social login) — console walkthrough
 
 `providerId=google`, driven by `createSocialIdp`. This is the consumer "Sign in with Google" button

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: magic-link login restricted to one organization's members.
 
 Combines two mechanisms that are each documented separately elsewhere in this repo

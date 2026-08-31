@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # keycloak-skills
 
 An Agent Skills marketplace for Phase Two — Claude Code skills for configuring Keycloak/Phase Two extension behaviors, for both vanilla/self-hosted Keycloak and Phase Two hosted Keycloak.
@@ -105,3 +108,45 @@ claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp
 ## Linting
 
 This repo uses [skillsaw](https://github.com/stbenjam/skillsaw) to enforce Agent Skills structure and marketplace conventions. Config is in [`.skillsaw.yaml`](.skillsaw.yaml); repo-specific rules are in [`.skillsaw/rules.py`](.skillsaw/rules.py).
+
+## License
+
+This repository is **dual-licensed by content type**, so the skills carry an
+attribution-and-share-alike condition while the code stays permissive:
+
+| Content | License | Text |
+| --- | --- | --- |
+| Skill content and documentation — `plugins/**/skills/**/*.md`, `docs/**/*.md`, `benchmarks/**/*.md`, `README.md` | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | [`LICENSE`](LICENSE) |
+| Code, scripts, and configuration — `scripts/`, bundled `assets/*.json`, benchmark harnesses, CI, lint rules | [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) | [`LICENSE-CODE`](LICENSE-CODE) |
+
+Copyright 2026 Phase Two, Inc.
+
+Every file whose format allows a comment carries an `SPDX-License-Identifier`
+header, so a single `SKILL.md` or reference doc copied into someone's
+`.claude/skills/` still declares its own terms — the licensing does not live only
+at the repo root. Files that cannot carry a comment (JSON, `.jar`, fixture
+`.txt`) follow the table above and the mapping in [`NOTICE`](NOTICE).
+
+Bundled authentication-flow JSON under `skills/*/assets/` is Apache-2.0 rather
+than CC BY-SA: it is configuration you import into your own realm, and ShareAlike
+should not reach your realm's config.
+
+### Attribution
+
+If you redistribute, incorporate, or adapt the CC BY-SA 4.0 material, include
+attribution substantially similar to:
+
+```text
+Contains material from "keycloak-skills" by Phase Two, Inc.
+https://github.com/p2-inc/keycloak-skills
+Licensed under CC BY-SA 4.0.
+```
+
+Adaptations must indicate that changes were made, and must themselves be
+distributed under CC BY-SA 4.0 or a compatible license.
+
+### Contributing
+
+Contributors retain copyright in their contributions and license them to this
+project under the license that applies to the file being changed — CC BY-SA 4.0
+for skill content and documentation, Apache-2.0 for code. There is no CLA.

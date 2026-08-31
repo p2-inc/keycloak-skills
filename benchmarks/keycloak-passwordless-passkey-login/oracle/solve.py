@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: turns on passkey-only passwordless login for the acme realm.
 
 Four pieces, all through the Admin REST API:

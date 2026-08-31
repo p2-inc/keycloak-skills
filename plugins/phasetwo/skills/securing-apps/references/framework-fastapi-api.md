@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # FastAPI — bearer-JWT resource server with PyJWT, and a `require_role` dependency for Keycloak's nested claims
 
 ## What this is

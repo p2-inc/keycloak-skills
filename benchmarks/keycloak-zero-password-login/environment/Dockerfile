@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
 # ECR staging registry rather than vendored in git. Tracks :latest deliberately, so
 # benchmarks exercise the current staging build; that means a run is reproducible

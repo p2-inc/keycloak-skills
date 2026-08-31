@@ -9,6 +9,9 @@ description: >-
   removes the password), and not WebAuthn or TOTP as a second factor.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # passwordEmailOtpMfaRest
 
 ## What this is, and what it isn't

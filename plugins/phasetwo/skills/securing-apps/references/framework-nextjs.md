@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Next.js — server-side login and route protection with the Auth.js Keycloak provider
 
 ## What this is

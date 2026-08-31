@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Reference solution for keycloak-app-add-login.
 
 Derived from plugins/phasetwo/skills/securing-apps/references/framework-react.md,

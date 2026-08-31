@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Okta — IdP-initiated SSO tile console walkthrough
 
 Vendor-side half of `admin:idp-initiated-sso`. Read the mechanics file first

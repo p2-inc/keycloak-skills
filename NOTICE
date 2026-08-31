@@ -1,0 +1,36 @@
+keycloak-skills
+Copyright 2026 Phase Two, Inc.
+
+This product includes software and skill content developed at
+Phase Two, Inc. (https://phasetwo.io).
+
+This repository is dual-licensed by content type. Every file carries an
+SPDX-License-Identifier where its format allows a comment; files that cannot
+carry one (JSON, binary artifacts, fixture data) follow the directory mapping
+below and in README.md.
+
+  Skill content and documentation      CC-BY-SA-4.0  (see LICENSE)
+    plugins/**/skills/**/*.md
+    plugins/**/README.md
+    benchmarks/**/*.md
+    docs/**/*.md
+    README.md
+
+  Code, scripts, and configuration     Apache-2.0    (see LICENSE-CODE)
+    plugins/**/skills/**/scripts/**
+    plugins/**/skills/**/assets/**
+    benchmarks/** (Python, shell, TypeScript, Dockerfiles, Compose, realm JSON)
+    .github/**, .skillsaw/**
+
+Attribution for the CC BY-SA 4.0 portions, when redistributing or adapting:
+
+    Contains material from "keycloak-skills" by Phase Two, Inc.
+    https://github.com/p2-inc/keycloak-skills
+    Licensed under CC BY-SA 4.0.
+
+Adaptations must indicate that changes were made and must be distributed under
+CC BY-SA 4.0 or a compatible license.
+
+Bundled Phase Two Keycloak extension JARs under benchmarks/ (keycloak-magic-link,
+keycloak-atomic-auth-flows) are distributed under the Apache License 2.0 by their
+respective upstream projects.
