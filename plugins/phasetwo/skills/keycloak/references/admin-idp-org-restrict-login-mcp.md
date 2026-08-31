@@ -115,7 +115,7 @@ Authoring paths, and one that does not work:
 
 | Path | Cost | Requires |
 |---|---|---|
-| `importAuthenticationFlow` — authors the flow **and** binds it to the IdP in one call | **One call** | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension |
+| `importAuthenticationFlow` — authors the flow **and** binds it to the IdP in one call | **One call** | The p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension |
 | Manual sequence, then `bindIdpBrokerLoginFlow(flowType="post_broker_login")` | Many calls | Nothing beyond stock Admin REST |
 | ~~Keycloak's `partialImport`~~ | — | **Does not work.** No handler for authentication flows: HTTP 200, nothing created, no error. |
 

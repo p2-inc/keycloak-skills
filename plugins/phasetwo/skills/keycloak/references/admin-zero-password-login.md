@@ -126,7 +126,7 @@ don't rename one without the other.
 
 | Path | Cost | Requires |
 |---|---|---|
-| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors **and** binds in one call | **One call** | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension |
+| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors **and** binds in one call | **One call** | The p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension |
 | Manual sequence: create flow → create sub-flow → add each execution → set requirements → attach config → bind | Many calls | Nothing beyond stock Admin REST |
 | ~~`POST /admin/realms/{realm}/partialImport`~~ | — | **Does not work.** No handler for authentication flows: HTTP 200, `added: 0`, nothing created, no error. The admin console's "Partial import" and `kcadm.sh create partialImport` fail the same way. |
 

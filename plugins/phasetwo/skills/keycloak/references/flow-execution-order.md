@@ -231,7 +231,7 @@ have to be deleted and re-added in the order you want.
 
 ## Path 1 — `importAuthenticationFlow` (one shot, correct by construction)
 
-The [keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension's
+The `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension's
 import endpoint carries the asset's own `priority` values, so ordering comes out right for free.
 When the intent ships a `../assets/*.partial-import.json`, this is the path that avoids the whole
 problem. Still read the flow back once — the alias is hash-prefixed, so you need the real name

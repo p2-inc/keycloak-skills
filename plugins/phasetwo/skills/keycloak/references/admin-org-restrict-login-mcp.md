@@ -89,7 +89,7 @@ The two paths that do work:
 
 | Path | Cost | Requires |
 |---|---|---|
-| **`importAuthenticationFlow`** — authors the whole flow *and* applies bindings in one call | One call | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed on the target Keycloak |
+| **`importAuthenticationFlow`** — authors the whole flow *and* applies bindings in one call | One call | The p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension installed on the target Keycloak |
 | **The component path, through MCP tools** — `addFlow` → `addSubFlow` per sub-flow → `addAuthenticator` per leaf step (passing `priority` **and** `requirement`) → `addConditional` for the conditional-OTP sub-flow → `addAuthenticatorConfig` on each `ext-select-org` step → bind | Many calls, order matters | Nothing beyond stock Admin REST — no extension |
 
 **Both paths are MCP tool calls. Neither requires dropping to raw REST or asking the user for

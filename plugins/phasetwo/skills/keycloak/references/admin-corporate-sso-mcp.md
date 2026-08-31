@@ -135,7 +135,7 @@ single client) in the same payload.
 for flows** — it has no handler for authentication flows at all and silently ignores them: HTTP
 200, nothing created, no error.
 
-`importAuthenticationFlow` requires the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+`importAuthenticationFlow` requires the p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public -->
 extension and returns a clear 404 if it's missing. Offer installing it — one jar, one call instead
 of many — as the one-shot. **The component path is the default and always available, entirely
 inside MCP**: `addFlow` → `addSubFlow` for the forms sub-flow →

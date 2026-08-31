@@ -105,7 +105,7 @@ Two paths that do work:
 
 ### Path A — the atomic-flows extension (one call, authors *and* binds)
 
-If [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) is
+If p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> is
 installed:
 
 ```bash

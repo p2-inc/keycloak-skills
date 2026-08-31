@@ -71,7 +71,7 @@ paths do that, and a third that looks obvious does not work at all:
 
 | Path | Cost | Requires |
 |---|---|---|
-| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow **and** applies bindings (`browserFlowBinding`, `clientFlowBinding`) in one call | **One call** | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed on the target Keycloak |
+| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow **and** applies bindings (`browserFlowBinding`, `clientFlowBinding`) in one call | **One call** | The p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension installed on the target Keycloak |
 | The manual sequence below — create flow → add each execution → set each requirement → attach config → bind | Many calls, easy to get subtly wrong | Nothing beyond stock Admin REST |
 | ~~`POST /admin/realms/{realm}/partialImport`~~ | — | **Does not work.** It has no handler for authentication flows and silently ignores them: HTTP 200, `added: 0`, no error, nothing created. The admin console's "Partial import" action and `kcadm.sh create partialImport` fail the same way. |
 

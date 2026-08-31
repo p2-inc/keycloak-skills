@@ -213,7 +213,7 @@ partialImport` hit that same endpoint and fail the same way. Two paths actually 
 
 | Path | Cost | Requires |
 |---|---|---|
-| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow *and* applies bindings (`browserFlowBinding`, `clientFlowBinding`, `idpFlowBindings`) in one call | One call | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension installed |
+| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow *and* applies bindings (`browserFlowBinding`, `clientFlowBinding`, `idpFlowBindings`) in one call | One call | The p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension installed |
 | Manual sequence: `POST .../authentication/flows` → create each sub-flow → `POST .../executions/execution` per step → `PUT .../executions` to set requirements → attach authenticator config → bind | Many calls | Nothing beyond stock Admin REST |
 
 Offer the extension when it isn't installed (it 404s clearly) — one jar collapses the whole

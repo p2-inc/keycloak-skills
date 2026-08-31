@@ -91,7 +91,7 @@ Two mechanical notes:
 
 ### If the atomic-flows extension isn't installed
 
-`importAuthenticationFlow` needs the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+`importAuthenticationFlow` needs the p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public -->
 extension and 404s without it. Offer installing it as the one-shot — one jar, one call instead of
 many. **The component path below is the default and always available — no raw REST, no credentials
 from the user**:

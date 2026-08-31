@@ -76,7 +76,7 @@ Authoring paths, same two-plus-one-that-doesn't-work as the passwordless variant
 
 | Path | Cost | Requires |
 |---|---|---|
-| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors and binds in one call | **One call** | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension |
+| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors and binds in one call | **One call** | The p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension |
 | Manual sequence: create flow → sub-flow → add each execution → set requirements → attach config → bind | Many calls | Nothing beyond stock Admin REST |
 | ~~`POST /admin/realms/{realm}/partialImport`~~ | — | **Does not work** for authentication flows: HTTP 200, `added: 0`, nothing created. |
 

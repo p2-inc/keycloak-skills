@@ -20,7 +20,7 @@ Keycloak Admin REST with no extension required. That is the default path, not a 
 
 `importAuthenticationFlow` is the one-shot alternative: it authors a whole flow *and* its bindings
 in a single call, and is the only way to import a flow **completely** at once — but it needs the
-[p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public -->
 extension and 404s without it. Paired with `deleteFlow` it also gives a clean re-import cycle.
 Keycloak's own `partialImport` is not a substitute for either path: it has no authentication-flow
 handler and ignores flows silently (HTTP 200, nothing created).
@@ -170,7 +170,7 @@ per the "growing this router" convention below rather than improvising one.
 `partialImport` endpoint has **no handler for authentication flows** and silently ignores them
 (HTTP 200, nothing created, no error) — verified against Keycloak's own `PartialImportManager`
 source and tested on two versions. The asset *contents* are still correct; they're consumed either
-by the [keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+by the `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public -->
 extension's `/authentication-flow/import` endpoint (which also binds, in the same call) or by a
 manual create-flow/add-execution REST sequence. Renaming the assets is worth doing but hasn't been,
 to avoid churning every reference that links them.

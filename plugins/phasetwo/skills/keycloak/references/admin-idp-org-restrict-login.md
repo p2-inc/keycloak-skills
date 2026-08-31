@@ -109,7 +109,7 @@ The flow's executions, in order — the shape the bundled asset produces:
 
 | Path | Cost | Requires |
 |---|---|---|
-| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow **and** binds it to the IdP in one call | **One call** | The [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows) extension |
+| `POST /admin/realms/{realm}/authentication-flow/import?force={bool}` — authors the flow **and** binds it to the IdP in one call | **One call** | The p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public --> extension |
 | Manual sequence, then set `postBrokerLoginFlowAlias` on the IdP | Many calls | Nothing beyond stock Admin REST |
 | ~~`POST /admin/realms/{realm}/partialImport`~~ | — | **Does not work.** No handler for authentication flows: HTTP 200, `added: 0`, no error. |
 

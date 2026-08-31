@@ -59,7 +59,7 @@ biometric check on the authenticator itself, not just presence).
 Confirm with `listAuthenticationFlows` that no existing flow already does this (there is
 no built-in one).
 
-**If the [p2-inc keycloak-atomic-auth-flows](https://github.com/p2-inc/keycloak-atomic-auth-flows)
+**If the p2-inc `keycloak-atomic-auth-flows`<!-- relink https://github.com/p2-inc/keycloak-atomic-auth-flows when public -->
 extension is installed**, `importAuthenticationFlow` authors the whole flow — and binds it —
 in a single call; prefer that over the manual sequence below, and offer installing the
 extension if it 404s. (Keycloak's own `partialImport` endpoint is *not* an alternative: it has
