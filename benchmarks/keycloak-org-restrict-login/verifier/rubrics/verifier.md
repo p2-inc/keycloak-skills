@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # keycloak-org-restrict-login Verifier Rubric
 
 - `task_success`: login through `acme-portal` is restricted to members of one

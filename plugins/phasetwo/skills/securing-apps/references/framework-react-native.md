@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # React Native / Expo — native login with react-native-app-auth, the system browser, and PKCE
 
 ## What this is

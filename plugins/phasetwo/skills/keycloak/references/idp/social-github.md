@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # GitHub (social login) — console walkthrough
 
 `providerId=github`, driven by `createSocialIdp`.

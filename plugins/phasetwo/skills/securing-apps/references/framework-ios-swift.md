@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # iOS (Swift) — native login with AppAuth-iOS, ASWebAuthenticationSession, and PKCE
 
 ## What this is

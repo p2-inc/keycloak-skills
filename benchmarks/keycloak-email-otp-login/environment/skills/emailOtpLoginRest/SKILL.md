@@ -11,6 +11,9 @@ description: >-
   not magic link (a clicked link rather than a typed code).
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # emailOtpLoginRest
 
 ## What this is, and what it isn't

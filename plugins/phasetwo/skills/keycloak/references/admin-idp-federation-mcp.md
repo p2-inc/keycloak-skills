@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Enterprise identity federation (Entra ID, Okta, Auth0, ADFS, ...) — via the Keycloak MCP server
 
 ## What this is

@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 name: CI
 
 # No paths-ignore here, deliberately: in this repo the Markdown *is* the payload.
@@ -32,8 +35,8 @@ jobs:
         run: pip install "skillsaw==0.18.0"
       # Reads .skillsaw.yaml (strict: true, so warnings fail), the custom rules
       # in .skillsaw/rules.py, and .skillsaw-baseline.json. The baseline records
-      # the two known context-budget violations as ceilings, so this passes today
-      # but fails if SKILL.md grows past its current size.
+      # the three known context-budget violations as ceilings, so this passes
+      # today but fails if either SKILL.md grows past its current size.
       - name: Run skillsaw
         run: skillsaw
 

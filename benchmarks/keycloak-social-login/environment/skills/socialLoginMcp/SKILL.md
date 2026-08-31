@@ -9,6 +9,9 @@ description: >-
   and why the generic OIDC attribute mapper is the wrong mapper type for GitHub specifically.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Social login (e.g. "Sign in with GitHub") — via the Keycloak MCP server
 
 ## What this is

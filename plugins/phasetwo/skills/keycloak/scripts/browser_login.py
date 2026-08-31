@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Drive a Keycloak browser login headlessly and report where each step went.
 
     browser_login.py --realm myrealm --client my-app \

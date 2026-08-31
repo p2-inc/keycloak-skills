@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 # Intentionally a single FROM: this task runs from a PREBUILT image so that running
 # the benchmark never rebuilds a ~550MB Keycloak environment.
 #

@@ -10,6 +10,9 @@ description: >-
   for everything else) rather than the generic oidc-user-attribute-idp-mapper.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Social login (e.g. "Sign in with GitHub") — via raw Admin REST
 
 ## What this is

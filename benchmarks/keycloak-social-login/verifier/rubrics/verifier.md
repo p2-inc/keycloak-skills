@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # keycloak-social-login Verifier Rubric
 
 - `task_success`: the `acme` realm offers "Sign in with GitHub" as a built-in social identity

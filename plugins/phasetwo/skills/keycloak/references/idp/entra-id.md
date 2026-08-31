@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Microsoft Entra ID (Azure AD) — SAML console walkthrough
 
 Verified against Phase Two's own [idp-wizard](https://github.com/p2-inc/idp-wizard)

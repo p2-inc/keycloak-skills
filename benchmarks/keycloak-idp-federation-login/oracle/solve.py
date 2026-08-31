@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Human-written oracle: a plain "log in with Contoso" button.
 
 This is the simplest of the three sibling identity-brokering tasks in this repo. It is

@@ -13,6 +13,9 @@ description: >-
   and how to verify the routing by actually logging in.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Corporate SSO by email domain — via raw Admin REST
 
 ## What is actually being asked for

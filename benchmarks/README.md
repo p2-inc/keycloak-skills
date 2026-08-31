@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # benchmarks
 
 Task definitions from [skillsbench](https://github.com/anthropics/skillsbench) used to evaluate the skills in [`plugins/`](../plugins/) against real sandboxed scenarios.

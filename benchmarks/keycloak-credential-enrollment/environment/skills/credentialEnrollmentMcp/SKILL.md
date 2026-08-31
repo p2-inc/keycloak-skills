@@ -17,6 +17,9 @@ description: >-
   binding a login flow - this is the step that makes such a flow usable.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 Getting a **new credential onto a user who already exists**: a passkey, a TOTP
 authenticator, a replacement password, recovery codes. This is the step every passwordless
 intent leaves dangling — a flow can be authored and bound perfectly and still let nobody

@@ -14,6 +14,9 @@ description: >-
   login button, nothing more.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Broker a partner's OIDC identity provider as a plain login button — via the Keycloak MCP server
 
 ## What this is, and what it is NOT

@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 # Blocks until Keycloak is serving the acme realm AND the MCP server is
 # answering, or fails after ~180s. Installed as /usr/local/bin/wait-for-services.
 set -uo pipefail

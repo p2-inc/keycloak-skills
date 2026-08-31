@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Pytest-based verifier. Run by BenchFlow after the agent completes.
 
 Nothing is read from agent-produced files. Every assertion comes from firing real portal

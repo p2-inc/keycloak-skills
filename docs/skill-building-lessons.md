@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Building and evaluating agent skills — distilled lessons
 
 Portable rules extracted from building the `keycloak` router skill and its benchmarks. Written to

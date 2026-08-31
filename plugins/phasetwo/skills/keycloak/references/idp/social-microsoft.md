@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Microsoft (social login, personal accounts) — console walkthrough
 
 `providerId=microsoft`, driven by `createSocialIdp`. This is the **personal Microsoft account**

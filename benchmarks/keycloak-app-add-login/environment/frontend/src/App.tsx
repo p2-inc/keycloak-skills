@@ -1,3 +1,6 @@
+// Copyright 2026 Phase Two, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 // The Acme customer portal.
 //
 // There is no authentication here yet: every visitor sees the same page and the

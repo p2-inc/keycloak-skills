@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Angular SPA — login, logout and route protection with `oidc-spa/angular`
 
 ## What this is

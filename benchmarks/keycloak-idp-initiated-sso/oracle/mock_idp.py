@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """A mock Okta / Entra ID SAML identity provider that fires "portal tiles" at Keycloak.
 
 There is no real Okta or Entra tenant, and the sandbox is `no-network`. So instead of a

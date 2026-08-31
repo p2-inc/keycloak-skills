@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
 # registry - pinned by digest, not :latest, so this stays reproducible even if the
 # tag moves. Requires `docker login quay.io` with Phase Two Quay credentials.

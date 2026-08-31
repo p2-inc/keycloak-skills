@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Common errors, across every framework
 
 Loaded on every intent. These failures are identical whether the app is React or Spring Boot, so

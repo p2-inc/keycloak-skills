@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Runbook: adding a skill to this repository
 
 This repo is an Agent Skills marketplace: `.claude-plugin/marketplace.json` lists one or more

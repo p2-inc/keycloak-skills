@@ -10,6 +10,9 @@ description: >-
   setting from redirect URIs that fails only in a real browser.
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # React + Keycloak login — via the Keycloak MCP server
 
 ## What this is

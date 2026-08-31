@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Environment image notes for `keycloak-password-email-otp-mfa`
 
 **Current mode: the image is BUILT IN THE TEST.** `environment/Dockerfile` is the real recipe and

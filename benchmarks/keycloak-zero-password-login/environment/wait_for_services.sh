@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 # Blocks until Keycloak is serving the acme realm, the mail capture server is
 # accepting connections, the deployment-token proxy is running, and the MCP
 # server is ready, or fails after ~180s. Installed as /usr/local/bin/wait-for-services.

@@ -1,3 +1,6 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """Verifier for keycloak-credential-enrollment.
 
 Deliberately asserts OUTCOMES, not a particular sequence of calls: whether the

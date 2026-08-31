@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # keycloak-magic-link-login Verifier Rubric
 
 - `task_success`: the `acme` realm lets existing staff log in with an emailed link instead

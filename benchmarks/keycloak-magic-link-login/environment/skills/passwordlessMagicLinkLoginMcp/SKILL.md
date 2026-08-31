@@ -24,6 +24,9 @@ description: >-
   authenticator in the same provider, not covered here).
 ---
 
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Passwordless login by magic link — via the Keycloak MCP server
 
 ## What "magic link" actually is

@@ -10,11 +10,14 @@ description: >-
   "secure/protect my API", "validate a JWT", "invalid redirect_uri", "401 from my API",
   "CORS on the token call". **OIDC/OAuth2 only, not SAML.** Not realm, flow or IdP
   admin, not passwordless/SSO setup — that is the `keycloak` skill.
-license: Apache-2.0
+license: CC-BY-SA-4.0
 metadata:
   version: '0.1.0'
   author: Phase Two <support@phasetwo.io>
 ---
+
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 
 # Securing applications
 

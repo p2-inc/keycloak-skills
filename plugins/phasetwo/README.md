@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Phase Two Agent Skills Plugin
 
 Agent skills for Keycloak: configuring behaviors from real p2-inc extensions, for both vanilla/self-hosted Keycloak and Phase Two hosted Keycloak — and protecting your own applications with them.
@@ -19,3 +22,16 @@ Only add it by hand if you are running the skill outside the plugin:
 ```bash
 claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp
 ```
+
+## License
+
+Copyright 2026 Phase Two, Inc.
+
+The skill content and documentation under `skills/` is licensed
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the scripts and
+bundled authentication-flow assets are licensed
+[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0). Each file carries its
+own `SPDX-License-Identifier`. See [`LICENSE`](../../LICENSE),
+[`LICENSE-CODE`](../../LICENSE-CODE), [`NOTICE`](../../NOTICE), and the
+[license section](../../README.md#license) of the repository README for the full
+mapping and the requested attribution wording.

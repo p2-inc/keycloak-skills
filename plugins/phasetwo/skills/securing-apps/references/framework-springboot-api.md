@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Spring Boot — bearer-JWT resource server, with Keycloak roles mapped to Spring authorities
 
 ## What this is

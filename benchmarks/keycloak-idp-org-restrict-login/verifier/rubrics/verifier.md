@@ -1,3 +1,6 @@
+<!-- Copyright 2026 Phase Two, Inc. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # keycloak-idp-org-restrict-login Verifier Rubric
 
 - `task_success`: federated login through the partner identity provider is restricted to members

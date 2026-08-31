@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 """A transparent proxy in front of Keycloak, with one path intercepted.
 
 The Keycloak MCP server's flow-binding tools (bindRealmAuthenticationFlow,
