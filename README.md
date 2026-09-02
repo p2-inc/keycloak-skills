@@ -9,10 +9,6 @@ Structured the same way as [auth0/agent-skills](https://github.com/auth0/agent-s
 
 ## Install
 
-The repo root *is* the marketplace — that's where [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) lives. `keycloak-skills` is the marketplace name declared in that file (it matches the repo name); `phasetwo` is the plugin inside it. That pairing is what `plugin@marketplace` ids are built from: `phasetwo@keycloak-skills`.
-
-### From GitHub
-
 ```bash
 claude plugin marketplace add p2-inc/keycloak-skills
 ```
@@ -21,7 +17,11 @@ claude plugin marketplace add p2-inc/keycloak-skills
 claude plugin install phasetwo@keycloak-skills
 ```
 
+Then restart Claude Code (or open a new session) — skills are loaded at session start.
+
 Or interactively inside a Claude Code session: `/plugin marketplace add p2-inc/keycloak-skills`, then `/plugin install phasetwo`.
+
+How the ids fit together: the repo root *is* the marketplace — that's where [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) lives. `keycloak-skills` is the marketplace name declared in that file (it matches the repo name); `phasetwo` is the plugin inside it. That pairing is what `plugin@marketplace` ids are built from: `phasetwo@keycloak-skills`.
 
 ### From a local checkout
 
@@ -34,8 +34,6 @@ claude plugin marketplace add /absolute/path/to/keycloak-skills
 ```bash
 claude plugin install phasetwo@keycloak-skills
 ```
-
-Then **restart Claude Code** (or open a new session) — skills are loaded at session start, so an already-running session won't see the plugin.
 
 A marketplace added from a directory reads the checkout **live**: its `installLocation` is the repo path itself, not a cached copy, so uncommitted edits take effect with no refresh step. Add `--scope project` to `marketplace add` to record the marketplace in this checkout's own settings instead of your user config, so everyone working in the repo picks up the same plugin; `--scope local` keeps it to your machine without touching either.
 
