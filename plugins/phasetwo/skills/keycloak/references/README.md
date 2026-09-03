@@ -223,3 +223,8 @@ binds to the identity provider's post-broker login flow rather than the realm/cl
   Each such issue carries the developer's **verbatim prompt**, not a paraphrase — that's what makes
   the backlog usable: a new intent row's "plain language" column should be written from the actual
   phrasing developers used, not a guess at how they'd phrase it.
+- **Covered-but-wrong guidance files issues too.** The same SKILL.md section tells the agent to
+  offer an issue when a *covered* intent's reference file itself fails — steps that error out,
+  claims that prove wrong — naming the reference file and what went wrong alongside the verbatim
+  prompt. These are higher-value than gap issues (a gap is a missing feature; a wrong walkthrough
+  is a bug in shipped content), so triage them first.

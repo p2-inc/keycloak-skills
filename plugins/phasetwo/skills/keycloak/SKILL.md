@@ -72,8 +72,8 @@ never report a deletion as done.
 
 ### No intent matches
 
-Don't force an uncovered request into `admin:passwordless-magic-link` just to have somewhere to
-send it — that produces confidently wrong guidance. If the request is genuinely something else
+Don't force an uncovered request into `admin:passwordless-magic-link` — that produces confidently
+wrong guidance. If the request is genuinely something else
 (plugin development, realm/client administration, IdP federation, or anything not in the table
 above):
 
@@ -81,19 +81,21 @@ above):
    deny it and don't file anything.
 1. Say plainly that this isn't covered yet, and what you understood the request to be.
 2. Ask if they'd like an issue opened in this repo (`p2-inc/keycloak-skills`) describing the gap —
-   that's how this router grows new intents (see `references/README.md`'s "growing this router"
-   note) instead of silently mis-routing.
+   that's how this router grows new intents instead of silently mis-routing.
 3. If they say yes, draft the issue with:
-   - **The verbatim prompt** — the developer's own request text, unedited, in a quoted block. This
-     is the point of filing the issue at all: a paraphrase loses exactly the phrasing future router
-     updates need to recognize this case. Never summarize it away.
+   - **The verbatim prompt** — the developer's own request text, unedited, in a quoted block; a
+     paraphrase loses exactly the phrasing future router updates need. Never summarize it away.
    - Which intent(s) it was checked against and why nothing matched.
    - Anything else relevant already established in this conversation.
 
-   Show the drafted issue to them before filing anything — opening an issue is a public, visible
-   action and needs their explicit go-ahead on the actual content, not just on the idea of filing one.
-4. If they decline, or if there's no way to open an issue (no `gh`/git remote access), just leave it
-   there — don't paper over the gap by answering anyway.
+   Show the drafted issue before filing — it's a public action and needs their explicit go-ahead
+   on the actual content, not just the idea of filing.
+4. If they decline, or there's no way to open an issue (no `gh`/git remote), leave it — don't
+   paper over the gap by answering anyway.
+
+The same offer applies when a **covered** intent's reference file itself fails — steps error out
+or prove wrong. That issue names the file and what went wrong alongside the verbatim prompt; keep
+helping the developer either way.
 
 ---
 
