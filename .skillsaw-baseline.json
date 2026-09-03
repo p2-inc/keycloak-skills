@@ -1,7 +1,7 @@
 {
   "version": "1",
-  "generated_by": "skillsaw 0.18.0",
-  "generated_at": "2026-08-31T13:51:52.040431+00:00",
+  "generated_by": "skillsaw 0.19.0",
+  "generated_at": "2026-09-03T12:50:56.824546+00:00",
   "violations": [
     {
       "fingerprint": "fbf0575626829aa0",
@@ -16,9 +16,9 @@
       "fingerprint": "fa5e050a120419ff",
       "rule_id": "context-budget",
       "file_path": "plugins/phasetwo/skills/keycloak/SKILL.md",
-      "message": "Estimated 5,630 tokens exceeds skill warn limit of 3,000",
+      "message": "Estimated 3,815 tokens exceeds skill warn limit of 3,000",
       "severity": "warning",
-      "value": 5630,
+      "value": 3815,
       "baseline_mode": "ceiling"
     },
     {
