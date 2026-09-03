@@ -55,6 +55,43 @@ future routing needs to recognise the case.
 Doing the reverse left a proven procedure sitting in the test tree while the shipped skill
 declared that path missing.
 
+### Skill-smell review checklist (run at authoring time, per file)
+
+Derived from the 26-smell taxonomy in *From Anatomy to Smells: An Empirical Study of SKILL.md in
+Agent Skills* ([arXiv:2607.01456](https://arxiv.org/abs/2607.01456)), keeping the smells that
+apply to this repo's router-plus-references design. The paper's own finding is the reason this
+runs at authoring time: smells are essentially never removed once shipped (their corpus averaged
+10.5 smells per file; prevalence never declined over 35 weeks of history).
+
+- [ ] **Anti-rationalization guards present** (their most prevalent smell, 94% of skills): every
+  place an agent could plausibly shortcut needs an explicit "don't" with the consequence — the
+  router's "don't paper over the gap by answering anyway", "never report a deletion as done",
+  "the file is right" are the pattern. A required step without a guard *will* be skipped.
+- [ ] **The human is asked, not modeled** (77%): tooling choice, ambiguous intent, and anything
+  public (filing an issue) must route through an explicit question, with "don't ask twice"
+  scoping so the guard doesn't become noise.
+- [ ] **Every reference file carries its own verification** (69%): a walkthrough ends with
+  read-it-back / drive-a-real-login checks, not with the last write call. Delegating validation
+  to references is only honest if it's actually there — spot-check with
+  `grep -icE "verify|read it back|confirm" references/<file>.md` ≥ 2 before calling it covered.
+- [ ] **Warnings sit where the agent will be when they matter** (81% bury them): a caveat about
+  step N belongs at step N, bolded, with its failure mode — not in a preamble the agent read 200
+  lines ago. A skill-wide trap (like deletion requests) earns a Step-0-style section of its own.
+- [ ] **No undelegated detail in the router** (46%): implementation content lives in reference
+  files; what stays in SKILL.md is only what routing itself needs (disambiguating authenticator
+  names in intent rows counts; per-intent how-to paragraphs don't). The skillsaw context-budget
+  ratchet enforces the size side of this — don't regenerate the baseline upward.
+- [ ] **Description = what + when + trigger vocabulary**: their "Confusing Skill Description"
+  smell is failing any one of the three. Check it whenever an intent is added.
+- [ ] **Statics**: name ≤ 64 chars, description ≤ 1,024 chars, body ≤ 5,000 words, no XML tags in
+  the description, forward-slash paths only.
+
+Two of the paper's smells are deliberate deviations here, not defects: descriptions open with
+imperative "Use when …" (their third-person rule loses to Anthropic's house convention, and our
+trigger phrasing is benchmark-validated — don't rewrite a description at its char limit for a
+style rule), and multi-step references carry no progress-tracking boilerplate (the agent harness
+already provides todo tooling; 26 files of tracking scaffolding buys nothing).
+
 ---
 
 ## 2. Evaluating a skill — the part most often skipped
