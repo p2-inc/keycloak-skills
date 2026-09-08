@@ -29,6 +29,28 @@ description: >-
 
 # Passwordless login by magic link — via the Keycloak MCP server
 
+## Step 0 — Is the MCP surface actually here?
+
+**Do this before any tool call.** Check your tool list once, now, for these five:
+
+`createClusterDeployment` · `setSmtpSettings` · `listFlowExecutions` ·
+`setExecutionAuthenticatorConfig` · `bindRealmAuthenticationFlow`
+
+- **All five present** → say "Using the Keycloak MCP tools", then follow this skill as written.
+- **Any missing** → say "Keycloak MCP tools unavailable in this session (missing: …) — using the
+  Keycloak admin REST API instead", then **keep reading**. Every stage below still applies: the
+  flow shape, the SMTP requirement, the create-user-if-none-exists trap and the anti-enumeration
+  behaviour are properties of Keycloak, not of the transport. Only the calls change — carry out
+  each stage against the admin REST API (`$KC_URL/admin/realms/{realm}/...`) with an admin token,
+  and if the sibling skill `passwordlessMagicLinkLogin` is loaded, use its exact REST recipes.
+
+Decide once, here. Do not call an MCP tool to discover whether it exists, and do not alternate
+between the two paths afterwards — discovering the gap a step at a time is measurably more
+expensive than committing up front.
+
+Say which path you took either way: a run that silently swaps tooling is indistinguishable from
+one that never had the tools.
+
 ## What "magic link" actually is
 
 The user clicks a link, does not enter a password, and is signed in. Mechanically:
@@ -55,8 +77,9 @@ exactly as strong as email delivery and the token's own lifespan.
 Capture **`deploymentId`** and **`deploymentRealm`** (from `createClusterDeployment`) and reuse them on
 every call below. `setSmtpSettings`, `listFlowExecutions`, and `setExecutionAuthenticatorConfig` are
 newer additions to the MCP server specifically to make this flow driveable end-to-end without dropping
-to raw REST — if any of the three are missing from the tool list, that gap is real (not a skill error);
-say so and fall back to `passwordlessMagicLinkLogin`'s REST instructions for whichever piece is missing.
+to raw REST. Step 0 has already established that all of them are present — if a call nevertheless
+fails because the tool is unknown, treat that as the whole MCP surface being unavailable, not as one
+gap to patch: switch to `passwordlessMagicLinkLogin` for the rest of the task and say so.
 
 ## Stage 1 — Establish identity and target realm
 

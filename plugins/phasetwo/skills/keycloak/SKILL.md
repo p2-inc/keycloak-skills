@@ -111,6 +111,28 @@ context. Don't ask twice in the same conversation once it's established.
 
 If the answer is ambiguous, ask — don't guess and don't default to either side.
 
+### On tooling=mcp: verify the tools once, before Step 3
+
+Check the tool list for the specific tools the chosen intent needs (each reference file names
+them). Do it **once, up front** — never by calling a tool to see whether it exists, and never
+discovering the gap one step at a time. Trickling into a fallback mid-task is measurably worse
+than deciding at the start: in one measured run it cost 39% more tool calls and 51% more prompt
+tokens than committing to a path immediately.
+
+If tools are missing, say which, and diagnose before retrying:
+
+- **No `keycloak` tools at all** → the OAuth connection is unauthorized. Have the developer
+  check `/mcp`.
+- **Some tools present, later-alphabet ones missing** (`setSmtpSettings`, `updateRealm`, and
+  similar) → the client is showing only the first page of `tools/list`. MCP paginates, and a
+  client that ignores `nextCursor` sees one page — Codex does this
+  ([openai/codex#28858](https://github.com/openai/codex/issues/28858)). It is not a permissions
+  or scope problem, and re-authenticating will not fix it. Either raise the server's page size
+  above its tool count, or do this work in a client that pages.
+
+Do **not** silently substitute `rest` on a Phase Two hosted deployment — there is no admin
+credential there, so the `rest` files fail at their first step. Stop and fix the connection.
+
 ---
 
 ## Step 3: Load reference files
