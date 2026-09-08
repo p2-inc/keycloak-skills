@@ -1,0 +1,43 @@
+{
+  "name": "phasetwo",
+  "version": "0.14.0",
+  "description": "Keycloak administration and application-security skills for Phase Two and self-hosted Keycloak.",
+  "author": {
+    "name": "Phase Two",
+    "email": "support@phasetwo.io",
+    "url": "https://phasetwo.io"
+  },
+  "homepage": "https://github.com/p2-inc/keycloak-skills",
+  "repository": "https://github.com/p2-inc/keycloak-skills",
+  "license": "CC-BY-SA-4.0 AND Apache-2.0",
+  "keywords": [
+    "keycloak",
+    "phasetwo",
+    "authentication",
+    "authorization",
+    "sso",
+    "passwordless",
+    "oidc",
+    "webauthn"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Phase Two Keycloak",
+    "shortDescription": "Configure Keycloak and secure applications with OIDC.",
+    "longDescription": "Guided Keycloak administration, passwordless login, federation, credential enrollment, and OIDC application integration.",
+    "developerName": "Phase Two",
+    "category": "Security",
+    "capabilities": [
+      "Agent skills",
+      "Keycloak MCP server"
+    ],
+    "websiteURL": "https://phasetwo.io",
+    "defaultPrompt": [
+      "Set up passwordless login in Keycloak.",
+      "Connect my application to Keycloak with OIDC.",
+      "Configure enterprise SSO for my Keycloak realm."
+    ],
+    "brandColor": "#0B6E69"
+  }
+}
