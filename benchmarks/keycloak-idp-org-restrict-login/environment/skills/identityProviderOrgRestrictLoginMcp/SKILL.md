@@ -9,6 +9,26 @@ description: >-
 
 # Restrict federated (IdP) login to members of one organization — via the Keycloak MCP server
 
+## Step 0 — Is the MCP surface actually here?
+
+**Do this before any tool call.** Check your tool list once, now, for:
+
+`createOidcIdp` · `createOrganization` · `listOrganizations` · `setExecutionAuthenticatorConfig` · `whoAmI`
+
+- **All present** → say "Using the Keycloak MCP tools", then follow this skill as written.
+- **Any missing** → say "Keycloak MCP tools unavailable in this session (missing: …) — using the
+  Keycloak admin REST API instead", then **keep reading**. Every stage below still applies: the
+  behaviour it configures is a property of Keycloak, not of the transport. Only the calls change —
+  carry out each stage against the admin REST API (`$KC_URL/admin/realms/{realm}/...`) with an
+  admin token. If the sibling skill `identityProviderOrgRestrictLoginRest` is loaded, use its exact REST recipes.
+
+Decide once, here. Do not call an MCP tool to discover whether it exists, and do not alternate
+between the two paths afterwards — discovering the gap a step at a time is measurably more
+expensive than committing up front.
+
+Say which path you took either way: a run that silently swaps tooling is indistinguishable from
+one that never had the tools.
+
 ## What this is, and what it isn't
 
 The user authenticates at an **external identity provider**, and only gets into your realm if

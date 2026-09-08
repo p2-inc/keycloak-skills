@@ -35,6 +35,26 @@ Two variants, and the prerequisite decides between them, not taste.
 | **When they're prompted** | Next login, after authenticating, before returning to the app | Whenever they open the emailed link |
 | **MCP support** | **None — no tool sets this. Use REST.** | `sendRequiredActionEmail` |
 
+## Step 0 — Is the MCP surface actually here?
+
+**Do this before any tool call.** Check your tool list once, now, for:
+
+`enableRequiredAction` · `findUser` · `setUserPassword` · `updateUser` · `whoAmI`
+
+- **All present** → say "Using the Keycloak MCP tools", then follow this skill as written.
+- **Any missing** → say "Keycloak MCP tools unavailable in this session (missing: …) — using the
+  Keycloak admin REST API instead", then **keep reading**. Every stage below still applies: the
+  behaviour it configures is a property of Keycloak, not of the transport. Only the calls change —
+  carry out each stage against the admin REST API (`$KC_URL/admin/realms/{realm}/...`) with an
+  admin token. If the sibling skill `credentialEnrollmentRest` is loaded, use its exact REST recipes.
+
+Decide once, here. Do not call an MCP tool to discover whether it exists, and do not alternate
+between the two paths afterwards — discovering the gap a step at a time is measurably more
+expensive than committing up front.
+
+Say which path you took either way: a run that silently swaps tooling is indistinguishable from
+one that never had the tools.
+
 ## Tools this skill drives
 
 | Purpose | Tool |
