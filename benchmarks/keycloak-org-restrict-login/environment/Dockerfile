@@ -17,7 +17,12 @@ FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
 # Phase Two's product never enables it (see
 # https://github.com/p2-inc/keycloak-orgs/blob/main/docs/note-keycloak-organizations-feature.md).
 # No --features=organization flag is passed anywhere in this task.
-FROM quay.io/phasetwo/phasetwo-keycloak@sha256:af0cb0d9fb3a73aa619678f5d290d5bd048908744996fe7ec435991ea0a93b03
+# Digest bumped from af0cb0d9 to e13732af: the old base topped out at GLIBC_2.43,
+# but this Dockerfile's `apk add python3` pulls from Wolfi's ROLLING repo, whose
+# current python3.13 needs GLIBC_2.44 — so the pinned base + rolling packages
+# combination broke the build with
+#   ImportError: /usr/lib/libm.so.6: version `GLIBC_2.44' not found
+FROM quay.io/phasetwo/phasetwo-keycloak@sha256:e13732af924b5c6de38a0fbbe4aed656ab00480ccc17c23ce3044ece4c1eb9cd
 USER root
 
 # The p2-inc keycloak-atomic-auth-flows extension: authors custom authentication
