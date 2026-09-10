@@ -10,6 +10,24 @@ version: "0.18.0"
 
 # Enable/disable rules with configurable severity levels
 rules:
+  # Context budget. skillsaw 0.19 defaults the `skill` category to warn at 3,000
+  # tokens; both shipped skills sit above that and were previously carried by
+  # ceiling entries in .skillsaw-baseline.json (keycloak 3,815 / securing-apps
+  # 3,022). The keycloak router grew past its ceiling when the tooling=mcp
+  # verification step was added, which turned a suppressed warning into a CI
+  # failure.
+  #
+  # Raised rather than trimmed: the router is a dispatch table plus the
+  # diagnostics needed to avoid a wrong turn, and the content earning the tokens
+  # is the part that stops an agent thrashing. Keep an eye on it — the real
+  # forcing function is still the 1024-char frontmatter description limit, which
+  # will eventually require splitting this skill rather than growing it.
+  context-budget:
+    limits:
+      skill:
+        warn: 4500
+        error: 8000
+
   # Plugin Structure
   plugin-json-required:
     enabled: true
