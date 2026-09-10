@@ -19,10 +19,21 @@ CONTOSO=http://localhost:8080/auth/realms/contoso-idp/.well-known/openid-configu
 MCP=http://localhost:8090/mcp
 
 for _ in $(seq 1 90); do
-  mcp_status=$(curl -s -o /dev/null -w '%{http_code}' "$MCP" 2>/dev/null || echo 000)
+  # No MCP server on a public build (no MCP_IMAGE passed): report the same
+  # 401 a running server gives, so every readiness shape below is satisfied.
+  if [ -f /opt/mcp-app/quarkus-run.jar ]; then
+    mcp_status=$(curl -s -o /dev/null -w '%{http_code}' "$MCP" 2>/dev/null || echo 000)
+  else
+    mcp_status=401
+  fi
   if curl -sf "$ACME" >/dev/null 2>&1 && curl -sf "$CONTOSO" >/dev/null 2>&1 \
       && [ "$mcp_status" = "401" ]; then
-    echo "keycloak ready on :8080/auth (acme, contoso-idp), mcp server ready on :8090"
+    if [ -f /opt/mcp-app/quarkus-run.jar ]; then
+      mcp_msg="mcp server ready on :8090"
+    else
+      mcp_msg="mcp server not built in (public build)"
+    fi
+    echo "keycloak ready on :8080/auth (acme, contoso-idp), $mcp_msg"
     exit 0
   fi
   sleep 2

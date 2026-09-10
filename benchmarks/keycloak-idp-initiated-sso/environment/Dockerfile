@@ -11,7 +11,24 @@
 # does not yet strip `ifResourceExists`. That particular fix is irrelevant here (this
 # task never touches authentication flows), but the opaque-4xx behaviour still applies
 # to identity-provider/mapper calls. Re-pin to a newer digest once those fixes ship.
-FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
+# The Keycloak MCP server stage is OPTIONAL so this benchmark is publicly
+# buildable. The image lives in Phase Two's private ECR, which outside
+# contributors cannot pull — a hard FROM failed their build outright with
+# "403 Forbidden ... no resource-based policy allows ecr:BatchGetImage".
+#
+# The default is a tiny public image with an empty /deployments, so the COPY
+# below lands nothing and the runtime simply has no MCP server. Phase Two
+# builds pass the real one:
+#
+#   docker build --build-arg MCP_IMAGE=773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest .
+#
+# entrypoint.sh and wait_for_services.sh both key off whether
+# /opt/mcp-app/quarkus-run.jar exists, so nothing else has to stay in sync.
+ARG MCP_IMAGE=alpine:3.20
+FROM ${MCP_IMAGE} AS mcp-app
+# No-op for the real server image (it ships /deployments already); creates an
+# empty dir for the public default so the COPY always resolves.
+RUN mkdir -p /deployments
 
 # Phase Two's own Keycloak distribution. This task needs NO Keycloak extension at all:
 # everything it exercises (the SAML broker endpoint's /clients/{urlName} variant and the

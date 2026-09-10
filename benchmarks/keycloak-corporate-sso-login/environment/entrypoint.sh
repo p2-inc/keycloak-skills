@@ -25,6 +25,8 @@ set -m
       >/dev/null 2>&1 && break
     sleep 2
   done
+  # Absent on a public build (no MCP_IMAGE passed) - skip rather than crash.
+  [ -f /opt/mcp-app/quarkus-run.jar ] || exit 0
   /opt/java21/bin/java -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
 ) &
 

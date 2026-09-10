@@ -39,6 +39,8 @@ python3 /opt/mcp/deployment_token_proxy.py > /var/log/deployment-token-proxy.log
   # Keycloak already owns :9000 (its own management interface); newer MCP staging
   # builds also enable a Quarkus management interface defaulting to :9000, which
   # made the MCP server die at bind time. Keep it off Keycloak's port.
+  # Absent on a public build (no MCP_IMAGE passed) - skip rather than crash.
+  [ -f /opt/mcp-app/quarkus-run.jar ] || exit 0
   java -Dquarkus.management.port=9001 -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
 ) &
 

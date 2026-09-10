@@ -34,6 +34,8 @@ python3 /opt/mcp/deployment_token_proxy.py > /var/log/deployment-token-proxy.log
   # ready" because /mcp never answers. Set with -D on THIS jvm: QUARKUS_MANAGEMENT_PORT
   # as an env var would move BOTH apps and reproduce the clash. Matches the other
   # MCP-wired benchmarks in this repo.
+  # Absent on a public build (no MCP_IMAGE passed) - skip rather than crash.
+  [ -f /opt/mcp-app/quarkus-run.jar ] || exit 0
   /opt/java21/bin/java -Dquarkus.management.port=9001 -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
 ) &
 

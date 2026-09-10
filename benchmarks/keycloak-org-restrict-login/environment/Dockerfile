@@ -4,7 +4,24 @@
 # The real Keycloak MCP server (Quarkus), pulled pre-built from Phase Two's own
 # registry - pinned by digest, not :latest, so this stays reproducible even if the
 # tag moves. Requires `docker login quay.io` with Phase Two Quay credentials.
-FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
+# The Keycloak MCP server stage is OPTIONAL so this benchmark is publicly
+# buildable. The image lives in Phase Two's private ECR, which outside
+# contributors cannot pull — a hard FROM failed their build outright with
+# "403 Forbidden ... no resource-based policy allows ecr:BatchGetImage".
+#
+# The default is a tiny public image with an empty /deployments, so the COPY
+# below lands nothing and the runtime simply has no MCP server. Phase Two
+# builds pass the real one:
+#
+#   docker build --build-arg MCP_IMAGE=773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest .
+#
+# entrypoint.sh and wait_for_services.sh both key off whether
+# /opt/mcp-app/quarkus-run.jar exists, so nothing else has to stay in sync.
+ARG MCP_IMAGE=alpine:3.20
+FROM ${MCP_IMAGE} AS mcp-app
+# No-op for the real server image (it ships /deployments already); creates an
+# empty dir for the public default so the COPY always resolves.
+RUN mkdir -p /deployments
 
 # Phase Two's own Keycloak distribution - includes the REAL p2-inc keycloak-orgs
 # extension (io.phasetwo.keycloak-keycloak-orgs jar, baked into providers/ already
