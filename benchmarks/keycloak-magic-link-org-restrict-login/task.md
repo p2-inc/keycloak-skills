@@ -53,16 +53,12 @@ sandbox:
   cpus: 2
   memory_mb: 4096
   storage_mb: 10240
-  # Prebuilt environment image: bench references it directly and SKIPS the docker
-  # build step entirely (see benchflow sandbox/docker.py `_validate_definition` -
-  # with docker_image set, no environment/Dockerfile is required at all). This is
-  # why there is no Dockerfile in this task: running the client should not rebuild
-  # a ~550MB Keycloak image.
-  #
-  # The recipe that produces this image lives in image/Dockerfile alongside this
-  # task - it is documentation and a rebuild path, NOT part of the test environment.
-  # To refresh: build image/ and push the tag below.
-  docker_image: quay.io/phasetwo/skillsbench-keycloak-magic-link-org-restrict-login:latest
+  # Built from environment/ like every other task here. This task previously
+  # pointed `docker_image` at a prebuilt tag to avoid rebuilding a ~550MB Keycloak
+  # image on every run, but that tag was never published - `docker pull` returns
+  # "not found" - so the task only ran on a machine that happened to have a stale
+  # local copy, and benchflow's `docker compose down --rmi all` teardown deleted
+  # even that after the first run. Building from source is slower but reproducible.
   # The keycloak-MCP-server jar runs in-container against the acme realm below.
   # The bearer token is a fixture, not a secret: it is signed with a private key
   # baked into environment/acme-realm.json (the same fixed, non-random signing
