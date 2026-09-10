@@ -101,14 +101,6 @@ The plugin declares an MCP server named `keycloak` (see [`plugins/phasetwo/.mcp.
 codex mcp login keycloak --oauth-client-registration dcr
 ```
 
-`dcr` selects Dynamic Client Registration explicitly. The Phase Two authorization server (`https://app.phasetwo.io/auth/realms/self`) advertises `client_id_metadata_document_supported: false`, so CIMD is not available on this realm.
-
-If registration is rejected with `403 insufficient_scope` and `Policy 'Allowed Client Scopes' rejected request ... Not permitted to use specified clientScope`, the client is asking for a scope the realm's client-registration policy does not allow. The protected-resource metadata for `/mcp` publishes no `scopes_supported`, so clients fall back to requesting everything the realm advertises in `scopes_supported`. Narrow the request instead:
-
-```bash
-codex mcp login keycloak --oauth-client-registration dcr --scopes openid,profile,email
-```
-
 Start a new Codex task after installing and logging in, so it picks up the skills and the MCP server.
 
 ### If you have a copy in `~/.claude/skills/`
