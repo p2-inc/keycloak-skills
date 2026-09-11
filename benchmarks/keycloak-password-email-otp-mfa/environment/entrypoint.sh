@@ -44,6 +44,8 @@ python3 /opt/mcp/deployment_token_proxy.py > /var/log/deployment-token-proxy.log
   # which surfaces only as "services did not become ready within 180s" from
   # wait-for-services, because /mcp never answers. Set with -D on THIS jvm, not as an env
   # var: QUARKUS_MANAGEMENT_PORT would move BOTH apps and reproduce the clash.
+  # Absent on a public build (no MCP_IMAGE passed) - skip rather than crash.
+  [ -f /opt/mcp-app/quarkus-run.jar ] || exit 0
   java -Dquarkus.management.port=9001 -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
 ) &
 

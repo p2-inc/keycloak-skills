@@ -70,14 +70,16 @@ not covered in v1.** Offer the first, say the second is uncovered, don't improvi
 
 ### No intent matches
 
-Don't force an uncovered request into `app:add-login` just to have somewhere to send it.
+Don't force an uncovered request into `app:add-login`.
 
 Out of scope: realm/flow/IdP config, passwordless, SSO, organizations → the **`keycloak`** skill.
 Running/deploying the server, or writing an SPI provider, theme or extension jar → neither yet.
 
 Otherwise follow the `keycloak` router's gap procedure: say plainly it isn't covered, offer to open
 an issue in `p2-inc/keycloak-skills` quoting the developer's **verbatim** prompt, and show the draft
-before filing. If they decline, leave it — don't paper over the gap by answering anyway.
+before filing. If they decline, leave it — don't paper over the gap by answering anyway. The same
+offer applies when a covered reference file itself fails — name the file and what went wrong; keep
+helping either way.
 
 ---
 
@@ -126,9 +128,8 @@ Map the developer's words to the same keys.
 
 ### Variant disambiguation — web app vs API
 
-**Only when Tier 1 didn't already pin it** — a Tier 1 match on `spring-boot-starter*-oauth2-resource-server`,
-`jose`/`express-jwt`, `pyjwt` or `quarkus-oidc` *is* the API variant. This rule is for **Tier 2/3**
-matches, where intent outranks the manifest. Web variants are v2.
+**Only when Tier 1 didn't already pin it** — a Tier 1 match on one of the API rows *is* the API
+variant. This rule is for **Tier 2/3** matches, where intent outranks the manifest. Web variants are v2.
 
 | Tier 2/3 base | API variant | Choose it when… |
 |---|---|---|
@@ -214,5 +215,5 @@ gap rather than substituting a neighbour.
 
 **If a framework file and your recollection disagree about which library to use, the file is right.**
 Keycloak removed its Java adapters in 25.0.0 and deprecated `keycloak-connect`; each framework file
-names the dead adapter it replaces. Emitting one is the most likely failure here, because it is what
-older training data suggests and the code does not build.
+names the dead adapter it replaces. Emitting one is the most likely failure here — older training
+data suggests it, and it doesn't build.

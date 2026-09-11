@@ -29,10 +29,20 @@ for _ in $(seq 1 90); do
   curl -sf "$ACME" >/dev/null 2>&1 && keycloak_up=1
   (echo > /dev/tcp/127.0.0.1/1025) >/dev/null 2>&1 && mail_up=1
   curl -sf "$PROXY_HEALTH" >/dev/null 2>&1 && proxy_up=1
-  mcp_status=$(curl -s -o /dev/null -w '%{http_code}' "$MCP" 2>/dev/null || echo 000)
-  [ "$mcp_status" = "401" ] && mcp_up=1
+  # A public build ships no MCP server; only gate on it when it was built in.
+  if [ -f /opt/mcp-app/quarkus-run.jar ]; then
+    mcp_status=$(curl -s -o /dev/null -w '%{http_code}' "$MCP" 2>/dev/null || echo 000)
+    [ "$mcp_status" = "401" ] && mcp_up=1
+  else
+    mcp_up=1
+  fi
   if [ "$keycloak_up" -eq 1 ] && [ "$mail_up" -eq 1 ] && [ "$proxy_up" -eq 1 ] && [ "$mcp_up" -eq 1 ]; then
-    echo "keycloak ready on :8080/auth (acme), mail capture server ready on :1025, proxy ready on :8091, mcp server ready on :8090"
+    if [ -f /opt/mcp-app/quarkus-run.jar ]; then
+      mcp_msg="mcp server ready on :8090"
+    else
+      mcp_msg="mcp server not built in (public build)"
+    fi
+    echo "keycloak ready on :8080/auth (acme), mail capture server ready on :1025, proxy ready on :8091, $mcp_msg"
     exit 0
   fi
   sleep 2

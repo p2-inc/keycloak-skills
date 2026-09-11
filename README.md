@@ -3,13 +3,11 @@
 
 # keycloak-skills
 
-An Agent Skills marketplace for Phase Two — Claude Code skills for configuring Keycloak/Phase Two extension behaviors, for both vanilla/self-hosted Keycloak and Phase Two hosted Keycloak.
+An Agent Skills marketplace for Phase Two — Claude Code and Codex skills for configuring Keycloak/Phase Two extension behaviors, for both vanilla/self-hosted Keycloak and Phase Two hosted Keycloak.
 
-Structured the same way as [auth0/agent-skills](https://github.com/auth0/agent-skills): a `.claude-plugin/marketplace.json` listing one or more plugins, each living under `plugins/<name>/` with its own `.claude-plugin/plugin.json` and `skills/`. Only the Claude platform surface is set up for now (no `.cursor-plugin`/`.codex-plugin`).
+Each plugin lives under `plugins/<name>/`, with shared Agent Skills and platform-specific manifests for Claude Code and Codex.
 
-## Install
-
-The repo root *is* the marketplace — that's where [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) lives. `keycloak-skills` is the marketplace name declared in that file (it matches the repo name); `phasetwo` is the plugin inside it. That pairing is what `plugin@marketplace` ids are built from: `phasetwo@keycloak-skills`.
+## Install with Claude Code
 
 ### From GitHub
 
@@ -22,6 +20,8 @@ claude plugin install phasetwo@keycloak-skills
 ```
 
 Or interactively inside a Claude Code session: `/plugin marketplace add p2-inc/keycloak-skills`, then `/plugin install phasetwo`.
+
+The repo root *is* the marketplace — that's where [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) lives. `keycloak-skills` is the marketplace name declared in that file (it matches the repo name); `phasetwo` is the plugin inside it. That pairing is what `plugin@marketplace` ids are built from: `phasetwo@keycloak-skills`.
 
 ### From a local checkout
 
@@ -80,6 +80,28 @@ claude plugin marketplace remove keycloak-skills
 ```
 
 Renaming the marketplace in `marketplace.json` **silently orphans existing installs** — the registration is keyed on that name, so anyone who added the old one loses the plugin with no error message and has to re-add and reinstall.
+
+## Install with Codex
+
+```bash
+codex plugin marketplace add p2-inc/keycloak-skills
+```
+
+```bash
+codex plugin add phasetwo@keycloak-skills
+```
+
+Codex reads [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) at the repo root and the Codex manifest at [`plugins/phasetwo/.codex-plugin/plugin.json`](plugins/phasetwo/.codex-plugin/plugin.json).
+
+### Authenticate the MCP server
+
+The plugin declares an MCP server named `keycloak` (see [`plugins/phasetwo/.mcp.json`](plugins/phasetwo/.mcp.json)) pointing at `https://mcp.phasetwo.io/mcp`, which is OAuth-protected. Log in once after installing:
+
+```bash
+codex mcp login keycloak --oauth-client-registration dcr
+```
+
+Start a new Codex task after installing and logging in, so it picks up the skills and the MCP server.
 
 ### If you have a copy in `~/.claude/skills/`
 

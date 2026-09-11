@@ -23,6 +23,26 @@ Only add it by hand if you are running the skill outside the plugin:
 claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp
 ```
 
+### Codex authentication
+
+Codex discovers the MCP from `.mcp.json`. To authenticate it from the CLI,
+use OAuth login:
+
+```bash
+codex mcp login keycloak
+```
+
+Codex can request dynamic client registration explicitly:
+
+```bash
+codex mcp login keycloak --oauth-client-registration dcr
+```
+
+This setting cannot be embedded in the plugin manifest. DCR must also be
+allowed by the Phase Two authorization server. If the server rejects client
+registration, reconnect the `keycloak` entry from `/mcp` in Codex or ask Phase
+Two to enable DCR for `https://mcp.phasetwo.io/mcp`.
+
 ## License
 
 Copyright 2026 Phase Two, Inc.

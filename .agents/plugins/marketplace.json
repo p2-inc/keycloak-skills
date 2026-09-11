@@ -1,0 +1,20 @@
+{
+  "name": "keycloak-skills",
+  "interface": {
+    "displayName": "Phase Two Keycloak Skills"
+  },
+  "plugins": [
+    {
+      "name": "phasetwo",
+      "source": {
+        "source": "local",
+        "path": "./plugins/phasetwo"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Security"
+    }
+  ]
+}

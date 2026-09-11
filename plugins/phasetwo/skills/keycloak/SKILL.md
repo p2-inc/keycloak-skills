@@ -72,8 +72,8 @@ never report a deletion as done.
 
 ### No intent matches
 
-Don't force an uncovered request into `admin:passwordless-magic-link` just to have somewhere to
-send it — that produces confidently wrong guidance. If the request is genuinely something else
+Don't force an uncovered request into `admin:passwordless-magic-link` — that produces confidently
+wrong guidance. If the request is genuinely something else
 (plugin development, realm/client administration, IdP federation, or anything not in the table
 above):
 
@@ -81,19 +81,21 @@ above):
    deny it and don't file anything.
 1. Say plainly that this isn't covered yet, and what you understood the request to be.
 2. Ask if they'd like an issue opened in this repo (`p2-inc/keycloak-skills`) describing the gap —
-   that's how this router grows new intents (see `references/README.md`'s "growing this router"
-   note) instead of silently mis-routing.
+   that's how this router grows new intents instead of silently mis-routing.
 3. If they say yes, draft the issue with:
-   - **The verbatim prompt** — the developer's own request text, unedited, in a quoted block. This
-     is the point of filing the issue at all: a paraphrase loses exactly the phrasing future router
-     updates need to recognize this case. Never summarize it away.
+   - **The verbatim prompt** — the developer's own request text, unedited, in a quoted block; a
+     paraphrase loses exactly the phrasing future router updates need. Never summarize it away.
    - Which intent(s) it was checked against and why nothing matched.
    - Anything else relevant already established in this conversation.
 
-   Show the drafted issue to them before filing anything — opening an issue is a public, visible
-   action and needs their explicit go-ahead on the actual content, not just on the idea of filing one.
-4. If they decline, or if there's no way to open an issue (no `gh`/git remote access), just leave it
-   there — don't paper over the gap by answering anyway.
+   Show the drafted issue before filing — it's a public action and needs their explicit go-ahead
+   on the actual content, not just the idea of filing.
+4. If they decline, or there's no way to open an issue (no `gh`/git remote), leave it — don't
+   paper over the gap by answering anyway.
+
+The same offer applies when a **covered** intent's reference file itself fails — steps error out
+or prove wrong. That issue names the file and what went wrong alongside the verbatim prompt; keep
+helping the developer either way.
 
 ---
 
@@ -109,176 +111,52 @@ context. Don't ask twice in the same conversation once it's established.
 
 If the answer is ambiguous, ask — don't guess and don't default to either side.
 
+### On tooling=mcp: verify the tools once, before Step 3
+
+Check the tool list for the specific tools the chosen intent needs (each reference file names
+them). Do it **once, up front** — never by calling a tool to see whether it exists, and never
+discovering the gap one step at a time. Trickling into a fallback mid-task is measurably worse
+than deciding at the start: in one measured run it cost 39% more tool calls and 51% more prompt
+tokens than committing to a path immediately.
+
+If tools are missing, say which, and diagnose before retrying:
+
+- **No `keycloak` tools at all** → the OAuth connection is unauthorized. Have the developer
+  check `/mcp`.
+- **Some tools present, later-alphabet ones missing** (`setSmtpSettings`, `updateRealm`, and
+  similar) → the client is showing only the first page of `tools/list`. MCP paginates, and a
+  client that ignores `nextCursor` sees one page — Codex does this
+  ([openai/codex#28858](https://github.com/openai/codex/issues/28858)). It is not a permissions
+  or scope problem, and re-authenticating will not fix it. Either raise the server's page size
+  above its tool count, or do this work in a client that pages.
+
+Do **not** silently substitute `rest` on a Phase Two hosted deployment — there is no admin
+credential there, so the `rest` files fail at their first step. Stop and fix the connection.
+
 ---
 
 ## Step 3: Load reference files
 
-Authoring or editing a flow (any intent below whose reference file creates, binds, or reorders
+For intent `admin:X`, read `references/admin-X-{tooling}.md`:
+
+```
+tooling=mcp  → references/admin-X-mcp.md
+tooling=rest → references/admin-X.md   (no suffix)
+```
+
+Each reference file carries its own prerequisites (required p2-inc extension jars), flow-shape
+and execution-order rules, per-vendor sub-file mappings under `references/idp/`, and any step
+that has no tool on one tooling — follow the file, don't answer from this router. The full
+per-intent file inventory is indexed in [`references/README.md`](references/README.md).
+
+Two exceptions, **mcp-only**: `admin:cluster-setup` → `references/cluster-setup-mcp.md` and
+`admin:cluster-create-deployment` → `references/cluster-create-deployment-mcp.md`. On
+tooling=rest, say plainly that cluster provisioning is a Phase Two control-plane capability with
+no self-managed equivalent — don't offer a REST workaround; the capability doesn't exist there.
+
+Authoring or editing a flow (any intent whose reference file creates, binds, or reorders
 authentication executions)? Also read
 [`references/flow-execution-order.md`](references/flow-execution-order.md) — shared across those
-intents. It carries the **shape** rule (every level must be all-ALTERNATIVE or all-REQUIRED/
-CONDITIONAL; mixing them makes Keycloak silently erase the alternatives, which is how "primary
-login, then a choice of second factors" gets built wrong) and the **order** rule (the create calls
-do not establish order — read it back and repair). Neither is guaranteed by the create calls, and
-both fail without an error.
-
-### admin:passwordless-magic-link
-```
-Read: references/admin-passwordless-magic-link-{tooling}.md
-  tooling=mcp  → references/admin-passwordless-magic-link-mcp.md
-  tooling=rest → references/admin-passwordless-magic-link.md
-```
-
-### admin:email-otp-login
-```
-Read: references/admin-email-otp-login-{tooling}.md
-  tooling=mcp  → references/admin-email-otp-login-mcp.md
-  tooling=rest → references/admin-email-otp-login.md
-```
-Requires the p2-inc `keycloak-magic-link` extension (same jar as magic-link) for the
-`ext-email-otp` authenticator. Unlike magic-link there is **no auto-created flow** — one has to
-be authored, and its execution order AND identifier-step choice are load-bearing: an identifier
-step (`ext-auth-username-auth-note`, NOT stock `auth-username-form` — that one leaks account
-existence) must run BEFORE `ext-email-otp`.
-
-### admin:password-email-otp-mfa
-```
-Read: references/admin-password-email-otp-mfa-{tooling}.md
-  tooling=mcp  → references/admin-password-email-otp-mfa-mcp.md
-  tooling=rest → references/admin-password-email-otp-mfa.md
-```
-Requires the p2-inc `keycloak-magic-link` extension, same as `admin:email-otp-login`. The first
-step is deliberately `auth-username-password-form` (stock Keycloak) — the opposite choice from
-`admin:email-otp-login`'s identifier-only step, and correct here specifically: the password must
-gate the OTP, so a wrong password never reaches `ext-email-otp` and never sends mail. Don't
-route a "2FA" or "second factor" request here to the passwordless intent just because both
-use `ext-email-otp` — check whether a password is supposed to remain required.
-
-### admin:passwordless-magic-link-org-restrict
-```
-Read: references/admin-passwordless-magic-link-org-restrict-{tooling}.md
-  tooling=mcp  → references/admin-passwordless-magic-link-org-restrict-mcp.md
-  tooling=rest → references/admin-passwordless-magic-link-org-restrict.md
-```
-Requires the p2-inc `keycloak-orgs` extension, same as `admin:org-restrict-login` below. The
-custom flow's execution order is load-bearing: the org check has to run *before* the magic-link
-send step, or a non-member would still receive the email. Don't drop to plain
-`admin:passwordless-magic-link` guidance just because the request mentions "magic link" — check
-for an organization-restriction requirement first.
-
-### admin:passwordless-passkey
-```
-Read: references/admin-passwordless-passkey-{tooling}.md
-  tooling=mcp  → references/admin-passwordless-passkey-mcp.md
-  tooling=rest → references/admin-passwordless-passkey.md
-```
-
-### admin:zero-password-login
-```
-Read: references/admin-zero-password-login-{tooling}.md
-  tooling=mcp  → references/admin-zero-password-login-mcp.md
-  tooling=rest → references/admin-zero-password-login.md
-```
-Requires the p2-inc `keycloak-magic-link` extension for `ext-magic-form` (WebAuthn itself is stock
-Keycloak), so **half** of this flow depends on a jar — check before authoring. Don't answer this
-with the auto-created `magic link` flow: that offers magic link only, no passkey path. The two
-authenticators are ALTERNATIVE siblings and their order is load-bearing — `ext-magic-form` must be
-the lower priority, or a user with no passkey lands on a ceremony they cannot complete.
-
-### admin:credential-enrollment
-```
-Read: references/admin-credential-enrollment-{tooling}.md
-  tooling=mcp  → references/admin-credential-enrollment-mcp.md
-  tooling=rest → references/admin-credential-enrollment.md
-```
-Settle which variant applies first — the **prerequisite** decides it, not preference. Both are inert
-unless the action is registered AND enabled: the failure that reads as "I configured it and nothing
-happened". On tooling=mcp the required-action variant has **no tool** (nothing sets `requiredActions`
-on an existing user), so that one step routes to the `rest` file — say so rather than substituting
-the email variant or setting a password. The email variant goes **only to a verified
-address** — the token authenticates whoever opens it, and nothing enforces that.
-
-### admin:cluster-setup
-```
-Read: references/cluster-setup-mcp.md   (tooling=mcp only)
-```
-If tooling=rest (self-managed Keycloak), say plainly that cluster provisioning is a Phase Two
-control-plane capability with no self-managed equivalent. Don't offer a REST workaround; this
-isn't a missing reference doc, it's a capability that doesn't exist for that tooling.
-
-### admin:cluster-create-deployment
-```
-Read: references/cluster-create-deployment-mcp.md   (tooling=mcp only)
-```
-Same tooling=rest handling as `admin:cluster-setup` above — doesn't apply to self-managed
-Keycloak, don't improvise a REST equivalent.
-
-### admin:corporate-sso
-```
-Read: references/admin-corporate-sso-{tooling}.md
-  tooling=mcp  → references/admin-corporate-sso-mcp.md
-  tooling=rest → references/admin-corporate-sso.md
-```
-
-### admin:social-login
-```
-Read: references/admin-social-login-{tooling}.md
-  tooling=mcp  → references/admin-social-login-mcp.md
-  tooling=rest → references/admin-social-login.md
-```
-Then, for the specific vendor asked for, also read the matching per-vendor console walkthrough:
-`references/idp/social-google.md`, `social-microsoft.md`, `social-github.md`, `social-facebook.md`.
-Other built-in providers (GitLab, Bitbucket, X/Twitter, LinkedIn, PayPal, OpenShift...) have no
-dedicated walkthrough — the mechanism is the same, say so plainly.
-
-### admin:idp-federation
-```
-Read: references/admin-idp-federation-{tooling}.md
-  tooling=mcp  → references/admin-idp-federation-mcp.md
-  tooling=rest → references/admin-idp-federation.md
-```
-If the vendor is **Okta**, hand off to the `settingOktaIdentityProvider` skill instead — it's a
-complete guided workflow, don't duplicate it here. For every other vendor, the mechanics file's own
-Step 1 table maps it to a per-vendor file under `references/idp/` — read exactly the one matching
-the developer's vendor. Those are console click-paths, so the same file serves both toolings.
-If asked about **LDAP/Active Directory** as a login source, that's user federation, not
-brokering — say plainly this router has no chapter for it yet
-(MCP tools exist: `createLdapUserStorage`, `testLdapConnection`, `syncLdapUsers`) rather than
-routing it into a SAML/OIDC vendor file or claiming no tool exists.
-
-### admin:idp-initiated-sso
-```
-Read: references/admin-idp-initiated-sso-{tooling}.md
-  tooling=mcp  → references/admin-idp-initiated-sso-mcp.md
-  tooling=rest → references/admin-idp-initiated-sso.md
-```
-Then read exactly one vendor file: `references/idp/okta-idp-initiated.md` or
-`references/idp/entra-idp-initiated.md` (console click-paths; tooling-agnostic).
-
-Prerequisite: the vendor must ALREADY be brokered as a **SAML** identity provider — do
-`admin:idp-federation` first if not. This mechanism is SAML-only; there is no OIDC-broker
-equivalent. The two settings developers expect on the *identity provider* are **client** attributes
-instead — the refs name them.
-
-Both variants target a **SAML** client (an OIDC/SPA app gets a shim client beside its untouched
-OIDC one); the reference files carry the field-level detail. Retrofitting an **already-existing**
-client is the one case with no MCP path — it needs the `rest` file. Say which path you're on.
-
-### admin:idp-org-restrict-login
-```
-Read: references/admin-idp-org-restrict-login-{tooling}.md
-  tooling=mcp  → references/admin-idp-org-restrict-login-mcp.md
-  tooling=rest → references/admin-idp-org-restrict-login.md
-```
-Both paths require the p2-inc `keycloak-orgs` extension. This binds the identity provider's
-**post-broker login flow**, not the realm/client browser flow the other org intent uses — and the
-stock post-broker flow has no `ext-select-org`, so binding that one gates nothing.
-
-### admin:org-restrict-login
-```
-Read: references/admin-org-restrict-login-{tooling}.md
-  tooling=mcp  → references/admin-org-restrict-login-mcp.md
-  tooling=rest → references/admin-org-restrict-login.md
-```
-Both paths require the p2-inc `keycloak-orgs` extension — nothing in this intent works
-without it.
+intents. It carries the **shape** rule (every level all-ALTERNATIVE or all-REQUIRED/CONDITIONAL;
+mixing them makes Keycloak silently erase the alternatives) and the **order** rule (the create
+calls do not establish order — read it back and repair). Both fail without an error.

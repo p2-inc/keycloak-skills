@@ -10,7 +10,24 @@
 # The tradeoff is explicit: a run's result can now change without this task
 # changing. If you need a reproducible historical run, pin the digest back here.
 # Requires `docker login quay.io` with Phase Two Quay credentials.
-FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
+# The Keycloak MCP server stage is OPTIONAL so this benchmark is publicly
+# buildable. The image lives in Phase Two's private ECR, which outside
+# contributors cannot pull — a hard FROM failed their build outright with
+# "403 Forbidden ... no resource-based policy allows ecr:BatchGetImage".
+#
+# The default is a tiny public image with an empty /deployments, so the COPY
+# below lands nothing and the runtime simply has no MCP server. Phase Two
+# builds pass the real one:
+#
+#   docker build --build-arg MCP_IMAGE=773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest .
+#
+# entrypoint.sh and wait_for_services.sh both key off whether
+# /opt/mcp-app/quarkus-run.jar exists, so nothing else has to stay in sync.
+ARG MCP_IMAGE=alpine:3.20
+FROM ${MCP_IMAGE} AS mcp-app
+# No-op for the real server image (it ships /deployments already); creates an
+# empty dir for the public default so the COPY always resolves.
+RUN mkdir -p /deployments
 
 # Phase Two's own Keycloak distribution. This single base image already bundles BOTH
 # extensions this task needs as real Maven dependencies of phasetwo-module (see
@@ -28,7 +45,12 @@ FROM 773532640636.dkr.ecr.us-west-2.amazonaws.com/mcp/staging:latest AS mcp-app
 # Phase Two's product never enables it (see
 # https://github.com/p2-inc/keycloak-orgs/blob/main/docs/note-keycloak-organizations-feature.md).
 # No --features=organization flag is passed anywhere in this task.
-FROM quay.io/phasetwo/phasetwo-keycloak@sha256:af0cb0d9fb3a73aa619678f5d290d5bd048908744996fe7ec435991ea0a93b03
+# Digest bumped from af0cb0d9 to e13732af: the old base topped out at GLIBC_2.43,
+# but this Dockerfile's `apk add python3` pulls from Wolfi's ROLLING repo, whose
+# current python3.13 needs GLIBC_2.44 — so the pinned base + rolling packages
+# combination broke the build with
+#   ImportError: /usr/lib/libm.so.6: version `GLIBC_2.44' not found
+FROM quay.io/phasetwo/phasetwo-keycloak@sha256:e13732af924b5c6de38a0fbbe4aed656ab00480ccc17c23ce3044ece4c1eb9cd
 USER root
 
 # The p2-inc keycloak-atomic-auth-flows extension: authors custom authentication
