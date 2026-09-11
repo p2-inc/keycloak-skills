@@ -11,6 +11,18 @@
   "homepage": "https://phasetwo.io",
   "repository": "https://github.com/p2-inc/keycloak-skills",
   "license": "CC-BY-SA-4.0 AND Apache-2.0",
+  "mcpServers": {
+    "keycloak": {
+      "type": "http",
+      "url": "https://mcp.phasetwo.io/mcp",
+      "auth": {
+        "CLIENT_ID": "1602794b-cd18-4c5c-8f2d-a80015801436",
+        "scopes": [
+          "openid"
+        ]
+      }
+    }
+  },
   "keywords": [
     "keycloak",
     "phasetwo",
