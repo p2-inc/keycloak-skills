@@ -1,0 +1,60 @@
+{
+  "name": "keycloak-skills",
+  "owner": {
+    "name": "Phase Two",
+    "email": "support@phasetwo.io"
+  },
+  "metadata": {
+    "description": "Agent skills for configuring Keycloak/Phase Two extension behaviors, for vanilla Keycloak and Phase Two hosted Keycloak.",
+    "version": "0.14.0"
+  },
+  "plugins": [
+    {
+      "name": "phasetwo",
+      "displayName": "Phase Two Keycloak",
+      "source": "./plugins/phasetwo",
+      "description": "Keycloak administration and application-security skills for Phase Two and self-hosted Keycloak. `keycloak` routes realm-administration work — passwordless login, enterprise SSO and identity-provider federation, organization login restriction, credential enrollment, cluster provisioning. `securing-apps` wires Keycloak login and bearer-token validation into your own React, Angular, Vue, Next.js, mobile or backend app.",
+      "version": "0.14.0",
+      "repository": "https://github.com/p2-inc/keycloak-skills.git",
+      "license": "CC-BY-SA-4.0 AND Apache-2.0",
+      "author": {
+        "name": "Phase Two",
+        "email": "support@phasetwo.io"
+      },
+      "keywords": [
+        "keycloak",
+        "phasetwo",
+        "authentication",
+        "authorization",
+        "sso",
+        "passwordless",
+        "magic-link",
+        "passkey",
+        "webauthn",
+        "cluster",
+        "deployment",
+        "identity-provider",
+        "social-login",
+        "saml",
+        "oidc",
+        "zero-password",
+        "required-actions",
+        "credential-enrollment",
+        "totp",
+        "idp-initiated-sso",
+        "react",
+        "angular",
+        "vue",
+        "nextjs",
+        "spring-boot",
+        "mobile",
+        "oidc-spa",
+        "keycloak-js",
+        "jwt",
+        "resource-server",
+        "pkce"
+      ],
+      "category": "security"
+    }
+  ]
+}
