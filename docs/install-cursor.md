@@ -3,150 +3,53 @@
 
 # Install with Cursor
 
-Verified against **Cursor 3.19.13**.
+Requires Cursor 3.19 or later.
 
-Cursor loads this plugin with no Cursor-specific packaging required, because its
-manifest resolver falls back to the Claude Code files:
+## Add the marketplace
 
-| What Cursor looks for | Order |
-| --- | --- |
-| Plugin manifest | `.cursor-plugin/plugin.json` → `.claude-plugin/plugin.json` → `plugin.json` |
-| Marketplace | `.cursor-plugin/marketplace.json` → `.claude-plugin/marketplace.json` |
-| MCP servers | `.mcp.json` or `mcp.json` at the plugin root |
-
-This repo ships the `.cursor-plugin/` files anyway, so the listing carries its own
-display name, keywords and category instead of inheriting Claude's.
-
-## Pick your route
-
-### You already use Claude Code — nothing to do
-
-Cursor imports plugins installed in Claude Code automatically. If you have already
-run `claude plugin install phasetwo@keycloak-skills`, the plugin is live in Cursor
-the next time it loads. You can confirm it in the log (see [Verify](#verify)):
-
-```text
-[cc-marketplace-import] discoveryComplete
-loadClaudePlugin phasetwo@keycloak-skills loaded in 327.8ms
-```
-
-### From this repository — team marketplace
-
-Cursor imports a marketplace from a GitHub repo through the web dashboard, not the
-CLI (the `cursor` command is only the editor launcher and has no plugin subcommands):
+Cursor imports a marketplace from a GitHub repository through the web dashboard:
 
 1. **Dashboard → Plugins**
 2. Under **Team Marketplaces**, click **Add Marketplace**
 3. Choose **Import from Repo** and point it at `p2-inc/keycloak-skills`
-4. Cursor parses [`.cursor-plugin/marketplace.json`](../.cursor-plugin/marketplace.json)
-   and lists the plugins it found — add **Phase Two Keycloak** with **Add to Marketplace**
-5. Set **Marketplace Access**, optionally enable **Auto Refresh** (needs the Cursor
-   GitHub App on the repo), and save
+4. Cursor lists the plugins it finds — add **Phase Two Keycloak** with
+   **Add to Marketplace**
+5. Set **Marketplace Access**, optionally enable **Auto Refresh** so the plugin
+   updates when changes are pushed (this needs the Cursor GitHub App installed on
+   the repository), and save
 
-Then install it from the editor: open **Customize** in the sidebar, find
-**Phase Two Keycloak**, click **Install**, and choose project or user scope.
+## Install the plugin
 
-### From a local checkout — plugin development
+In Cursor, open **Customize** in the sidebar, find **Phase Two Keycloak**, click
+**Install**, and choose project or user scope.
 
-Copy the plugin directory into Cursor's local plugin folder, then reload:
+The plugin's two skills — `keycloak` for realm administration and `securing-apps`
+for wiring login into your own application — are then listed under **Customize**.
+Ask for something like *"set up passwordless magic-link login on my Keycloak realm"*
+and the matching skill activates.
 
-```bash
-cp -R plugins/phasetwo ~/.cursor/plugins/local/phasetwo
-```
-
-Run **Developer: Reload Window** from the command palette, or restart Cursor.
-
-> **Copy it — do not symlink it.** Cursor's own documentation suggests
-> `ln -s /path/to/plugin ~/.cursor/plugins/local/my-plugin`, but 3.19.13 rejects a
-> symlink whose target lives outside that folder:
->
-> ```text
-> loadUserLocalPlugin phasetwo rejected: symlink target
->   /path/to/keycloak-skills/plugins/phasetwo is outside ~/.cursor/plugins/local
-> ```
->
-> The plugin then silently does not load. Re-copy after changes, or use the Claude
-> Code install above, which does read your checkout live.
-
-## Authenticate the MCP server
+## The Keycloak MCP server
 
 Both skills use the Keycloak MCP server at `https://mcp.phasetwo.io/mcp` to inspect
-deployment targets and verify changes against a live realm. It is OAuth-protected.
+deployment targets and verify changes against a live realm. Installing the plugin
+connects it — there is nothing to configure.
 
-The plugin pins a pre-registered OAuth client in
-[`.cursor-plugin/plugin.json`](../plugins/phasetwo/.cursor-plugin/plugin.json), so
-there is nothing to configure:
+The server is OAuth-protected. The first time a skill uses a tool, Cursor opens a
+browser window to sign in to Phase Two; after you approve, Cursor stores the tokens
+and refreshes them for you. The plugin ships with a pre-registered OAuth client, so
+you are only ever asked to sign in, never to register anything.
 
-```json
-"mcpServers": {
-  "keycloak": {
-    "type": "http",
-    "url": "https://mcp.phasetwo.io/mcp",
-    "auth": { "CLIENT_ID": "…", "scopes": ["openid"] }
-  }
-}
-```
+Once connected, Cursor has the full Keycloak toolset available — creating clusters
+and deployments, configuring authentication flows, identity providers, client
+scopes and SMTP, and reading back the realm to verify a change landed.
 
-On first use Cursor opens a browser window to sign in to Phase Two. After you
-approve, tokens are stored by Cursor and refreshed automatically.
+Two things worth knowing:
 
-**Why the client is pinned.** Without `auth.CLIENT_ID`, Cursor performs dynamic
-client registration, sending three redirect URIs — including
-`cursor://anysphere.cursor-mcp/oauth/callback`, whose "host" is not a resolvable
-hostname. Keycloak's Trusted Hosts policy rejects the registration:
-
-```text
-Policy 'Trusted Hosts' rejected request to client-registration service.
-Details: URI doesn't match any trusted host or trusted domain
-```
-
-Supplying a client id makes Cursor skip registration entirely, so the policy is
-never consulted. `scopes` is pinned for the same reason: left unset, Cursor falls
-back to requesting the authorization server's entire `scopes_supported` list.
-
-This block lives in the Cursor manifest rather than the shared
-[`.mcp.json`](../plugins/phasetwo/.mcp.json) so that Claude Code and Codex keep
-their existing behaviour.
-
-## Verify
-
-Open **Customize** in the sidebar — the plugin's skills should be listed.
-
-For the authoritative view, read Cursor's logs under
-`~/Library/Application Support/Cursor/logs/<timestamp>/`:
-
-```bash
-# plugin loading
-tail -f ~/Library/Application\ Support/Cursor/logs/*/window*/exthost/anysphere.cursor-agent-exec/Cursor\ Plugins.*.log
-
-# MCP connection
-tail -f ~/Library/Application\ Support/Cursor/logs/*/mcp-server-plugin-phasetwo-keycloak.log
-```
-
-A healthy connection ends like this:
-
-```text
-Successfully connected to streamableHttp server
-[V2 FSM] connection:connect_success: conn=connecting,auth=valid -> conn=connected,auth=valid
-Server "plugin-phasetwo-keycloak" fingerprint changed: tools=159, status=connected
-```
-
-`tools=159` is the number to check. Cursor follows `tools/list` pagination correctly
-and surfaces the whole toolset.
-
-Then try it: ask Cursor something like *"set up passwordless magic-link login on my
-Keycloak realm"* and confirm the `keycloak` skill activates.
-
-## Troubleshooting
-
-| Symptom | Cause and fix |
-| --- | --- |
-| `Trusted Hosts rejected request to client-registration service` | Cursor fell back to dynamic registration — the `auth.CLIENT_ID` block is missing or the plugin is stale. Reinstall, or reload the window. |
-| `loadUserLocalPlugin … rejected: symlink target … is outside` | You symlinked into `~/.cursor/plugins/local`. Copy the directory instead. |
-| `status=needsAuth`, `tools=1` | The OAuth flow has not completed. Click the sign-in prompt, or reconnect the server from Cursor's MCP settings. |
-| `tools=0, status=connected` | Transient — Cursor logs this between connecting and the first `tools/list`. If it persists, reconnect. |
-| Plugin edits have no effect | Cursor does not re-read plugin manifests while a connection is live. Run **Developer: Reload Window**. |
-| A tool returns a permission error that the same call does not produce in Claude Code | The pinned `scopes` list may be too narrow for the downstream Phase Two API. Widen it in the Cursor manifest. |
+- **The tools act on your own Phase Two account.** Cursor signs in as you, and every
+  tool call carries your identity, so an agent can only do what you can do.
+- **Deleting clusters, deployments and realms is deliberately not available.** The
+  server refuses those operations regardless of your permissions; remove them from
+  the Phase Two console instead.
 
 ## References
 

@@ -30,9 +30,8 @@ claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp
 Each client authenticates the MCP server differently. Full walkthroughs:
 
 - [Claude Code](../../docs/install-claude-code.md)
-- [Cursor](../../docs/install-cursor.md) — pins a pre-registered OAuth client in
-  [`.cursor-plugin/plugin.json`](.cursor-plugin/plugin.json), because Cursor's dynamic
-  client registration is rejected by Keycloak's Trusted Hosts policy
+- [Cursor](../../docs/install-cursor.md) — ships a pre-registered OAuth client, so
+  installing the plugin and signing in is all that is needed
 - [Codex](../../docs/install-codex.md) — `codex mcp login keycloak`, and DCR must be
   allowed by the Phase Two authorization server
 

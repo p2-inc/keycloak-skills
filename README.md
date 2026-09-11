@@ -20,10 +20,6 @@ The repo root *is* the marketplace. `keycloak-skills` is the marketplace name de
 in those files (it matches the repo name); `phasetwo` is the plugin inside it. That
 pairing is what ids like `phasetwo@keycloak-skills` are built from.
 
-Cursor resolves `.cursor-plugin/` first and falls back to `.claude-plugin/`, so it
-loads the plugin even without Cursor-specific files — and imports plugins already
-installed in Claude Code automatically.
-
 ## Plugins
 
 - [`phasetwo`](plugins/phasetwo/) — a unified `keycloak` skill that routes Keycloak/Phase Two requests to the right guidance: passwordless login (magic link, email OTP, passkey, or passkey-or-magic-link), email OTP as a second factor, organization-membership login restriction, corporate SSO by email domain, social login and enterprise IdP federation, IdP-initiated SSO, and Phase Two cluster/deployment provisioning. New capabilities get added as reference docs under the same skill, once genuinely written and verified, rather than as new skills.
