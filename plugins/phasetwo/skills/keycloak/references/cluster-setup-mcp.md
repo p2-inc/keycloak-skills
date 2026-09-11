@@ -27,6 +27,11 @@ The person running this may be doing it for the first time. So:
   values into a SINGLE question; don't narrate intermediate tool calls.
 - **Never invent values.** Cluster names, regions, and the owning org are the user's — ask and
   wait.
+- **NEVER alter the checkout link.** Reproduce `checkoutLink` byte for byte — the whole string,
+  including everything after the `#`. Stripe puts session state in that fragment, and a link
+  truncated at the `#` is not the same link. Do not shorten it, wrap it in markdown, "clean up"
+  the percent-encoding, or drop a query string. This has actually happened: an agent relayed only
+  the part before the `#` and the user was handed a broken link.
 - **NEVER enter or complete payment.** `createCluster` returns a Stripe checkout link. If a
   browser tool is available, opening a tab to that link for the user is fine (Stage 4) — but stop
   there. Filling in card or billing details, or clicking to submit/pay, is the human's step,
@@ -49,6 +54,7 @@ The person running this may be doing it for the first time. So:
 | Regions | `listClusterRegions` | Available regions; also the capability probe (404 = no SaaS bundle) |
 | Name check | `checkClusterNameAvailable` | Confirm the chosen name is free (lowercase alphanumeric, ≤63 chars) |
 | Create + pay | `createCluster` | Create the cluster; returns the **Stripe checkout link** |
+| Resume checkout | `resumeClusterCheckout` | Fresh payment link for a cluster stuck in `BILLING_SETUP`/`PENDING_PAYMENT` — use instead of creating a second cluster |
 | Poll status | `getCluster` | Watch status until `ACTIVE` (BILLING_SETUP → PENDING_PAYMENT → PROVISIONING → ACTIVE) |
 | First realm | `checkDeploymentNameAvailable`, `createClusterDeployment` | Optionally create the first deployment (a realm) |
 | Custom domain | `updateClusterDomain` | Optionally set a custom domain |
@@ -103,6 +109,12 @@ Every cluster is owned by an organization.
    If no browser tool is available, present the `checkoutLink` prominently instead and tell the
    user to open it themselves.
 
+   **Copy the link exactly as returned.** These URLs look like
+   `https://checkout.stripe.com/c/pay/cs_test_...#fidnandhYHdWcXxpYCc%2F...` — the part after the
+   `#` carries Stripe's session state and is part of the link. Paste the raw string; never
+   truncate at the `#`, re-encode it, or shorten it for readability. If it looks unwieldy, that is
+   expected — hand it over whole anyway.
+
    **In either case, do not interact with the checkout page beyond opening it** — no filling in
    card/billing fields, no clicking pay/submit, no reading back card details. Opening the tab is
    as far as this goes; completing the purchase is the human's step, always. If the checkout page
@@ -115,6 +127,11 @@ After the user confirms they've completed checkout, poll `getCluster` with the c
 `clusterId` and report progress as the status advances: `BILLING_SETUP → PENDING_PAYMENT →
 PROVISIONING → ACTIVE`. Only proceed once it's **ACTIVE**. If it stalls in `BILLING_SETUP`,
 payment hasn't completed — point the user back to the checkout link.
+
+If you no longer have a usable link (it expired, or it was mangled in transit), call
+`resumeClusterCheckout` with the `clusterId` to mint a fresh one. **Do not call `createCluster`
+again** — the cluster already exists, and a second call creates a duplicate that only Phase Two
+support can remove.
 
 ## Stage 6 — First deployment (optional)
 
