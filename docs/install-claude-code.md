@@ -83,3 +83,20 @@ not track your checkout, it goes stale silently, and if you also install the plu
 end up with two `keycloak` skills of different vintages in the same session. Prefer the
 local marketplace above, and delete `~/.claude/skills/keycloak/` once the plugin is
 installed.
+
+## The MCP server
+
+Both skills use the Keycloak MCP server at `https://mcp.phasetwo.io/mcp`. The plugin
+declares it in [`.mcp.json`](../plugins/phasetwo/.mcp.json) with a pre-registered
+OAuth client, so Claude Code signs you in rather than registering a client of its own:
+
+```json
+"oauth": { "clientId": "…", "callbackPort": 8787, "scopes": "openid" }
+```
+
+`callbackPort` is what makes this work. Claude Code builds its redirect URI as
+`http://localhost:<callbackPort>/callback`, and picks a free port at random unless you
+pin one. Pinning 8787 gives every client the same redirect URI, so one registered
+client covers Claude Code, Cursor and Codex.
+
+Check the connection with `/mcp` in a session.

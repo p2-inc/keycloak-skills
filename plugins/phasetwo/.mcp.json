@@ -2,7 +2,12 @@
   "mcpServers": {
     "keycloak": {
       "type": "http",
-      "url": "https://mcp.phasetwo.io/mcp"
+      "url": "https://mcp.phasetwo.io/mcp",
+      "oauth": {
+        "clientId": "1602794b-cd18-4c5c-8f2d-a80015801436",
+        "callbackPort": 8787,
+        "scopes": "openid"
+      }
     }
   }
 }

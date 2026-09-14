@@ -29,25 +29,42 @@ codex plugin marketplace upgrade
 Start a **new** Codex task after installing, so it picks up the skills and the MCP
 server.
 
-## Authenticate the MCP server
+## The MCP server
 
-Codex discovers the MCP server from [`.mcp.json`](../plugins/phasetwo/.mcp.json).
-Authenticate it from the CLI:
+Both skills use the Keycloak MCP server at `https://mcp.phasetwo.io/mcp`. The Codex
+manifest declares it with a pre-registered OAuth client, so Codex does not have to
+register one of its own:
+
+```json
+"mcpServers": {
+  "keycloak": {
+    "type": "http",
+    "url": "https://mcp.phasetwo.io/mcp",
+    "scopes": ["openid"],
+    "oauth": {
+      "client_id": "…",
+      "callback_url": "http://localhost:8787/callback",
+      "callback_port": 8787
+    }
+  }
+}
+```
+
+Sign in once after installing:
 
 ```bash
 codex mcp login keycloak
 ```
 
-Codex can request dynamic client registration explicitly:
+If you need Codex to register its own client instead — against an authorization
+server that allows it — override the strategy for a single login:
 
 ```bash
 codex mcp login keycloak --oauth-client-registration dcr
 ```
 
-This setting cannot be embedded in the plugin manifest. DCR must also be allowed by
-the Phase Two authorization server. If the server rejects client registration,
-reconnect the `keycloak` entry from `/mcp` in Codex, or ask Phase Two to enable DCR
-for `https://mcp.phasetwo.io/mcp`.
+That flag cannot be embedded in the plugin manifest, and dynamic registration must
+also be permitted by the Phase Two authorization server.
 
 ## Known limitations
 
