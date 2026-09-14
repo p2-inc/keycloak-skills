@@ -50,7 +50,11 @@ register one of its own:
 }
 ```
 
-Sign in once after installing:
+You do not have to connect or authenticate it separately. The marketplace entry
+declares `"authentication": "ON_INSTALL"`, so Codex runs the browser sign-in as part
+of installing the plugin.
+
+If you ever need to sign in again — revoked access, a cleared token store:
 
 ```bash
 codex mcp login keycloak
