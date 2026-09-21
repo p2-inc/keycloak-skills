@@ -5,6 +5,8 @@
 
 Agent skills for Keycloak: configuring behaviors from real p2-inc extensions, for both vanilla/self-hosted Keycloak and Phase Two hosted Keycloak — and protecting your own applications with them.
 
+Ships for Claude Code, Cursor and Codex from one shared `skills/` tree.
+
 The two skills split by **what the work targets**: `keycloak` changes a live realm, `securing-apps` changes your application's source code.
 
 ## Skills
@@ -23,25 +25,15 @@ Only add it by hand if you are running the skill outside the plugin:
 claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp
 ```
 
-### Codex authentication
+### Per-client authentication
 
-Codex discovers the MCP from `.mcp.json`. To authenticate it from the CLI,
-use OAuth login:
+Each client authenticates the MCP server differently. Full walkthroughs:
 
-```bash
-codex mcp login keycloak
-```
-
-Codex can request dynamic client registration explicitly:
-
-```bash
-codex mcp login keycloak --oauth-client-registration dcr
-```
-
-This setting cannot be embedded in the plugin manifest. DCR must also be
-allowed by the Phase Two authorization server. If the server rejects client
-registration, reconnect the `keycloak` entry from `/mcp` in Codex or ask Phase
-Two to enable DCR for `https://mcp.phasetwo.io/mcp`.
+- [Claude Code](../../docs/install-claude-code.md)
+- [Cursor](../../docs/install-cursor.md) — ships a pre-registered OAuth client, so
+  installing the plugin and signing in is all that is needed
+- [Codex](../../docs/install-codex.md) — `codex mcp login keycloak`, and DCR must be
+  allowed by the Phase Two authorization server
 
 ## License
 

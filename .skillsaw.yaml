@@ -80,9 +80,11 @@ rules:
     enabled: true
     severity: error
 
-  # Only the Claude plugin surface is in scope right now (no .cursor-plugin/
-  # .codex-plugin), so the openclaw cross-platform packaging block isn't
-  # required yet. Revisit if/when this repo adds non-Claude platform support.
+  # This repo now ships three plugin surfaces — .claude-plugin, .codex-plugin
+  # and .cursor-plugin. None of them is OpenClaw: these rules validate a
+  # metadata.openclaw installer block (brew/node/go/uv/download + OS gating)
+  # for the OpenClaw runtime, which we do not target. Keep disabled unless we
+  # actually publish for OpenClaw.
   skill-openclaw-metadata:
     enabled: false
 
