@@ -33,7 +33,8 @@ server.
 
 Both skills use the Keycloak MCP server at `https://mcp.phasetwo.io/mcp`. The Codex
 manifest declares it with a pre-registered OAuth client, so Codex does not have to
-register one of its own:
+register one of its own. Each platform has its own — `claude-client`, `cursor-client`,
+`codex-client` — carrying only that platform's redirect URIs:
 
 ```json
 "mcpServers": {
@@ -42,13 +43,17 @@ register one of its own:
     "url": "https://mcp.phasetwo.io/mcp",
     "scopes": ["openid"],
     "oauth": {
-      "client_id": "…",
+      "client_id": "codex-client",
       "callback_url": "http://localhost:8787/callback",
       "callback_port": 8787
     }
   }
 }
 ```
+
+`callback_url` is pinned because Codex otherwise generates a random per-install
+callback path (`http://127.0.0.1/callback/<random>`), which no pre-registered client
+could match.
 
 You do not have to connect or authenticate it separately. The marketplace entry
 declares `"authentication": "ON_INSTALL"`, so Codex runs the browser sign-in as part

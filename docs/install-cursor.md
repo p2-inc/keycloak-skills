@@ -36,8 +36,9 @@ connects it — there is nothing to configure.
 
 The server is OAuth-protected. The first time a skill uses a tool, Cursor opens a
 browser window to sign in to Phase Two; after you approve, Cursor stores the tokens
-and refreshes them for you. The plugin ships with a pre-registered OAuth client, so
-you are only ever asked to sign in, never to register anything.
+and refreshes them for you. The plugin ships with a pre-registered OAuth client — `cursor-client`, separate from
+the ones Claude Code and Codex use — so you are only ever asked to sign in, never to
+register anything.
 
 Once connected, Cursor has the full Keycloak toolset available — creating clusters
 and deployments, configuring authentication flows, identity providers, client

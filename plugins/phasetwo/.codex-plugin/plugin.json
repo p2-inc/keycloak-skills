@@ -29,7 +29,7 @@
         "openid"
       ],
       "oauth": {
-        "client_id": "1602794b-cd18-4c5c-8f2d-a80015801436",
+        "client_id": "codex-client",
         "callback_url": "http://localhost:8787/callback",
         "callback_port": 8787
       }

@@ -91,12 +91,16 @@ declares it in [`.mcp.json`](../plugins/phasetwo/.mcp.json) with a pre-registere
 OAuth client, so Claude Code signs you in rather than registering a client of its own:
 
 ```json
-"oauth": { "clientId": "…", "callbackPort": 8787, "scopes": "openid" }
+"oauth": { "clientId": "claude-client", "callbackPort": 8787, "scopes": "openid" }
 ```
 
-`callbackPort` is what makes this work. Claude Code builds its redirect URI as
-`http://localhost:<callbackPort>/callback`, and picks a free port at random unless you
-pin one. Pinning 8787 gives every client the same redirect URI, so one registered
-client covers Claude Code, Cursor and Codex.
+Each platform has its own client — `claude-client`, `cursor-client`, `codex-client` —
+so each one carries only the redirect URIs that platform uses and can be revoked
+independently.
+
+`callbackPort` is what makes a pre-registered client possible here. Claude Code builds
+its redirect URI as `http://localhost:<callbackPort>/callback` and picks a free port at
+random unless you pin one, which would leave nothing stable to register. Pinning 8787
+gives `claude-client` one fixed redirect URI.
 
 Check the connection with `/mcp` in a session.

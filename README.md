@@ -32,19 +32,27 @@ The `keycloak` skill relies on the Keycloak MCP server to check deployment targe
 { "mcpServers": { "keycloak": {
     "type": "http",
     "url": "https://mcp.phasetwo.io/mcp",
-    "oauth": { "clientId": "…", "callbackPort": 8787, "scopes": "openid" }
+    "oauth": { "clientId": "claude-client", "callbackPort": 8787, "scopes": "openid" }
 } } }
 ```
 
 That file has to sit at the plugin root, beside `.claude-plugin/`. An `mcpServers` key inside `plugin.json` passes `claude plugin validate --strict` but is silently ignored at runtime — `claude plugin details phasetwo` reports `MCP servers (0)`. Cursor is the exception: its manifest schema *does* accept `mcpServers`, which is why the Cursor build declares its own entry with a pinned OAuth client (see [docs/install-cursor.md](docs/install-cursor.md)). Endpoints are unversioned and images are tagged by commit, so this URL picks up new server releases with no change here.
 
-It is a remote server behind OAuth. All three clients use the **same pre-registered
-OAuth client** rather than registering one of their own, so the only prompt you ever
-see is the sign-in: Claude Code reads `oauth.clientId` above, Cursor reads `auth.CLIENT_ID`
-in [`.cursor-plugin/plugin.json`](plugins/phasetwo/.cursor-plugin/plugin.json), and Codex
-reads `oauth.client_id` in [`.codex-plugin/plugin.json`](plugins/phasetwo/.codex-plugin/plugin.json)
-— each in its own dialect, all pointing at one client and one redirect URI
-(`http://localhost:8787/callback`). Check the connection with `/mcp` in a session. Each client authenticates differently — see the install guide for [Claude Code](docs/install-claude-code.md), [Cursor](docs/install-cursor.md) or [Codex](docs/install-codex.md). If you are using the skill *without* the plugin — a copy under `~/.claude/skills/`, say — add it yourself, since nothing declares it for you:
+It is a remote server behind OAuth. Each client authenticates against **its own
+pre-registered OAuth client** rather than registering one dynamically, so the only
+prompt you ever see is the sign-in:
+
+| Client | Declared in | Key | OAuth client |
+| --- | --- | --- | --- |
+| Claude Code | [`.mcp.json`](plugins/phasetwo/.mcp.json) | `oauth.clientId` | `claude-client` |
+| Cursor | [`.cursor-plugin/plugin.json`](plugins/phasetwo/.cursor-plugin/plugin.json) | `auth.CLIENT_ID` | `cursor-client` |
+| Codex | [`.codex-plugin/plugin.json`](plugins/phasetwo/.codex-plugin/plugin.json) | `oauth.client_id` | `codex-client` |
+
+One per platform, so each carries only the redirect URIs that platform actually uses
+and can be revoked on its own — the per-client walkthroughs are in the
+[install guides](#install). Check the connection with `/mcp` in a session.
+
+If you are using the skill *without* the plugin — a copy under `~/.claude/skills/`, say — add it yourself, since nothing declares it for you:
 
 ```bash
 claude mcp add --transport http keycloak https://mcp.phasetwo.io/mcp

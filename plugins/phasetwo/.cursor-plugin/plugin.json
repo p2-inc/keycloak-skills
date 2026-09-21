@@ -16,7 +16,7 @@
       "type": "http",
       "url": "https://mcp.phasetwo.io/mcp",
       "auth": {
-        "CLIENT_ID": "1602794b-cd18-4c5c-8f2d-a80015801436",
+        "CLIENT_ID": "cursor-client",
         "scopes": [
           "openid"
         ]
