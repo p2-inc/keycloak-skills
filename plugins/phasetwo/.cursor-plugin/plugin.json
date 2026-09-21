@@ -1,7 +1,7 @@
 {
   "name": "phasetwo",
   "displayName": "Phase Two Keycloak",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Keycloak administration and application-security skills for Phase Two and self-hosted Keycloak. `keycloak` routes realm-administration work — passwordless login, enterprise SSO and identity-provider federation, organization login restriction, credential enrollment, cluster provisioning. `securing-apps` wires Keycloak login and bearer-token validation into your own React, Angular, Vue, Next.js, mobile or backend app.",
   "author": {
     "name": "Phase Two",
