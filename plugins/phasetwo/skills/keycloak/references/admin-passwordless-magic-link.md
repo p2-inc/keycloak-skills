@@ -12,20 +12,38 @@ does (email verification, password reset) — it is not a bespoke security model
 that is worth saying if anyone asks whether it is "as secure" as a password: it is
 exactly as strong as email delivery and the token's own lifespan.
 
-```bash
-BASE=http://localhost:8080/auth       # include the relative path if one is configured
-REALM=<realm>
+## Set up one admin REST helper first — tokens expire after 60 seconds
 
-# Self-managed Keycloak: mint $ADMIN_TOKEN from the built-in admin-cli client in `master`
-# (skip if you already have a token). Does NOT apply to Phase Two hosted deployments — there
-# is no self-service admin REST credential of any kind there (confirmed with Phase Two).
-# Without MCP, use the dashboard instead; raw REST is a dead end here, not a fallback.
-ADMIN_TOKEN=$(curl -s -X POST "$BASE/realms/master/protocol/openid-connect/token" \
-  -d client_id=admin-cli -d grant_type=password \
-  -d username=<admin-user> -d password=<admin-password> \
-  | jq -r .access_token)
-H="Authorization: Bearer $ADMIN_TOKEN"
+Self-managed Keycloak only. This does NOT apply to Phase Two hosted deployments — there
+is no self-service admin REST credential of any kind there (confirmed with Phase Two).
+Without MCP, use the dashboard instead; raw REST is a dead end there, not a fallback.
+
+A token from `admin-cli` in the `master` realm **expires after 60 seconds** by default,
+so a token minted once and reused goes stale partway through the task. A `401
+Unauthorized` halfway through means the token expired — **not** that the endpoint,
+method, or body is wrong. Don't reuse a token: write this helper once, and it mints a
+fresh token for every call.
+
+```bash
+cat > /tmp/kc <<'EOF'
+#!/bin/sh
+# kc METHOD PATH [curl args...] — one admin REST call with a freshly minted token.
+# Body goes to stdout (pipe it to jq); "HTTP <status>" goes to stderr.
+BASE=http://localhost:8080/auth   # include the relative path if one is configured
+KC_USER=<admin-user> KC_PASS=<admin-password>
+m=$1 p=$2; shift 2
+t=$(curl -s "$BASE/realms/master/protocol/openid-connect/token" -d client_id=admin-cli \
+  -d grant_type=password --data-urlencode "username=$KC_USER" \
+  --data-urlencode "password=$KC_PASS" | jq -r .access_token)
+exec curl -s -X "$m" "$BASE/admin/realms$p" -H "Authorization: Bearer $t" \
+  -H "Content-Type: application/json" -w "%{stderr}HTTP %{http_code}\n" "$@"
+EOF
+chmod +x /tmp/kc
+REALM=<realm>
 ```
+
+Each step below says which status means success. Several succeed with an **empty
+body** — that is the success, not a failure to retry.
 
 ## Check the provider is actually installed, first
 
@@ -35,7 +53,7 @@ This capability comes from the **p2-inc `keycloak-magic-link` provider**
 stock Keycloak. Confirm it before doing anything else:
 
 ```bash
-curl -s "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" | jq -r '.[].alias'
+/tmp/kc GET "/$REALM/authentication/flows" | jq -r '.[].alias'    # HTTP 200
 ```
 
 If **`magic link`** is in that list, the provider is present — proceed below. If it is
@@ -59,10 +77,9 @@ flow to author, only a binding to make.
 
 ```bash
 # Bind realm-wide...
-curl -s "$BASE/admin/realms/$REALM" -H "$H" > /tmp/realm.json
+/tmp/kc GET "/$REALM" > /tmp/realm.json                          # HTTP 200
 # set "browserFlow": "magic link" in /tmp/realm.json, then PUT it back
-curl -s -X PUT "$BASE/admin/realms/$REALM" -H "$H" \
-  -H 'Content-Type: application/json' --data-binary @/tmp/realm.json
+/tmp/kc PUT "/$REALM" --data-binary @/tmp/realm.json             # HTTP 204, empty body = done
 
 # ...or to one client only, via authenticationFlowBindingOverrides on the client,
 # if only one application should go passwordless rather than the whole realm.
@@ -96,7 +113,8 @@ identical to a working one until you check whether mail actually left.
 ```
 
 PUT the whole realm representation with this set — a realm PUT that omits fields
-resets them, so read first.
+resets them, so read first. Setting `smtpServer` and `browserFlow` in the same
+`/tmp/realm.json` and doing one PUT is fine. Expect `HTTP 204` with an empty body.
 
 **Verify by checking what actually left**, not by trusting a `204`. If you have no
 real mail provider to point at (a test/sandbox setting), a minimal SMTP-protocol
@@ -112,17 +130,36 @@ provisions a brand-new account and emails *that* address a working login link. T
 is no error, no warning, and no visible difference in what the page shows.
 
 ```bash
-# Read the flow's executions to find the ext-magic-form execution's id:
-curl -s "$BASE/admin/realms/$REALM/authentication/flows/magic%20link/executions" -H "$H" \
-  | jq '.[] | select(.providerId=="ext-magic-form") | {id, authenticationConfig}'
+# 1. Find the ext-magic-form execution's id, and whether it already has a config:
+/tmp/kc GET "/$REALM/authentication/flows/magic%20link/executions" \
+  | jq '.[] | select(.providerId=="ext-magic-form") | {id, authenticationConfig}'   # HTTP 200
 
-# Attach (POST) or update (PUT to /authentication/config/{id}) its config:
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/executions/$EXEC_ID/config" \
-  -H "$H" -H 'Content-Type: application/json' -d '{
+# 2a. No authenticationConfig yet → attach one. POST only:
+/tmp/kc POST "/$REALM/authentication/executions/$EXEC_ID/config" -d '{
     "alias": "magic-link-existing-accounts-only",
     "config": {"ext-magic-create-nonexistent-user": "false"}
-  }'
+  }'                                                       # HTTP 201, empty body = done
+
+# 2b. authenticationConfig already set → update that config in place instead:
+/tmp/kc PUT "/$REALM/authentication/config/$CONFIG_ID" -d '{
+    "id": "'"$CONFIG_ID"'", "alias": "magic-link-existing-accounts-only",
+    "config": {"ext-magic-create-nonexistent-user": "false"}
+  }'                                                       # HTTP 204, empty body = done
+
+# 3. Confirm: rerun step 1 — authenticationConfig now holds an id. Read it with
+/tmp/kc GET "/$REALM/authentication/config/$CONFIG_ID"   # HTTP 200
 ```
+
+Three responses here look like errors and are not:
+
+- `GET …/executions/$EXEC_ID/config` returns **404**. That path accepts POST only; the
+  404 does not mean the path or the execution id is wrong. There is also no list
+  endpoint at `GET …/authentication/config` (also 404). Read an existing config only by
+  its id, as in step 3.
+- The POST in 2a returns **201 with an empty body**. That is success — don't repeat it.
+  Each extra POST creates another config and re-links the execution to it.
+- A **401** anywhere means the token expired — use `/tmp/kc`, which mints a fresh one
+  per call, rather than exploring other endpoints.
 
 Turn this off whenever the request implies "our existing staff/customers", not "let
 anyone create an account by typing an email" — which is almost always the intent
@@ -144,10 +181,26 @@ whether create-on-demand is off — it looks correct either way. The only way to
 is checking what happened on the *other* side: was mail sent, and did a user get
 created, for an address that should have neither.
 
-## Verifying the whole thing works
+## Verifying the whole thing works — run the script once
 
 Drive an actual login rather than trusting configuration alone — nothing here has a
-status endpoint that says "passwordless is working."
+status endpoint that says "passwordless is working." [`../scripts/verify_magic_link.py`](../scripts/verify_magic_link.py) does the whole round trip below in one command:
+
+```bash
+python3 <skill-dir>/scripts/verify_magic_link.py --realm "$REALM" --client <client-id> \
+  --redirect-uri <app-redirect-uri> --known <an-existing-user's-email> \
+  --unknown <an-address-with-no-account> \
+  --mail-dir <capture-dir, if a local SMTP capture server writes one file per mail> \
+  --admin-user <admin-user> --admin-password <admin-password>
+```
+
+Without a capture directory, run it once to trigger the mail, then rerun with
+`--link <url>` copied from the real inbox. It prints one PASS/FAIL line per check.
+**If it ends with "All checks passed", the configuration is done — stop there** rather
+than re-inspecting flows and executions. If a check fails, the line says which
+setting to fix; fix that one thing and rerun the script.
+
+What it checks, if you are doing it by hand instead:
 
 1. Submit a known address on the client's login page. Expect no password field.
 2. Confirm mail actually arrived (real inbox, or your capture point) containing a
