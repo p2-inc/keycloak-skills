@@ -144,6 +144,11 @@ Both `admin-passwordless-magic-link-org-restrict*.md` files reference the shared
 (`ext-magic-create-nonexistent-user=false`), not a placeholder; the same key the plain
 magic-link references already document.
 
+`admin-passwordless-magic-link.md` references `scripts/verify_magic_link.py` — one end-to-end
+check (known address gets a working link, unknown address gets the same page and no mail or
+account) that exits 0 only when the configuration is done. Tooling-agnostic, plain HTTP; the MCP
+variant can use it too.
+
 Both `admin-corporate-sso*.md` files reference shared assets/scripts at the skill root:
 `assets/home-idp.partial-import.json`, `assets/home-idp-with-orgs-check.partial-import.json`, and
 `scripts/browser_login.py` (tooling-agnostic — verifies routing over plain HTTP either way).
