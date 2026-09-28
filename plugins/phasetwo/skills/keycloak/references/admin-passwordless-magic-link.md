@@ -200,7 +200,15 @@ Without a capture directory, run it once to trigger the mail, then rerun with
 than re-inspecting flows and executions. If a check fails, the line says which
 setting to fix; fix that one thing and rerun the script.
 
-What it checks, if you are doing it by hand instead:
+**Use this script — don't write your own test instead.** A home-made check is easy to
+get subtly wrong and will happily report success when no mail left the server: it
+confirms the page said "check your email", which the page says either way. The
+script only passes once real mail has arrived and its link has been followed to the
+application. If you can't run it (no Python, no `requests`), do the steps below by
+hand, and treat "mail arrived" and "the link reached the redirect URI" as the checks
+that matter.
+
+What it checks, for reference:
 
 1. Submit a known address on the client's login page. Expect no password field.
 2. Confirm mail actually arrived (real inbox, or your capture point) containing a
