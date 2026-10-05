@@ -118,6 +118,11 @@ COPY acme-realm.json /opt/keycloak/data/import/acme-realm.json
 # Admin credentials, and connection details for the local mail-capture server.
 COPY admin_credentials.txt /root/admin_credentials.txt
 COPY mail_server_details.txt /root/mail_server_details.txt
+# bench runs the agent as the unprivileged `agent` user, and /root is 700 by default, so
+# these files would be unreadable (EACCES) to it. /root stays unlistable (711); only the
+# files the task names become readable.
+RUN chmod 711 /root && \
+    chmod 644 /root/admin_credentials.txt /root/mail_server_details.txt
 
 # The mail capture server itself - fixed infrastructure, not something to configure.
 COPY mail_capture_server.py /opt/mail/mail_capture_server.py
