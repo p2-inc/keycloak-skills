@@ -46,10 +46,12 @@ SUB='Password-or-passkey forms'
   `webauthn-authenticator` (that's the second-factor variant)
 - Both are ALTERNATIVE in the same forms sub-flow, creating the "either/or" choice
 
-## Authoring via atomic import (recommended)
+## Authoring via atomic import (only with the extension)
 
 `POST /admin/realms/{realm}/authentication-flow/import` with the p2-inc keycloak-atomic-auth-flows
-extension authors and binds in one call.
+extension authors the whole flow in one call. Stock Keycloak has no such endpoint: a `404` here
+means the extension is not installed, so use [manual authoring](#manual-authoring-no-extension)
+instead.
 
 Strip `ifResourceExists` from the payload (the extension rejects unknown fields), and read the
 generated alias back from the response (the extension hash-prefixes aliases):
@@ -126,76 +128,99 @@ curl -s -X POST "$BASE/admin/realms/$REALM/authentication-flow/import?force=fals
 
 ## Manual authoring (no extension)
 
-Create flow, sub-flow, executions, set requirements, bind:
+Stock Admin REST, in this order. `q` URL-encodes an alias (the sub-flow's contains a space).
 
 ```bash
-# Create top-level flow
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"alias":"Password-or-passkey","description":"Browser flow with password or passkey","providerId":"basic-flow","builtIn":false}'
+q() { jq -rn --arg f "$1" '$f|@uri'; }
+J='Content-Type: application/json'
 
-# Create forms sub-flow
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"alias":"Password-or-passkey forms","description":"Username/password or passkey forms","providerId":"basic-flow","builtIn":false}'
+# 1. Top-level flow
+curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" -H "$J" \
+  -d '{"alias":"Password-or-passkey","description":"Browser flow with password or passkey","providerId":"basic-flow","topLevel":true,"builtIn":false}'
 
-# Add executions to top-level flow
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"provider":"auth-cookie","priority":0}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"provider":"auth-spnego","priority":1}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"provider":"identity-provider-redirector","priority":2}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$FLOW" '$f|@uri')/executions/flow" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"provider":"Password-or-passkey forms","priority":3}'
+# 2. The forms sub-flow is created AS an execution of the parent, in one call. Do NOT
+#    create it first with POST /authentication/flows: that makes a second, top-level flow
+#    with the same alias, this call then answers 409 Conflict, and the orphan stays behind.
+curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(q "$FLOW")/executions/flow" -H "$H" -H "$J" \
+  -d '{"alias":"Password-or-passkey forms","description":"Username/password or passkey forms","provider":"basic-flow","type":"basic-flow","priority":3}'
 
-# Add executions to forms sub-flow
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$SUB" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"provider":"auth-username-password-form","priority":2}'
-curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$SUB" '$f|@uri')/executions/execution" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"provider":"webauthn-authenticator-passwordless","priority":3}'
+# 3. Leaves of the top-level flow. The add call APPENDS unless priority is sent.
+for p in auth-cookie:0 auth-spnego:1 identity-provider-redirector:2; do
+  curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(q "$FLOW")/executions/execution" -H "$H" -H "$J" \
+    -d "{\"provider\":\"${p%%:*}\",\"priority\":${p##*:}}"
+done
 
-# Set requirements (executions come in as DISABLED by default)
-# Get execution IDs first, then PUT to set requirement
+# 4. Leaves of the forms sub-flow: the password form first, so it is the page users see.
+for p in auth-username-password-form:2 webauthn-authenticator-passwordless:3; do
+  curl -s -X POST "$BASE/admin/realms/$REALM/authentication/flows/$(q "$SUB")/executions/execution" -H "$H" -H "$J" \
+    -d "{\"provider\":\"${p%%:*}\",\"priority\":${p##*:}}"
+done
+
+# 5. Set requirements. New executions start DISABLED, and the add calls ignore a
+#    "requirement" field. Change one with PUT on the flow's executions COLLECTION
+#    (not executions/{id}), sending the execution's WHOLE row back with only the
+#    requirement changed: the PUT also writes "priority", so a body of just
+#    {"id","requirement"} resets the priority to 0 and scrambles the order. A
+#    sub-flow's own row has no providerId; it is matched by its displayName (the alias).
+set_req() {  # <flow alias> <providerId or sub-flow alias> <requirement>
+  curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(q "$1")/executions" -H "$H" \
+    | jq -c --arg k "$2" --arg r "$3" '.[] | select((.providerId // .displayName) == $k) | .requirement = $r' \
+    | curl -s -o /dev/null -w "$2 -> $3: %{http_code}\n" -X PUT \
+        "$BASE/admin/realms/$REALM/authentication/flows/$(q "$1")/executions" -H "$H" -H "$J" --data-binary @-
+}
+set_req "$FLOW" auth-cookie ALTERNATIVE
+set_req "$FLOW" identity-provider-redirector ALTERNATIVE
+set_req "$FLOW" "$SUB" ALTERNATIVE
+set_req "$SUB" auth-username-password-form ALTERNATIVE
+set_req "$SUB" webauthn-authenticator-passwordless ALTERNATIVE
+# auth-spnego stays DISABLED.  Each PUT answers 204.
+
+# 6. Read the whole tree back; level, position and requirement must match the table above
+#    before binding (top level: auth-cookie, auth-spnego, identity-provider-redirector, forms).
+curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(q "$FLOW")/executions" -H "$H" \
+  | jq -r '.[] | "\(.level) \(.index) prio=\(.priority) \(.providerId // .displayName) \(.requirement)"'
 ```
 
-Read back execution order and verify the structure matches the table above before binding.
+## WebAuthn passwordless policy and realm SMTP
 
-## WebAuthn passwordless policy
+The passwordless policy is a **separate** block from the realm's second-factor WebAuthn policy.
+Set it, and the realm's outgoing mail, with one read-modify-write of the realm:
 
-A **separate** policy from the realm's second-factor WebAuthn policy. Read realm, modify
-passwordless fields, PUT back:
-
-```json
-{
-  "webAuthnPolicyPasswordlessRpEntityName": "Acme Portal",
-  "webAuthnPolicyPasswordlessRpId": "localhost",
-  "webAuthnPolicyPasswordlessRequireResidentKey": "Yes",
-  "webAuthnPolicyPasswordlessUserVerificationRequirement": "preferred"
-}
+```bash
+curl -s "$BASE/admin/realms/$REALM" -H "$H" \
+  | jq '. + {
+      webAuthnPolicyPasswordlessRpEntityName: "Acme Portal",
+      webAuthnPolicyPasswordlessRpId: "localhost",
+      webAuthnPolicyPasswordlessRequireResidentKey: "Yes",
+      webAuthnPolicyPasswordlessUserVerificationRequirement: "preferred",
+      smtpServer: {host: "<smtp-host>", port: "<smtp-port>", from: "<from-address>",
+                   auth: "false", starttls: "false", ssl: "false"}
+    }' \
+  | curl -s -o /dev/null -w '%{http_code}\n' -X PUT "$BASE/admin/realms/$REALM" -H "$H" -H "$J" --data-binary @-
 ```
 
 - **`rpId`**: hostname only, no scheme/port. Must match what browsers navigate to.
 - **`requireResidentKey: "Yes"`**: required for passwordless/discoverable credentials.
+- **`smtpServer`**: an existing user's first passkey usually arrives by an execute-actions email
+  (below), and Keycloak refuses to send one without a sender: `500` *"No sender address configured
+  in the realm settings for emails"*. Take host, port, sender and the auth/TLS flags from the
+  mail server you were given; every value is a string. Skip it only when no user will be enrolled
+  by email.
 
 ## Binding
 
 ```bash
-# Realm-wide
-curl -s -X PUT "$BASE/admin/realms/$REALM" \
-  -H "$H" -H 'Content-Type: application/json' \
+# Realm-wide: browserFlow takes the flow's ALIAS
+curl -s -X PUT "$BASE/admin/realms/$REALM" -H "$H" -H "$J" \
   -d '{"browserFlow":"Password-or-passkey"}'
 
-# Or per-client
-curl -s -X PUT "$BASE/admin/realms/$REALM/clients/{client-id}" \
-  -H "$H" -H 'Content-Type: application/json' \
-  -d '{"authenticationFlowBindingOverride":{"browser":"Password-or-passkey"}}'
+# Or one client: authenticationFlowBindingOverrides (plural) takes the flow's ID, not its alias
+FLOW_ID=$(curl -s "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
+  | jq -r --arg a "$FLOW" '.[] | select(.alias == $a) | .id')
+CID=$(curl -s "$BASE/admin/realms/$REALM/clients?clientId=<client-id>" -H "$H" | jq -r '.[0].id')
+curl -s "$BASE/admin/realms/$REALM/clients/$CID" -H "$H" \
+  | jq --arg f "$FLOW_ID" '.authenticationFlowBindingOverrides.browser = $f' \
+  | curl -s -o /dev/null -w '%{http_code}\n' -X PUT "$BASE/admin/realms/$REALM/clients/$CID" -H "$H" -H "$J" --data-binary @-
 ```
 
 ## Verifying this actually works
@@ -243,4 +268,12 @@ Two client-side details that otherwise cost an afternoon:
 The passkey half needs a user who has a passkey. To give an existing user one, see
 `admin:credential-enrollment`: a required action on the account (no mail involved) for a user who
 can already sign in with a password, or an execute-actions email with
-`webauthn-register-passwordless` — which needs realm SMTP configured.
+`webauthn-register-passwordless` — which needs the realm SMTP above:
+
+```bash
+UID_=$(curl -s "$BASE/admin/realms/$REALM/users?username=<username>&exact=true" -H "$H" | jq -r '.[0].id')
+curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H "$H" -H "$J" \
+  "$BASE/admin/realms/$REALM/users/$UID_/execute-actions-email?client_id=<client-id>&redirect_uri=<url-encoded-redirect-uri>" \
+  -d '["webauthn-register-passwordless"]'
+# 204 = sent. The user completes the registration in a browser from the emailed link.
+```

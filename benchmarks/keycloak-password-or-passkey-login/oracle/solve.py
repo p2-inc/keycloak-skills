@@ -173,10 +173,12 @@ def create_flow(base_url, realm, token):
                 headers=auth(token), timeout=TIMEOUT).json():
             key = exe.get("providerId") or exe.get("displayName")
             if key in wanted and exe["requirement"] != wanted[key]:
+                # Send the whole row back: this PUT also writes "priority", so a body
+                # of just id+requirement would reset it to 0 and scramble the order.
                 resp = requests.put(
                     f"{base_url}/admin/realms/{realm}/authentication/flows/{q(alias)}/executions",
                     headers=auth(token),
-                    json={"id": exe["id"], "requirement": wanted[key]}, timeout=TIMEOUT)
+                    json={**exe, "requirement": wanted[key]}, timeout=TIMEOUT)
                 resp.raise_for_status()
 
     return next(f["id"] for f in requests.get(
