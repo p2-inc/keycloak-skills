@@ -135,6 +135,9 @@ class Scoring(unittest.TestCase):
             raise RuntimeError("HTTP 500")
         results = rc.run_cases(self.cases[:1], "intent", ROUTER, {}, GROUPS, boom)
         self.assertEqual((results[0]["got"], results[0]["ok"]), ("ERROR", False))
+        report = rc.format_report(results, "intent", "m", "r.md", 0, 0)          # must not crash
+        self.assertIn("Model call errors (1 of 1)", report)
+        self.assertIn("HTTP 500", report)
 
     def test_the_prompts_carry_the_skill_or_the_descriptions(self):
         system, user = rc.build_request("intent", self.cases[0], ROUTER, {})

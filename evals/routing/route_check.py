@@ -248,12 +248,13 @@ def run_cases(cases, level, router_text, descriptions, groups, call, concurrency
 
     def one(case):
         system, user = build_request(level, case, router_text, descriptions)
+        want = ({expected_skill(case, groups)} if level == "skill" else accepted_intents(case, ids))
         try:
             text, tin, tout = call(system, user)
         except RuntimeError as e:
-            return {"case": case, "got": "ERROR", "ok": False, "raw": str(e), "tin": 0, "tout": 0}
+            return {"case": case, "got": "ERROR", "ok": False, "raw": str(e), "tin": 0, "tout": 0,
+                    "want": sorted(want)}
         got = parse_answer(level, text)
-        want = ({expected_skill(case, groups)} if level == "skill" else accepted_intents(case, ids))
         return {"case": case, "got": got, "ok": got in want, "raw": text.strip(),
                 "tin": tin, "tout": tout, "want": sorted(want)}
 
@@ -305,6 +306,9 @@ def format_report(results, level, model, router, tin, tout):
               "| expected | correct | n |", "|---|---|---|"]
     for k, (c, n) in sorted(s["by_want"].items()):
         lines.append(f"| {k} | {c} | {n} |")
+    errors = [r for r in results if r["got"] == "ERROR"]
+    if errors:
+        lines += ["", f"## Model call errors ({len(errors)} of {len(results)}) — first: {errors[0]['raw']}"]
     wrong = [r for r in results if not r["ok"]]
     if wrong:
         lines += ["", f"## Wrong answers ({len(wrong)})"]
