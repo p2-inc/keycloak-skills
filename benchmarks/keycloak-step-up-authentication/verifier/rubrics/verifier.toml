@@ -1,0 +1,24 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+Step-up authentication is fully configured: one authentication flow with two trust levels
+(silver and gold) ordered lowest-first, each level a separate ALTERNATIVE sub-flow with
+REQUIRED executions (password for level 1; condition + OTP for level 2). Realm attribute
+acr.loa.map maps silver→1 and gold→2. Level-2 condition has loa-max-age=300 s. The
+acme-payments client has minimum.acr.value="gold". Fresh login to acme-portal without
+requesting acr: password only, acr=silver. Same session, step-up with essential gold
+claim: code-only form (no password), valid code → acr=gold. Immediate re-request: no
+prompt, acr=gold. Fresh browser with gold on first login: password then code, acr=gold.
+Wrong code fails. acme-payments with no acr parameter: code prompted anyway (forced by
+minimum.acr.value), acr=gold. Unmapped essential acr (platinum): error. priya and morgan
+keep their original passwords. Only master and acme realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"
