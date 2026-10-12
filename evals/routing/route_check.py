@@ -391,6 +391,8 @@ def main(argv=None):
         Path(args.out).write_text(json.dumps(
             [{"id": r["case"]["id"], "expected": r.get("want"), "got": r["got"], "ok": r["ok"],
               "raw": r["raw"]} for r in results], indent=2), encoding="utf-8")
+    if any(r["got"] == "ERROR" for r in results):
+        return 3          # the numbers above are not a measurement: say so in the exit code
     acc = sum(r["ok"] for r in results) / max(1, len(results))
     return 1 if args.fail_below is not None and acc < args.fail_below else 0
 

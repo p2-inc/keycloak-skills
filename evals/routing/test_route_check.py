@@ -201,6 +201,20 @@ class Cli(unittest.TestCase):
         code, out, _ = self.run_main("--dry-run", "--level", "skill", "--limit", "5")
         self.assertIn("5 calls", out)
 
+    def test_failed_model_calls_make_the_exit_code_nonzero(self):
+        import os
+        os.environ["ROUTE_CHECK_TEST_KEY"] = "k"
+        real = rc.call_model
+        rc.call_model = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("HTTP 401"))
+        try:
+            code, out, _ = self.run_main("--level", "skill", "--limit", "2", "--key-env",
+                                         "ROUTE_CHECK_TEST_KEY")
+        finally:
+            rc.call_model = real
+            del os.environ["ROUTE_CHECK_TEST_KEY"]
+        self.assertEqual(code, 3)
+        self.assertIn("Model call errors (2 of 2)", out)
+
     def test_a_missing_key_is_reported_not_guessed(self):
         code, _, err = self.run_main("--level", "skill", "--key-env", "NO_SUCH_KEY_VARIABLE_XYZ")
         self.assertEqual(code, 2)
