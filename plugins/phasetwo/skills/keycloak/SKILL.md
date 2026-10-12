@@ -1,19 +1,16 @@
 ---
 name: keycloak
 description: >-
-  Use when doing Keycloak / Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
-  OTP, passkey WebAuthn, or passkey-or-magic-link "0 password required"); email OTP as a 2FA second
-  factor; org-membership login restriction (password, federated, or magic-link); cluster/deployment
-  provisioning; enrolling a credential (passkey/TOTP) onto users who already exist — and refusing
-  cluster/deployment/realm DELETION. Also identity brokering: domain-routed corporate SSO;
-  social login buttons (Google/GitHub/Microsoft); enterprise IdP federation — Entra ID,
-  Okta, Auth0, ADFS, AWS SSO, PingOne, Salesforce and other OIDC/SAML IdPs; and IdP-initiated
-  SSO tiles. Triggers: "2FA by email", "passkeys",
-  "restrict login to org X", "spin up a cluster", "delete a cluster/realm",
-  "set up my passkey", "enroll users in 2FA",
-  "connect Okta/Entra ID", "SAML/OIDC SSO".
-  Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation, not app-side login
-  code — that's `securing-apps`.
+  Use when doing Keycloak / Phase Two hosted Keycloak admin work. Login methods: magic link, email
+  OTP, passkeys (WebAuthn), TOTP 2FA, password-or-passkey, "0 password required", step-up /
+  re-authentication (LoA, ACR). Org-membership login restriction. Enrolling or resetting
+  passkeys/TOTP for existing users, incl. lost-device links. Cluster/deployment provisioning (a new deployment or
+  realm in an existing cluster), and refusing DELETION: delete, remove, tear down a cluster, deployment or realm. Identity brokering:
+  domain-routed corporate SSO; social login (Google/GitHub/Microsoft); enterprise IdPs (Entra ID,
+  Okta, Auth0, ADFS, AWS SSO, PingOne, Salesforce, OIDC/SAML); IdP-initiated SSO tiles. Triggers:
+  "2FA by email", "passkeys", "ask for a code again on the payments page", "restrict login to
+  org X", "spin up a cluster", "tear down the realm", "connect Okta/Entra ID". Not LDAP/AD user
+  federation, not app-side login code — that's `securing-apps`.
 license: CC-BY-SA-4.0
 metadata:
   version: '0.17.0'
