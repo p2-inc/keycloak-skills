@@ -193,6 +193,7 @@ curl -s "$BASE/admin/realms/$REALM" -H "$H" \
       webAuthnPolicyPasswordlessRpId: "localhost",
       webAuthnPolicyPasswordlessRequireResidentKey: "Yes",
       webAuthnPolicyPasswordlessUserVerificationRequirement: "preferred",
+      webAuthnPolicyPasswordlessPasskeysEnabled: false,
       smtpServer: {host: "<smtp-host>", port: "<smtp-port>", from: "<from-address>",
                    auth: "false", starttls: "false", ssl: "false"}
     }' \
@@ -201,6 +202,9 @@ curl -s "$BASE/admin/realms/$REALM" -H "$H" \
 
 - **`rpId`**: hostname only, no scheme/port. Must match what browsers navigate to.
 - **`requireResidentKey: "Yes"`**: required for passwordless/discoverable credentials.
+- **`passkeysEnabled: false`** (console: *Enable Passkeys* toggle, Keycloak 26.4+): always set it
+  off for this flow, and read it back after the PUT. The passkey option is offered by the flow's
+  `webauthn-authenticator-passwordless` step, not by this toggle. Older versions ignore the field.
 - **`smtpServer`**: an existing user's first passkey usually arrives by an execute-actions email
   (below), and Keycloak refuses to send one without a sender: `500` *"No sender address configured
   in the realm settings for emails"*. Take host, port, sender and the auth/TLS flags from the

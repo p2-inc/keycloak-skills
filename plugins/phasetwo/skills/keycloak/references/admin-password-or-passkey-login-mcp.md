@@ -90,6 +90,12 @@ the realm's ordinary second-factor WebAuthn policy). Critical fields:
 - **`requireResidentKey: "Yes"`** — required for passwordless/discoverable credentials to work
   without a username entry step.
 
+- **`passkeysEnabled: false`** (console: *Enable Passkeys* toggle, Keycloak 26.4+) — always keep
+  it off for this flow. The passkey option is offered by the flow's
+  `webauthn-authenticator-passwordless` step, not by this toggle. If `setWebAuthnPasswordlessPolicy`
+  does not expose the field, say so and ask the developer to switch it off in the console
+  (Authentication → Policies → Webauthn Passwordless Policy).
+
 `userVerificationRequirement` of `"preferred"` or `"required"` is recommended.
 
 Call `getWebAuthnPasswordlessPolicy` after setting to confirm values landed.
