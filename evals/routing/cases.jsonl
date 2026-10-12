@@ -1,0 +1,95 @@
+{"id": "magic-link-1", "prompt": "Our users hate remembering passwords. Can we send them an emailed sign-in link they just click?", "intent": "admin:passwordless-magic-link", "group": "auth-flows"}
+{"id": "magic-link-2", "prompt": "I'd like customers to get a one-click login URL in their inbox instead of typing credentials.", "intent": "admin:passwordless-magic-link", "group": "auth-flows"}
+{"id": "magic-link-3", "prompt": "Set up Keycloak so signing in works by clicking a link we mail to the user's address.", "intent": "admin:passwordless-magic-link", "group": "auth-flows"}
+{"id": "magic-link-4", "prompt": "We want to drop passwords for our staff portal and have people sign in from a link in their email.", "intent": "admin:passwordless-magic-link", "group": "auth-flows"}
+{"id": "email-otp-1", "prompt": "Instead of a password, I want users to type a short code that arrives in their mailbox when they try to sign in.", "intent": "admin:email-otp-login", "group": "auth-flows"}
+{"id": "email-otp-2", "prompt": "Can login work by emailing a numeric PIN that the user then enters?", "intent": "admin:email-otp-login", "group": "auth-flows"}
+{"id": "email-otp-3", "prompt": "We need sign-in via a code sent by email, with no authenticator app and no password.", "intent": "admin:email-otp-login", "group": "auth-flows"}
+{"id": "email-otp-4", "prompt": "Make users enter the number we mail them to get in. They won't have passwords at all.", "intent": "admin:email-otp-login", "group": "auth-flows"}
+{"id": "email-mfa-1", "prompt": "Keep the password step but add a mailed verification code afterwards for extra security.", "intent": "admin:password-email-otp-mfa", "group": "auth-flows"}
+{"id": "email-mfa-2", "prompt": "After they type their password, they should also have to enter a code we send to their email.", "intent": "admin:password-email-otp-mfa", "group": "auth-flows"}
+{"id": "email-mfa-3", "prompt": "Add a second step by email on top of the existing password login.", "intent": "admin:password-email-otp-mfa", "group": "auth-flows"}
+{"id": "email-mfa-4", "prompt": "We want email-delivered two-step verification layered over passwords.", "intent": "admin:password-email-otp-mfa", "group": "auth-flows"}
+{"id": "totp-1", "prompt": "Require staff to open their authenticator app and enter the rotating code after logging in with a password.", "intent": "admin:totp-second-factor", "group": "auth-flows"}
+{"id": "totp-2", "prompt": "Add two-factor with Google Authenticator for everyone.", "intent": "admin:totp-second-factor", "group": "auth-flows"}
+{"id": "totp-3", "prompt": "I need time-based one-time passwords as a second step, using an app on the phone.", "intent": "admin:totp-second-factor", "group": "auth-flows"}
+{"id": "totp-4", "prompt": "Make Authy codes mandatory right after the password.", "intent": "admin:totp-second-factor", "group": "auth-flows"}
+{"id": "passkey-1", "prompt": "We want users to log in with Touch ID or a YubiKey and never type a password again.", "intent": "admin:passwordless-passkey", "group": "auth-flows"}
+{"id": "passkey-2", "prompt": "Enable WebAuthn so people can authenticate with their phone's biometrics and remove passwords.", "intent": "admin:passwordless-passkey", "group": "auth-flows"}
+{"id": "passkey-3", "prompt": "Set up passkeys as the only way to sign in.", "intent": "admin:passwordless-passkey", "group": "auth-flows"}
+{"id": "passkey-4", "prompt": "How do I make logins phishing-resistant with FIDO2 keys instead of passwords?", "intent": "admin:passwordless-passkey", "group": "auth-flows"}
+{"id": "zero-password-1", "prompt": "Let people sign in with a passkey, and if they don't have one yet, email them a link. No passwords anywhere.", "intent": "admin:zero-password-login", "group": "auth-flows"}
+{"id": "zero-password-2", "prompt": "I need a passwordless flow where users can pick between a security key and a login link by mail.", "intent": "admin:zero-password-login", "group": "auth-flows"}
+{"id": "zero-password-3", "prompt": "Our new users have no passkey yet; give them an emailed link to get in and then register one, and never a password.", "intent": "admin:zero-password-login", "group": "auth-flows"}
+{"id": "zero-password-4", "prompt": "Offer either a passkey or an emailed link at the login screen. Passwords must not exist.", "intent": "admin:zero-password-login", "group": "auth-flows"}
+{"id": "pw-or-passkey-1", "prompt": "Users should be able to log in with the password they have now, or switch to a passkey if they prefer.", "intent": "admin:password-or-passkey-login", "group": "auth-flows"}
+{"id": "pw-or-passkey-2", "prompt": "We're migrating to passkeys gradually, so both password and passkey need to work on the same login screen.", "intent": "admin:password-or-passkey-login", "group": "auth-flows"}
+{"id": "pw-or-passkey-3", "prompt": "Add a passkey option next to the existing username and password form, without removing passwords.", "intent": "admin:password-or-passkey-login", "group": "auth-flows"}
+{"id": "pw-or-passkey-4", "prompt": "Allow either credentials or a security key on the sign-in page.", "intent": "admin:password-or-passkey-login", "group": "auth-flows"}
+{"id": "step-up-1", "prompt": "Users stay signed in all day, but when they open the payments area they should be asked for an extra code again.", "intent": "admin:step-up-authentication", "group": "auth-flows", "note": "Planned intent (keycloak-skills#31): expected NONE until the router has it.", "planned": true}
+{"id": "step-up-2", "prompt": "I want to map ACR values to levels of authentication and require a higher level for one client.", "intent": "admin:step-up-authentication", "group": "auth-flows", "planned": true}
+{"id": "step-up-3", "prompt": "After five minutes the elevated access should lock again while the normal session stays alive.", "intent": "admin:step-up-authentication", "group": "auth-flows", "planned": true}
+{"id": "step-up-4", "prompt": "Prompt for a stronger login only when the application asks for it, without logging the user out.", "intent": "admin:step-up-authentication", "group": "auth-flows", "planned": true}
+{"id": "corporate-sso-1", "prompt": "Anyone with an @acme.com address should be sent to Acme's own identity provider automatically; everyone else uses a password.", "intent": "admin:corporate-sso", "group": "organizations"}
+{"id": "corporate-sso-2", "prompt": "Customers at big companies want to sign in through their own corporate IdP; route them by the domain of their email.", "intent": "admin:corporate-sso", "group": "organizations"}
+{"id": "corporate-sso-3", "prompt": "Set up discovery so Contoso employees get redirected to Contoso's Azure AD.", "intent": "admin:corporate-sso", "group": "organizations"}
+{"id": "corporate-sso-4", "prompt": "When someone enters their work email, send them to their employer's login, and keep password login for everyone else.", "intent": "admin:corporate-sso", "group": "organizations"}
+{"id": "org-restrict-1", "prompt": "Only people who belong to the Engineering organization should be able to finish signing in with their password.", "intent": "admin:org-restrict-login", "group": "organizations"}
+{"id": "org-restrict-2", "prompt": "Block logins from users who aren't members of organization X.", "intent": "admin:org-restrict-login", "group": "organizations"}
+{"id": "org-restrict-3", "prompt": "We have orgs in Keycloak and I want to make sure non-members can't complete a login.", "intent": "admin:org-restrict-login", "group": "organizations"}
+{"id": "org-restrict-4", "prompt": "Gate access so that only org members get through the username and password login.", "intent": "admin:org-restrict-login", "group": "organizations"}
+{"id": "idp-org-restrict-1", "prompt": "Users sign in through Okta; after they come back, I want to check they're members of the right organization before letting them in.", "intent": "admin:idp-org-restrict-login", "group": "organizations"}
+{"id": "idp-org-restrict-2", "prompt": "Reject federated logins from people who aren't in the customer's org after the IdP step.", "intent": "admin:idp-org-restrict-login", "group": "organizations"}
+{"id": "idp-org-restrict-3", "prompt": "Add an org membership check that runs once the external identity provider has authenticated the user.", "intent": "admin:idp-org-restrict-login", "group": "organizations"}
+{"id": "idp-org-restrict-4", "prompt": "Restrict single sign-on so only a tenant's own staff can enter that tenant.", "intent": "admin:idp-org-restrict-login", "group": "organizations"}
+{"id": "magic-org-1", "prompt": "Email login links, but send them only to users who are members of one specific organization.", "intent": "admin:passwordless-magic-link-org-restrict", "group": "organizations"}
+{"id": "magic-org-2", "prompt": "I want the passwordless email flow to verify org membership before sending anything.", "intent": "admin:passwordless-magic-link-org-restrict", "group": "organizations"}
+{"id": "magic-org-3", "prompt": "Magic link sign-in limited to a given team; don't mail links to outsiders.", "intent": "admin:passwordless-magic-link-org-restrict", "group": "organizations"}
+{"id": "magic-org-4", "prompt": "Combine email-link login with an organization membership gate.", "intent": "admin:passwordless-magic-link-org-restrict", "group": "organizations"}
+{"id": "social-1", "prompt": "Add a button so users can sign in with their GitHub account.", "intent": "admin:social-login", "group": "identity-providers"}
+{"id": "social-2", "prompt": "We need Google sign-in for our consumer app.", "intent": "admin:social-login", "group": "identity-providers"}
+{"id": "social-3", "prompt": "How do I let people authenticate using Facebook?", "intent": "admin:social-login", "group": "identity-providers"}
+{"id": "social-4", "prompt": "Enable 'Continue with Microsoft' on the login page; we just have a client ID and secret.", "intent": "admin:social-login", "group": "identity-providers"}
+{"id": "idp-fed-1", "prompt": "Our customer uses Okta; connect it so their users can log in to our realm.", "intent": "admin:idp-federation", "group": "identity-providers"}
+{"id": "idp-fed-2", "prompt": "I need to set up SAML federation with Entra ID.", "intent": "admin:idp-federation", "group": "identity-providers"}
+{"id": "idp-fed-3", "prompt": "Add our company's Auth0 tenant as an external identity provider.", "intent": "admin:idp-federation", "group": "identity-providers"}
+{"id": "idp-fed-4", "prompt": "Configure Keycloak to trust an OIDC provider that a partner runs.", "intent": "admin:idp-federation", "group": "identity-providers"}
+{"id": "idp-initiated-1", "prompt": "Users click the app tile inside their Okta dashboard and should land directly in our app already signed in.", "intent": "admin:idp-initiated-sso", "group": "identity-providers"}
+{"id": "idp-initiated-2", "prompt": "We need unsolicited SAML responses from the IdP to log people into one specific client.", "intent": "admin:idp-initiated-sso", "group": "identity-providers"}
+{"id": "idp-initiated-3", "prompt": "Set it up so login starts from the My Apps portal rather than from our application.", "intent": "admin:idp-initiated-sso", "group": "identity-providers"}
+{"id": "idp-initiated-4", "prompt": "Support login initiated at the identity provider, targeting a single app.", "intent": "admin:idp-initiated-sso", "group": "identity-providers"}
+{"id": "cluster-1", "prompt": "I want a brand new managed Keycloak instance on Phase Two.", "intent": "admin:cluster-setup", "group": "realm-admin"}
+{"id": "cluster-2", "prompt": "Spin me up a hosted Keycloak environment, I don't have one yet.", "intent": "admin:cluster-setup", "group": "realm-admin"}
+{"id": "cluster-3", "prompt": "How do I get a dedicated Keycloak server from Phase Two for production?", "intent": "admin:cluster-setup", "group": "realm-admin"}
+{"id": "cluster-4", "prompt": "Create a new Phase Two cluster in us-east-1.", "intent": "admin:cluster-setup", "group": "realm-admin"}
+{"id": "deployment-1", "prompt": "I already have a cluster; add another realm for the staging environment.", "intent": "admin:cluster-create-deployment", "group": "realm-admin"}
+{"id": "deployment-2", "prompt": "Create a separate deployment inside my existing cluster for a new tenant.", "intent": "admin:cluster-create-deployment", "group": "realm-admin"}
+{"id": "deployment-3", "prompt": "I want a new isolated security context for this app in the cluster I already run.", "intent": "admin:cluster-create-deployment", "group": "realm-admin"}
+{"id": "deployment-4", "prompt": "Make a deployment called acme-dev inside the cluster I already have.", "intent": "admin:cluster-create-deployment", "group": "realm-admin"}
+{"id": "enroll-1", "prompt": "Help my existing users register a passkey; they already can log in with passwords.", "intent": "admin:credential-enrollment", "group": "realm-admin"}
+{"id": "enroll-2", "prompt": "How do I make all current users set up TOTP at their next login?", "intent": "admin:credential-enrollment", "group": "realm-admin"}
+{"id": "enroll-3", "prompt": "A user lost their phone; send them a link so they can enroll a new security key without logging in.", "intent": "admin:credential-enrollment", "group": "realm-admin"}
+{"id": "enroll-4", "prompt": "Send existing users an email with a link to set up their security key.", "intent": "admin:credential-enrollment", "group": "realm-admin"}
+{"id": "enroll-5", "prompt": "Force every user to set up two-factor authentication now.", "intent": "admin:credential-enrollment", "group": "realm-admin", "accept": ["admin:totp-second-factor"], "note": "Genuinely ambiguous between enrolling existing users and requiring TOTP at login; either is accepted."}
+{"id": "gap-1", "prompt": "Set up LDAP user federation with our Active Directory.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-2", "prompt": "Enable brute force protection and lockout for the realm.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-3", "prompt": "Customize the login theme with our logo and colors.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-4", "prompt": "Configure a password policy with a minimum length of 12.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-5", "prompt": "Create a custom protocol mapper that adds roles to the token.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-6", "prompt": "Export the realm as JSON for backup.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-7", "prompt": "Configure SMTP settings for the realm.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-8", "prompt": "Upgrade our Keycloak server from version 25 to 26.", "intent": "NONE", "group": "admin-gap"}
+{"id": "gap-9", "prompt": "Require TOTP only for users that have the admin role.", "intent": "NONE", "group": "admin-gap", "note": "Conditional MFA is roadmap item A8 and not an intent; a confident TOTP-for-everyone answer would be wrong."}
+{"id": "delete-1", "prompt": "Tear down the staging realm, we don't need it any more.", "intent": "DENY", "group": "deny"}
+{"id": "delete-2", "prompt": "Please delete the cluster named test-1.", "intent": "DENY", "group": "deny"}
+{"id": "delete-3", "prompt": "Remove that deployment I created yesterday.", "intent": "DENY", "group": "deny"}
+{"id": "delete-4", "prompt": "Clean up our old realms to save cost.", "intent": "DENY", "group": "deny"}
+{"id": "app-1", "prompt": "Add Keycloak login to my React single page app.", "intent": "NONE", "group": "securing-apps"}
+{"id": "app-2", "prompt": "My Spring Boot API returns 401; how do I validate the JWT?", "intent": "NONE", "group": "securing-apps"}
+{"id": "app-3", "prompt": "I get invalid redirect_uri in my Next.js app.", "intent": "NONE", "group": "securing-apps"}
+{"id": "app-4", "prompt": "Protect my Express routes with Keycloak access tokens.", "intent": "NONE", "group": "securing-apps"}
+{"id": "app-5", "prompt": "Wire up native login in my Android app with AppAuth.", "intent": "NONE", "group": "securing-apps"}
+{"id": "app-6", "prompt": "CORS error when my Vue app calls the token endpoint.", "intent": "NONE", "group": "securing-apps"}
+{"id": "offtopic-1", "prompt": "Write a haiku about rainy days.", "intent": "NONE", "group": "none"}
+{"id": "offtopic-2", "prompt": "How do I center a div?", "intent": "NONE", "group": "none"}
+{"id": "offtopic-3", "prompt": "Explain what a Kubernetes pod is.", "intent": "NONE", "group": "none"}
