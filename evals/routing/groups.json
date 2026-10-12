@@ -1,0 +1,10 @@
+{
+  "auth-flows": "keycloak",
+  "organizations": "keycloak",
+  "identity-providers": "keycloak",
+  "realm-admin": "keycloak",
+  "admin-gap": "keycloak",
+  "deny": "keycloak",
+  "securing-apps": "securing-apps",
+  "none": null
+}
