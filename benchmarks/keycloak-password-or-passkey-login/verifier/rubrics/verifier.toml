@@ -1,0 +1,23 @@
+# Copyright 2026 Phase Two, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+version = "0.1"
+
+[[criteria]]
+id = "task_success"
+description = """
+The `acme` realm offers username/password OR a passkey as alternative first factors on one
+login page for acme-portal. All of: the login page shows the password form and a control
+leading to the passkey; priya (password, no passkey) completes an authorization-code login
+with her password alone, returning to http://localhost:9999/callback with a code and the
+original state; a wrong password is rejected; marcus, enrolled by an execute-actions email
+carrying webauthn-register-passwordless, logs in with a real WebAuthn passkey ceremony
+(headless browser, CDP virtual authenticator) without filling in the password form, again
+with a code and the original state; marcus can then still log in with his password alone;
+priya and marcus still exist, are enabled, and keep their passwords; and only the master
+and acme realms exist.
+"""
+weight = 1.0
+
+[scoring]
+method = "weighted_mean"
