@@ -105,9 +105,33 @@ for p in ext-auth-username-auth-note ext-email-otp; do   # order matters, see th
     -H "$H" -H 'Content-Type: application/json' -d "{\"provider\":\"$p\"}"
 done
 
-# List executions of both flows to get ids, then PUT requirements:
-#   top-level: all three ALTERNATIVE      forms: both REQUIRED
-# Finally attach the config to the ext-email-otp execution (see next section).
+# New executions start DISABLED, and the add calls ignore a "requirement" field. Set each
+# one with PUT on the flow's executions collection, sending the execution's WHOLE row back
+# with only the requirement changed: the PUT also writes "priority", so a body of just
+# {id, requirement} resets it to 0 (see flow-execution-order.md). A sub-flow's own row has
+# no providerId; it is matched by its alias (displayName).
+set_req() {  # <flow alias> <providerId or sub-flow alias> <requirement>
+  F=$(jq -rn --arg f "$1" '$f|@uri')
+  curl -s "$BASE/admin/realms/$REALM/authentication/flows/$F/executions" -H "$H" \
+    | jq -c --arg k "$2" --arg r "$3" '.[] | select((.providerId // .displayName) == $k) | .requirement = $r' \
+    | curl -s -o /dev/null -w "$2 -> $3: %{http_code}\n" -X PUT \
+        "$BASE/admin/realms/$REALM/authentication/flows/$F/executions" -H "$H" \
+        -H 'Content-Type: application/json' --data-binary @-
+}
+set_req "$FLOW" auth-cookie ALTERNATIVE
+set_req "$FLOW" identity-provider-redirector ALTERNATIVE
+set_req "$FLOW" "$SUB" ALTERNATIVE
+set_req "$SUB" ext-auth-username-auth-note REQUIRED
+set_req "$SUB" ext-email-otp REQUIRED
+# Each PUT answers 204.
+
+# Attach the config (next section) to the ext-email-otp execution.
+EID=$(curl -s "$BASE/admin/realms/$REALM/authentication/flows/$(jq -rn --arg f "$SUB" '$f|@uri')/executions" -H "$H" \
+  | jq -r '.[] | select(.providerId == "ext-email-otp") | .id')
+curl -s -o /dev/null -w 'config: %{http_code}\n' -X POST "$BASE/admin/realms/$REALM/authentication/executions/$EID/config" \
+  -H "$H" -H 'Content-Type: application/json' \
+  -d '{"alias":"email-otp-config","config":{"ext-magic-create-nonexistent-user":"false"}}'
+# 201 = attached.
 ```
 
 ## The identifier-step choice: this is where anti-enumeration is actually decided
@@ -176,14 +200,32 @@ omits fields resets them):
 }
 ```
 
+```bash
+# Read-modify-write: a PUT that omits fields resets them. With auth "true", add user/password.
+curl -s "$BASE/admin/realms/$REALM" -H "$H" \
+  | jq '.smtpServer = {host: "<smtp-host>", port: "<smtp-port>", from: "<from-address>",
+                       auth: "false", starttls: "false", ssl: "false"}' \
+  | curl -s -o /dev/null -w 'smtp: %{http_code}\n' -X PUT "$BASE/admin/realms/$REALM" -H "$H" \
+      -H 'Content-Type: application/json' --data-binary @-
+```
+
 Verify by checking what actually left, not by trusting a `204`.
 
 ## Bind it
 
 ```bash
-# Realm-wide: set "browserFlow": "email-otp-flow" on the realm representation.
-# Single client: set the client's authenticationFlowBindingOverrides.browser to the flow's ID
-#               (an id, not an alias — resolve it from /authentication/flows first).
+# Realm-wide: browserFlow takes the flow's ALIAS.
+curl -s -o /dev/null -w 'realm: %{http_code}\n' -X PUT "$BASE/admin/realms/$REALM" -H "$H" \
+  -H 'Content-Type: application/json' -d "{\"browserFlow\":\"$FLOW\"}"
+
+# Or one client: authenticationFlowBindingOverrides.browser takes the flow's ID, not its alias.
+FLOW_ID=$(curl -s "$BASE/admin/realms/$REALM/authentication/flows" -H "$H" \
+  | jq -r --arg a "$FLOW" '.[] | select(.alias == $a) | .id')
+CID=$(curl -s "$BASE/admin/realms/$REALM/clients?clientId=<client-id>" -H "$H" | jq -r '.[0].id')
+curl -s "$BASE/admin/realms/$REALM/clients/$CID" -H "$H" \
+  | jq --arg f "$FLOW_ID" '.authenticationFlowBindingOverrides.browser = $f' \
+  | curl -s -o /dev/null -w 'client: %{http_code}\n' -X PUT "$BASE/admin/realms/$REALM/clients/$CID" \
+      -H "$H" -H 'Content-Type: application/json' --data-binary @-
 ```
 
 Ask which the user wants — realm-wide affects every client including the admin and account
