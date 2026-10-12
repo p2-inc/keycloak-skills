@@ -30,7 +30,9 @@ skill can advertise.
 | `cases.jsonl` | 95 requests, each with the expected `intent` and a `group` |
 | `groups.json` | which skill should handle each group (today every Keycloak group → `keycloak`) |
 | `route_check.py` | the runner (standard library only) |
-| `test_route_check.py` | offline tests: `python3 -m unittest discover -s evals/routing` |
+| `bench_arm.py` | the SkillsBench router arm (below) |
+| `bench_routes.json` | which benchmark should route to which intent (17 scenarios) |
+| `test_route_check.py`, `test_bench_arm.py` | offline tests: `python3 -m unittest discover -s evals/routing` |
 
 The prompts are fresh paraphrases. `--check` warns when one repeats a trigger phrase quoted in
 the router, because that would test string matching, not understanding. A `planned` case names
@@ -73,6 +75,40 @@ The report gives accuracy overall, by group and by intent, then every wrong answ
 confusions (`expected → got`) ranked by count. The confusions are the useful part: they name
 which pair of rows a model cannot tell apart.
 
+## SkillsBench router arm
+
+`route_check.py` measures the routing decision alone. The benchmarks measure the procedure, but
+each hands the agent the one skill it needs (`environment/skills/totpSecondFactorRest`), so the
+router is never exercised. `bench_arm.py` runs the same benchmark two ways:
+
+| `--arm` | The agent gets |
+|---|---|
+| `intent` | the task's own REST skill, as shipped (the control) |
+| `router` | the live `keycloak` and `securing-apps` skills from this checkout: router, references, assets, scripts |
+
+The task prompts are ordinary business requests that name no intent, so a router-arm pass means
+the agent chose the right reference **and** configured Keycloak correctly. Routing is read from
+the agent's own trajectory, with no self-report: which skill it loaded first, and which intent
+reference (`references/admin-<intent>.md`) it opened first. It uses the live skill rather than a
+copy inside a task, so the scenario cannot go stale when the router changes.
+
+```bash
+python3 evals/routing/bench_arm.py --list                                  # the 17 scenarios
+python3 evals/routing/bench_arm.py --task keycloak-totp-second-factor --arm both --dry-run   # free
+export AWS_BEARER_TOKEN_BEDROCK=...                                        # for Bedrock; needs Docker and `bench`
+python3 evals/routing/bench_arm.py --task keycloak-totp-second-factor --arm both
+python3 evals/routing/bench_arm.py --analyze <jobs dir> --task <task> --arm router   # re-score a finished run
+```
+
+The report lists, per run, the reward, the first route and whether it was the expected one, tool
+calls and cost, then the router and intent arms side by side. A router-arm run that fails with a
+correct route is a procedure problem; one that fails with a wrong route is a routing problem.
+Expect roughly $0.3–1.2 per run on Haiku 4.5 (the TOTP and passkey intent-arm runs cost $0.34 and
+$0.67).
+
+bench's own `n_skill_invocations` read 0 on runs that did load a skill, so this reads the
+trajectory instead (its tool-call counts match bench's).
+
 ## Adding an intent
 
 `--check` fails until every router intent has at least three cases, so a new intent comes with
@@ -99,5 +135,6 @@ add the new descriptions; the same cases then score the new layout.
 - One sample per case at temperature 0: a case that flips between runs is not detected.
 - `--level skill` pits a plugin's own skills against each other, not the dozens a user may have
   installed.
-- It stops at routing. Step 2 (are you a Phase Two user?) and everything after it are not run.
+- `route_check.py` stops at routing: Step 2 (are you a Phase Two user?) and everything after it are
+  not run. The router arm runs the whole task, REST only (the public build has no MCP server).
 - The cases are written by us. Real requests from users are better; add them as they turn up.

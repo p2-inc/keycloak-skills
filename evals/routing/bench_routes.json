@@ -1,0 +1,19 @@
+{
+  "keycloak-passwordless-passkey-login": "admin:passwordless-passkey",
+  "keycloak-magic-link-login": "admin:passwordless-magic-link",
+  "keycloak-email-otp-login": "admin:email-otp-login",
+  "keycloak-password-email-otp-mfa": "admin:password-email-otp-mfa",
+  "keycloak-totp-second-factor": "admin:totp-second-factor",
+  "keycloak-zero-password-login": "admin:zero-password-login",
+  "keycloak-password-or-passkey-login": "admin:password-or-passkey-login",
+  "keycloak-credential-enrollment": "admin:credential-enrollment",
+  "keycloak-magic-link-org-restrict-login": "admin:passwordless-magic-link-org-restrict",
+  "keycloak-org-restrict-login": "admin:org-restrict-login",
+  "keycloak-idp-org-restrict-login": "admin:idp-org-restrict-login",
+  "keycloak-corporate-sso-login": "admin:corporate-sso",
+  "keycloak-social-login": "admin:social-login",
+  "keycloak-idp-federation-login": "admin:idp-federation",
+  "keycloak-idp-initiated-sso": "admin:idp-initiated-sso",
+  "keycloak-app-add-login": "skill:securing-apps",
+  "keycloak-app-protect-api": "skill:securing-apps"
+}
