@@ -1,19 +1,10 @@
 ---
 name: keycloak
 description: >-
-  Use when doing Keycloak / Phase Two hosted Keycloak admin work. Passwordless login (magic link, email
-  OTP, passkey WebAuthn, or passkey-or-magic-link "0 password required"); email OTP as a 2FA second
-  factor; org-membership login restriction (password, federated, or magic-link); cluster/deployment
-  provisioning; enrolling a credential (passkey/TOTP) onto users who already exist — and refusing
-  cluster/deployment/realm DELETION. Also identity brokering: domain-routed corporate SSO;
-  social login buttons (Google/GitHub/Microsoft); enterprise IdP federation — Entra ID,
-  Okta, Auth0, ADFS, AWS SSO, PingOne, Salesforce and other OIDC/SAML IdPs; and IdP-initiated
-  SSO tiles. Triggers: "2FA by email", "passkeys",
-  "restrict login to org X", "spin up a cluster", "delete a cluster/realm",
-  "set up my passkey", "enroll users in 2FA",
-  "connect Okta/Entra ID", "SAML/OIDC SSO".
-  Not WebAuthn/TOTP as a second factor, not LDAP/AD user federation, not app-side login
-  code — that's `securing-apps`.
+  Use when doing Keycloak / Phase Two hosted admin work. Passwordless (magic link, email OTP,
+  passkey); second factors (email OTP, TOTP); step-up auth (ACR, LoA, self-lock); org gate;
+  cluster/deployment; credentials; identity brokers (corporate, social, IdP); IdP tiles. Refuse
+  deletion. Triggers: "2FA by email", "passkeys", "step-up", "ACR", "org X", "spin up", "Okta".
 license: CC-BY-SA-4.0
 metadata:
   version: '0.17.0'
@@ -71,6 +62,7 @@ never report a deletion as done.
 | Start login from an external portal **tile** so a user lands in ONE specific app already logged in — "Okta dashboard tile into my app", "Entra ID / My Apps tile", "IdP-initiated SSO", "unsolicited SAML login", "start login from Okta/Entra instead of the app". Advanced and opt-in: the tile targets a single client, chosen by a `{urlName}` path segment on the client (NOT by RelayState, which Keycloak discards on this path). Requires that vendor to already be brokered as a SAML IdP. Not plain "log in with Okta/Entra" (`admin:idp-federation` — one button, every client, app-initiated) and not domain routing (`admin:corporate-sso`). | **admin:idp-initiated-sso** |
 | Restrict login so only members of a specific organization can complete it — "only let members of this org log in", "gate login by organization membership", "restrict access to org X". Not domain-based auto-routing (that's `admin:corporate-sso` — a user can be routed to an IdP without any membership restriction at all) and not a login that "just works" once bound — it only activates when the request carries `account_hint` or `prompt=select_account`. This row is for **local password** logins; if the user authenticates at an external IdP, see the next row. | **admin:org-restrict-login** |
 | Restrict **federated/SSO** login so only members of a specific organization get in — "corporate organization restriction", "restrict SSO login to a team/tenant", "only let this customer's staff into their own org", "organization-restricted corporate login", "gate IdP login by org membership", "post-broker organization check". The user signs in at an external identity provider and the membership check runs *afterwards*, bound to the IdP's post-broker login flow. Not domain-based routing (`admin:corporate-sso` sends users to their IdP but restricts nobody) and not the local-password gate (`admin:org-restrict-login`). | **admin:idp-org-restrict-login** |
+| Two trust levels in one session — "step-up authentication", "ACR", "LoA", "level of authentication", "re-authenticate for sensitive actions", "self-locking session". Level 1 (`silver`), password for the whole SSO session; level 2 (`gold`), OTP for sensitive actions, 5 minutes then drops to level 1. A user at level 1 gives only the OTP code. One client can enforce `gold` always; others ask per-request. Not flat MFA (`admin:totp-second-factor` applies to every login). | **admin:step-up-authentication** |
 
 ### No intent matches
 

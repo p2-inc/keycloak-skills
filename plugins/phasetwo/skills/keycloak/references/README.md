@@ -77,7 +77,7 @@ account-level question.
   `admin:zero-password-login`, `admin:password-or-passkey-login`, `admin:credential-enrollment`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
   `admin:social-login`, `admin:idp-federation`, `admin:idp-initiated-sso`,
-  `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
+  `admin:org-restrict-login`, `admin:idp-org-restrict-login`, `admin:step-up-authentication`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
 - **Step 3** maps the intent + tooling to the `Read:` list below.
 
@@ -117,6 +117,8 @@ account-level question.
 | `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
 | `admin-idp-org-restrict-login-mcp.md` | `admin:idp-org-restrict-login` (tooling=`mcp`) — gating FEDERATED login on organization membership: the org-owned IdP link that makes the gate work at all, a post-broker flow containing `ext-select-org` bound as the IdP's `postBrokerLoginFlowAlias` (the stock post-broker flow has none, so binding it gates nothing) | ✅ done |
 | `admin-idp-org-restrict-login.md` | `admin:idp-org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST, including the atomic-flows payload details (`postLoginFlowBinding`, stripped `ifResourceExists`, hash-prefixed aliases) | ✅ done |
+| `admin-step-up-authentication-mcp.md` | `admin:step-up-authentication` (tooling=`mcp`) — two trust levels in one SSO session: level 1 (`silver`, password-only, whole session) and level 2 (`gold`, password+OTP, 5 minutes then back to level 1). A user already at level 1 gives only the OTP code for level 2. One client can enforce level 2 always (`minimum.acr.value`); others ask per-request. Drives `importAuthenticationFlow` or the component tools, `setOtpPolicy`, `setSmtpSettings`, `updateRealmAttributes` (ACR → LoA map), `updateClientAttributes` (per-client enforcement), and application-side checking of the `acr` claim in the ID token | ✅ done |
+| `admin-step-up-authentication.md` | `admin:step-up-authentication` (tooling=`rest`) — same outcome via raw Admin REST: authoring the flow manually with the two level sub-flows and conditions, setting realm attributes for ACR mapping and OTP policy, SMTP, and per-client enforcement | ✅ done |
 
 Both `admin-password-email-otp-mfa*.md` files reference
 [`assets/username-password-email-otp-flow.partial-import.json`](../assets/username-password-email-otp-flow.partial-import.json)
