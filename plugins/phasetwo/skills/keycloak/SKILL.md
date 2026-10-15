@@ -126,7 +126,7 @@ If tools are missing, say which, and diagnose before retrying:
 
 - **No `keycloak` tools at all** → the OAuth connection is unauthorized. Have the developer
   check `/mcp`.
-- **Some tools present, later-alphabet ones missing** (`setSmtpSettings`, `updateRealm`, and
+- **Some tools present, later-alphabet ones missing** (`setSmtpSettings`, `updateOidcClient`, and
   similar) → the client is showing only the first page of `tools/list`. MCP paginates, and a
   client that ignores `nextCursor` sees one page — Codex does this
   ([openai/codex#28858](https://github.com/openai/codex/issues/28858)). It is not a permissions
