@@ -26,10 +26,13 @@ load-bearing in exactly the way that file warns about.
 | The condition's config (`loa-condition-level`, `loa-max-age`) | `addAuthenticatorConfig` |
 | Verify order and shape | `listFlowExecutions` |
 | Repair order | `raiseExecutionPriority` / `lowerExecutionPriority`, or `reorderFlowExecutions` where present |
-| ACR → LoA map, client `minimum.acr.value` | `updateRealm` / `updateClient` (both expose a raw attributes map; there is no dedicated step-up tool) |
+| ACR → LoA map, client `minimum.acr.value` | **None — admin console.** No tool sets an arbitrary realm or client attribute (`updateOidcClient` covers only redirect URIs, web origins and enabled). See ["Console handoff"](#console-handoff-acr--loa-map-and-minimum-acr) |
 | Bind the flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 
-Confirm `addConditional`, `addAuthenticatorConfig`, and `listFlowExecutions` are present before
+Tell the developer **at the start**, before the first tool call, that two settings at the end are
+theirs to make in the admin console (below) — a Phase Two hosted deployment has no admin REST
+credential, so there is no other route, and discovering that mid-task is the costly way to learn
+it. Confirm `addConditional`, `addAuthenticatorConfig`, and `listFlowExecutions` are present before
 starting — the component path in `references/README.md`'s "Authoring flows" section is the default
 even on MCP, since no single tool authors this whole shape in one call. If the server also exposes
 `importAuthenticationFlow` (the keycloak-atomic-auth-flows extension), a hand-authored
@@ -56,11 +59,30 @@ asset's own `priority` values.
    one within its own sub-flow, not by providerId alone.
 10. `listFlowExecutions` — verify the whole tree: every level bucket-pure, Level 1 before Level 2.
     Repair with `raiseExecutionPriority`/`lowerExecutionPriority` if not.
-11. `updateRealm` — set `attributes["acr.loa.map"]` to the JSON string `{"silver":1,"gold":2}`.
-12. `updateClient` on the client that must always step up (e.g. `acme-payments`) — set
-    `attributes["minimum.acr.value"]` to `"gold"`.
-13. `bindRealmAuthenticationFlow` (or `bindClientAuthenticationFlow` for a single client) to the new
+11. `bindRealmAuthenticationFlow` (or `bindClientAuthenticationFlow` for a single client) to the new
     flow's alias/id.
+12. Hand the developer the console steps below, all in one message.
+
+## Console handoff: ACR → LoA map and minimum ACR
+
+Without the map, nothing translates `acr_values=gold` into level 2, so the flow built above never
+steps up. Give the developer these exact locations — and do not report the task done until they
+confirm, since nothing here can read either value back:
+
+1. **Realm settings → General → ACR to LoA Mapping** — add `silver` → `1` and `gold` → `2`, then
+   **Save**. (Stored as the realm attribute `acr.loa.map`.)
+2. Only for a client that must always require level 2 (e.g. `acme-payments`): **Clients →
+   *client* → Advanced → Advanced settings → Minimum ACR value** = `gold`, then that section's own
+   **Save**. This is a client setting, not a realm one. Don't confuse it with **Default ACR
+   values** in the same section — that is a default the browser can override, so it enforces
+   nothing. A client not pinned this way gets level 2 only when the application requests
+   `acr_values=gold`.
+3. Check **Realm settings → Tokens → Access Token Lifespan** is ≤ 5 minutes (the level-2
+   `loa-max-age`); the default already is. A longer lifespan lets a stale `gold` token outlive the
+   self-locking window.
+
+Leave the ACR to LoA Mapping on the client's Advanced tab empty — one realm-level map is the
+shared reference file's advice.
 
 Verify with real logins exactly as in the shared reference file's "Verifying this actually works" —
 config read-back alone doesn't catch an order mistake.
