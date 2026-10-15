@@ -82,10 +82,15 @@ data is unreliable on them:
 
 ## 2. What already exists
 
-The `keycloak` router covers **13 intents**, spread across four of the categories below:
-6 in **A** (authentication), 4 in **B** (brokering), 1 in **C** (organizations), and 2 in **N**
+The `keycloak` router covers **14 intents**, spread across four of the categories below:
+7 in **A** (authentication), 4 in **B** (brokering), 1 in **C** (organizations), and 2 in **N**
 (Phase Two platform). Everything marked ✅ in the category tables is already done; those rows are
 listed so the backlog reads as a complete map rather than a diff.
+
+**A8 (Conditional MFA / step-up) has shipped**: `admin:step-up-authentication`, with REST and MCP
+reference files, a router row with ACR/LoA/self-locking-session trigger phrasing, and index entries
+in `references/README.md`. Benchmarked separately once `benchmarks/keycloak-step-up-authentication/`
+lands.
 
 ---
 
