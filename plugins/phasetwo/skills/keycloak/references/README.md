@@ -77,7 +77,7 @@ account-level question.
   `admin:zero-password-login`, `admin:password-or-passkey-login`, `admin:credential-enrollment`,
   `admin:cluster-setup`, `admin:cluster-create-deployment`, `admin:corporate-sso`,
   `admin:social-login`, `admin:idp-federation`, `admin:idp-initiated-sso`,
-  `admin:org-restrict-login`, `admin:idp-org-restrict-login`).
+  `admin:org-restrict-login`, `admin:idp-org-restrict-login`, `admin:step-up-authentication`).
 - **Step 2** picks a **tooling** (`mcp` or `rest`).
 - **Step 3** maps the intent + tooling to the `Read:` list below.
 
@@ -117,6 +117,8 @@ account-level question.
 | `admin-org-restrict-login.md` | `admin:org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST: creating the organization and adding members through the keycloak-orgs surface (`/realms/{realm}/orgs`), configuring `ext-select-org`, and authoring/binding the flow (atomic-flows extension or the manual sequence) | ✅ done |
 | `admin-idp-org-restrict-login-mcp.md` | `admin:idp-org-restrict-login` (tooling=`mcp`) — gating FEDERATED login on organization membership: the org-owned IdP link that makes the gate work at all, a post-broker flow containing `ext-select-org` bound as the IdP's `postBrokerLoginFlowAlias` (the stock post-broker flow has none, so binding it gates nothing) | ✅ done |
 | `admin-idp-org-restrict-login.md` | `admin:idp-org-restrict-login` (tooling=`rest`) — same outcome via raw Admin REST, including the atomic-flows payload details (`postLoginFlowBinding`, stripped `ifResourceExists`, hash-prefixed aliases) | ✅ done |
+| `admin-step-up-authentication.md` | `admin:step-up-authentication` (tooling=`rest`) — two trust levels (`silver`/`gold`) in one session via stock `conditional-level-of-authentication` (`loa-condition-level`, `loa-max-age`), a CONDITIONAL-sub-flow-per-level shape (lowest level first — getting this backwards demands the top level on every first login), realm `acr.loa.map`, client `minimum.acr.value` to pin a client to always step up, the application side (`claims`/`acr_values`), the please-openit PIN Code Authenticator as a level-2 variant, and verification | ✅ done |
+| `admin-step-up-authentication-mcp.md` | `admin:step-up-authentication` (tooling=`mcp`) — same outcome through the component tools (`addFlow`, `addSubFlow`, `addConditional`, `addAuthenticator`, `addAuthenticatorConfig`, `listFlowExecutions`, `bindRealmAuthenticationFlow`; ACR → LoA map and `minimum.acr.value` are an admin-console handoff — no MCP tool sets them) | ✅ done |
 
 Both `admin-password-email-otp-mfa*.md` files reference
 [`assets/username-password-email-otp-flow.partial-import.json`](../assets/username-password-email-otp-flow.partial-import.json)
