@@ -47,6 +47,10 @@ npx expo prebuild --clean
 npx expo run:ios        # or: npx expo run:android, or an EAS build
 ```
 
+Every `npx expo …` in this file runs the `expo` CLI the project already has in `node_modules` (it
+ships with the `expo` package) — it downloads nothing. Outside an Expo project, stop: these commands
+are not for bare React Native.
+
 `expo-auth-session` (currently 57.0.10) is Expo's own pure-JS OIDC client and is a legitimate
 alternative — fewer native moving parts in a managed project, at the cost of doing the flow in JS
 rather than in AppAuth. It is an **alternative, not a requirement**, and it is under exactly the same
