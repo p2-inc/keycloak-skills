@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "phasetwo",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Two Keycloak skills, split by what the work targets. `keycloak` routes realm-administration requests to the right guidance: passwordless login by magic link, email OTP, passkey-only WebAuthn, or a combined passkey-or-magic-link \"0 password required\" flow, corporate/enterprise SSO by email domain, social login and enterprise identity-provider federation (Entra ID, Okta, Auth0, and more), organization-membership login restriction for both local and federated logins, credential enrollment for existing users (passkey/TOTP via required actions or an emailed link), and Phase Two cluster/deployment provisioning. `securing-apps` covers the other direction — wiring Keycloak login into your own React, Angular, Vue, Next.js, mobile or backend application, validating its bearer tokens, and registering the OIDC client it needs.",
   "author": {
     "name": "Phase Two",
@@ -9,8 +9,10 @@
     "url": "https://phasetwo.io"
   },
   "homepage": "https://phasetwo.io",
+  "privacyPolicyUrl": "https://phasetwo.io/company/privacy/",
   "repository": "https://github.com/p2-inc/keycloak-skills",
   "license": "CC-BY-SA-4.0 AND Apache-2.0",
+  "icon": "./.claude-plugin/icon.png",
   "keywords": [
     "keycloak",
     "phasetwo",
@@ -43,5 +45,12 @@
     "jwt",
     "resource-server",
     "pkce"
-  ]
+  ],
+  "userConfig": {
+    "keycloak_base_url": {
+      "type": "string",
+      "title": "Self-managed Keycloak base URL",
+      "description": "Optional, and only for self-managed Keycloak; leave empty for Phase Two hosted. The server's base URL including any relative path, e.g. http://localhost:8080 or https://sso.example.com/auth. No admin credential is stored here: when an admin token is needed, Claude asks you for one in the conversation."
+    }
+  }
 }
