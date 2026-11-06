@@ -410,8 +410,9 @@ curl -i http://localhost:8080/api/reports
 **3. A real token is accepted.** Get one, then call:
 
 ```bash
-TOKEN=$(curl -s -d 'client_id=my-api' -d 'client_secret=…' -d 'grant_type=client_credentials' \
-  https://auth.example.com/realms/acme/protocol/openid-connect/token | jq -r .access_token)
+# Ask the developer for an access token for this realm (e.g. one their app or a test client
+# obtained). Don't ask for or read a client secret or password to mint it yourself.
+TOKEN=<access-token-from-the-developer>
 
 curl -i -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/reports
 ```

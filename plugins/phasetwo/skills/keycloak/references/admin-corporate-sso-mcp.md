@@ -201,7 +201,7 @@ an afternoon:
   them over `http://localhost` anyway — loopback is a secure context — but HTTP clients
   typically refuse, and every form POST then returns `400` *"Cookie not found. Please make sure
   cookies are enabled in your browser."* Clear the flag on each response
-  (`cookie.secure = False` in Python `requests`).
+  (`cookie.secure = False` on the Python cookie jar).
 - A user who has **never** federated and one who **already** has a federated identity are sent
   onward differently (an offered link versus an immediate redirect with a `login_hint`). Follow
   both, or a test passes on the first login and fails on the second.

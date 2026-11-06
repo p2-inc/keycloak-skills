@@ -114,6 +114,17 @@ context. Don't ask twice in the same conversation once it's established.
 
 If the answer is ambiguous, ask — don't guess and don't default to either side.
 
+### On tooling=rest: base URL and Admin token
+
+- **Base URL.** The developer's configured value is `${user_config.keycloak_base_url}`. Use it as
+  `$BASE`; if it reads as an unexpanded `${user_config…}` placeholder or is empty, nothing is set — ask.
+- **Admin token.** Every `rest` file needs `$ADMIN_TOKEN`, a `master`-realm admin access token.
+  **Ask the developer for the token itself** — never for their admin password, and never read a
+  password or token from files, environment variables or keychains on their machine. If they need
+  to mint one, they do it in their own terminal (`admin-cli`, or a service-account client holding
+  `realm-admin`). `master` tokens last about a minute by default: on a `401` partway through, ask
+  for a fresh one rather than debugging permissions.
+
 ### On tooling=mcp: verify the tools once, before Step 3
 
 Check the tool list for the specific tools the chosen intent needs (each reference file names
