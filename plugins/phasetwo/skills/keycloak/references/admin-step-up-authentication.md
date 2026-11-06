@@ -35,10 +35,7 @@ Stock Keycloak (no extension), provider id `conditional-level-of-authentication`
 
 ```bash
 BASE=http://localhost:8080/auth
-ADMIN_TOKEN=$(curl -s -X POST "$BASE/realms/master/protocol/openid-connect/token" \
-  -d client_id=admin-cli -d grant_type=password \
-  -d username=<admin-user> -d password=<admin-password> \
-  | jq -r .access_token)
+ADMIN_TOKEN=<admin-access-token>   # from the developer, never their password — SKILL.md "Admin token"
 H="Authorization: Bearer $ADMIN_TOKEN"
 REALM=<realm>
 
