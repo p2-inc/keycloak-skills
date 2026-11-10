@@ -19,7 +19,7 @@ run passed. If it exits 0, the configuration is done — stop re-inspecting it.
                     mail there and follows the link itself
   --link            the magic link copied from a real inbox, if there is no
                     capture directory (run once without it to trigger the mail)
-  --admin-token     a master-realm admin access token (or set ADMIN_TOKEN), to
+  --admin-token     a master-realm admin access token, to
                     confirm no account was created for --unknown (the login
                     page cannot show this)
 
@@ -211,7 +211,7 @@ def main():
     parser.add_argument("--unknown", required=True)
     parser.add_argument("--mail-dir")
     parser.add_argument("--link")
-    parser.add_argument("--admin-token", default=os.environ.get("ADMIN_TOKEN"))
+    parser.add_argument("--admin-token")
     args = parser.parse_args()
 
     before = mail_files(args.mail_dir) if args.mail_dir else set()
