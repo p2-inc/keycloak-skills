@@ -42,10 +42,11 @@ follow [`framework-spa-js.md`](framework-spa-js.md) for the core API and `oidc-s
 
 ```bash
 npm install next-auth@beta
-npx auth secret
+echo "AUTH_SECRET=$(openssl rand -base64 33)" >> .env.local
 ```
 
-`npx auth secret` generates `AUTH_SECRET` and writes it into your `.env` file. It is the key that
+That line generates `AUTH_SECRET` and writes it into `.env.local` (the same thing `npx auth secret`
+does, without downloading the Auth.js CLI). It is the key that
 encrypts the session JWT — without it, Auth.js throws `MissingSecret` at the first request.
 
 ## Step 1: The Keycloak client
@@ -97,7 +98,7 @@ fills them in. The naming rule is `AUTH_{PROVIDER_ID_UPPERCASED}_{ID|SECRET|ISSU
 
 ```bash
 # .env.local
-AUTH_SECRET=…                                              # written by `npx auth secret`
+AUTH_SECRET=…                                              # written by the Install step
 AUTH_KEYCLOAK_ID=my-web-app
 AUTH_KEYCLOAK_SECRET=…                                     # from the Keycloak client's Credentials tab
 AUTH_KEYCLOAK_ISSUER=https://auth.example.com/realms/myrealm
@@ -411,7 +412,7 @@ Two things people expect that do not exist:
 | `Module '"next-auth"' has no exported member 'handlers'` | v4 installed | `npm install next-auth@beta` |
 | `NextAuth is not a function` / v4-shaped type errors everywhere | same | same — check `package.json` says `5.0.0-beta.x` |
 | `Invalid redirect_uri` before the login form | callback URL not registered exactly | register `{origin}/api/auth/callback/keycloak`, no trailing slash |
-| `MissingSecret` | `AUTH_SECRET` not set | `npx auth secret` |
+| `MissingSecret` | `AUTH_SECRET` not set | `echo "AUTH_SECRET=$(openssl rand -base64 33)" >> .env.local` |
 | `UntrustedHost` in production | `trustHost` is off outside Vercel/Cloudflare unless told otherwise | set `AUTH_URL` to the public origin, or `AUTH_TRUST_HOST=true` behind a trusted proxy |
 | `UnknownAction` on `/api/auth/*` | route handler in the wrong place | `app/api/auth/[...nextauth]/route.ts`, exactly |
 | Callback URL points at `http://localhost:3000` in production | Auth.js derived the origin from the request behind a proxy | set `AUTH_URL` to the real public origin |

@@ -22,7 +22,7 @@ reached the redirect URI with an authorization code.
 Two client-side details this handles, which otherwise waste an afternoon:
 
   * Keycloak's auth cookies are Secure with SameSite=None. Browsers send them
-    over http://localhost anyway (loopback is a secure context); requests will
+    over http://localhost anyway (loopback is a secure context); urllib will
     not, and every POST fails with "Cookie not found". The flag is cleared after
     each response.
   * The route to a brokered provider takes two shapes: a page offering it as a
@@ -31,13 +31,60 @@ Two client-side details this handles, which otherwise waste an afternoon:
 """
 
 import argparse
+import http.cookiejar
+import json
 import re
 import sys
+import urllib.error
 import urllib.parse
-
-import requests
+import urllib.request
 
 TIMEOUT = 30
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None  # surface the 3xx to the caller instead of following it
+
+
+class Response:
+    def __init__(self, status, headers, body):
+        self.status_code = status
+        self.headers = headers
+        self.text = body.decode("utf-8", "replace")
+
+    def json(self):
+        return json.loads(self.text)
+
+
+class Session:
+    """The slice of a `requests` session these scripts need, on the standard
+    library alone, so running them never needs a `pip install`."""
+
+    def __init__(self):
+        self.cookies = http.cookiejar.CookieJar()
+        cookies = urllib.request.HTTPCookieProcessor(self.cookies)
+        self._follow = urllib.request.build_opener(cookies)
+        self._stay = urllib.request.build_opener(cookies, _NoRedirect())
+
+    def request(self, method, url, params=None, data=None, headers=None,
+                allow_redirects=True, timeout=None):
+        if params:
+            url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
+        body = urllib.parse.urlencode(data).encode() if data is not None else None
+        req = urllib.request.Request(url, data=body, headers=headers or {}, method=method)
+        opener = self._follow if allow_redirects else self._stay
+        try:
+            with opener.open(req, timeout=timeout) as resp:
+                return Response(resp.status, resp.headers, resp.read())
+        except urllib.error.HTTPError as err:
+            return Response(err.code, err.headers, err.read())
+
+    def get(self, url, **kwargs):
+        return self.request("GET", url, **kwargs)
+
+    def post(self, url, **kwargs):
+        return self.request("POST", url, **kwargs)
 
 
 def relax_cookies(session):
@@ -77,7 +124,7 @@ def main():
     args = p.parse_args()
 
     base = args.base.rstrip("/")
-    session = requests.Session()
+    session = Session()
 
     auth_url = f"{base}/realms/{args.realm}/protocol/openid-connect/auth?" + urllib.parse.urlencode({
         "client_id": args.client, "response_type": "code", "scope": "openid email",

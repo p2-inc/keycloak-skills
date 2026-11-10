@@ -18,24 +18,22 @@ Self-managed Keycloak only. This does NOT apply to Phase Two hosted deployments 
 is no self-service admin REST credential of any kind there (confirmed with Phase Two).
 Without MCP, use the dashboard instead; raw REST is a dead end there, not a fallback.
 
-A token from `admin-cli` in the `master` realm **expires after 60 seconds** by default,
-so a token minted once and reused goes stale partway through the task. A `401
+`$ADMIN_TOKEN` is a `master`-realm admin access token **the developer gives you** — ask for
+the token, never for their admin password (see SKILL.md "Admin token"). A `master` token
+**expires after 60 seconds** by default, so it can go stale partway through the task. A `401
 Unauthorized` halfway through means the token expired — **not** that the endpoint,
-method, or body is wrong. Don't reuse a token: write this helper once, and it mints a
-fresh token for every call.
+method, or body is wrong: ask for a fresh token and rewrite the helper with it. For a long
+session, the developer can mint one from a service-account client with a longer lifespan.
 
 ```bash
 cat > /tmp/kc <<'EOF'
 #!/bin/sh
-# kc METHOD PATH [curl args...] — one admin REST call with a freshly minted token.
+# kc METHOD PATH [curl args...] — one admin REST call with the developer's token.
 # Body goes to stdout (pipe it to jq); "HTTP <status>" goes to stderr.
 BASE=http://localhost:8080/auth   # include the relative path if one is configured
-KC_USER=<admin-user> KC_PASS=<admin-password>
+ADMIN_TOKEN=<admin-access-token>  # from the developer, never their password
 m=$1 p=$2; shift 2
-t=$(curl -s "$BASE/realms/master/protocol/openid-connect/token" -d client_id=admin-cli \
-  -d grant_type=password --data-urlencode "username=$KC_USER" \
-  --data-urlencode "password=$KC_PASS" | jq -r .access_token)
-exec curl -s -X "$m" "$BASE/admin/realms$p" -H "Authorization: Bearer $t" \
+exec curl -s -X "$m" "$BASE/admin/realms$p" -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" -w "%{stderr}HTTP %{http_code}\n" "$@"
 EOF
 chmod +x /tmp/kc
@@ -158,8 +156,8 @@ Three responses here look like errors and are not:
   its id, as in step 3.
 - The POST in 2a returns **201 with an empty body**. That is success — don't repeat it.
   Each extra POST creates another config and re-links the execution to it.
-- A **401** anywhere means the token expired — use `/tmp/kc`, which mints a fresh one
-  per call, rather than exploring other endpoints.
+- A **401** anywhere means the token expired — ask the developer for a fresh one and
+  rewrite `/tmp/kc` with it, rather than exploring other endpoints.
 
 Turn this off whenever the request implies "our existing staff/customers", not "let
 anyone create an account by typing an email" — which is almost always the intent
@@ -191,7 +189,7 @@ python3 <skill-dir>/scripts/verify_magic_link.py --realm "$REALM" --client <clie
   --redirect-uri <app-redirect-uri> --known <an-existing-user's-email> \
   --unknown <an-address-with-no-account> \
   --mail-dir <capture-dir, if a local SMTP capture server writes one file per mail> \
-  --admin-user <admin-user> --admin-password <admin-password>
+  --admin-token <admin-access-token, if the developer gave you one>
 ```
 
 Without a capture directory, run it once to trigger the mail, then rerun with
@@ -204,7 +202,7 @@ setting to fix; fix that one thing and rerun the script.
 get subtly wrong and will happily report success when no mail left the server: it
 confirms the page said "check your email", which the page says either way. The
 script only passes once real mail has arrived and its link has been followed to the
-application. If you can't run it (no Python, no `requests`), do the steps below by
+application. If you can't run it (no Python 3), do the steps below by
 hand, and treat "mail arrived" and "the link reached the redirect URI" as the checks
 that matter.
 

@@ -9,6 +9,26 @@ Ships for Claude Code, Cursor and Codex from one shared `skills/` tree.
 
 The two skills split by **what the work targets**: `keycloak` changes a live realm, `securing-apps` changes your application's source code.
 
+## Install
+
+In Claude Code:
+
+```
+/plugin install phasetwo --marketplace p2-inc/keycloak-skills
+```
+
+Cursor and Codex: see the [install guides](../../README.md#install).
+
+### Self-managed Keycloak
+
+Phase Two hosted users need nothing more — the bundled MCP server signs in with OAuth.
+
+Against a self-managed Keycloak the skills use the Admin REST API. The plugin has one optional
+setting, **Self-managed Keycloak base URL** (`keycloak_base_url`), so you aren't asked for it every
+session. It stores no credential: when an admin call is needed, Claude asks you for a short-lived
+`master`-realm admin **access token** that you mint yourself. It never asks for your admin password
+and never reads credentials from your machine.
+
 ## Skills
 
 - [`securing-apps`](./skills/securing-apps/) — app-side integration: wiring Keycloak/OIDC login into your own application. Browser login, logout and route protection for React, Angular, Vue, Next.js or a vanilla SPA (oidc-spa, keycloak-js, Auth.js); bearer-JWT validation in a Spring Boot, Express, FastAPI or Quarkus resource server (JWKS, issuer, audience, and Keycloak's nested role claims); native login on Android, iOS and React Native (AppAuth, PKCE, custom-scheme callbacks). Detects the framework from the project's own manifests rather than asking, then registers or updates the OIDC client the app needs — redirect URIs, web origins, public vs confidential — via either the Keycloak MCP server or raw Admin REST. Leads with the ecosystem-native library for each stack and names the Keycloak adapter it replaces, since the adapters were removed in Keycloak 25.0.0 and older training data still suggests them.

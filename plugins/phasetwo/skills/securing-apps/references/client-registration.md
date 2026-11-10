@@ -43,11 +43,8 @@ you want when a human or an agent is registering one known app.
 BASE=http://localhost:8080        # include the relative path (e.g. /auth) if one is configured
 REALM=myrealm                       # the realm the app logs in against — NOT master
 
-# Mint $ADMIN_TOKEN from the built-in admin-cli client in `master` (skip if you already have one).
-ADMIN_TOKEN=$(curl -s -X POST "$BASE/realms/master/protocol/openid-connect/token" \
-  -d client_id=admin-cli -d grant_type=password \
-  -d username=<admin-user> -d password=<admin-password> \
-  | jq -r .access_token)
+# $ADMIN_TOKEN is a `master` admin access token the developer gives you.
+ADMIN_TOKEN=<admin-access-token>   # from the developer, never their password — SKILL.md "Admin token"
 H="Authorization: Bearer $ADMIN_TOKEN"
 ```
 
@@ -55,7 +52,7 @@ H="Authorization: Bearer $ADMIN_TOKEN"
   the app's realm. Creating the client in `master` by mistake produces a client that exists, looks
   right in the console, and that the app can never log in against.
 - **The token is short-lived** — minutes, not hours. A run that starts working and then returns `401`
-  on every call has simply expired; re-run the block above rather than debugging permissions.
+  on every call has simply expired; ask the developer for a fresh one rather than debugging permissions.
 
 ## Step 1: Decide the client type — from the app, not from preference
 
@@ -334,7 +331,7 @@ catch the `webOrigins` failure — it needs a browser to trigger CORS at all.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `401 Unauthorized` on every admin call, after some worked | `$ADMIN_TOKEN` expired — it lives for minutes | re-run the Step 0 token block |
+| `401 Unauthorized` on every admin call, after some worked | `$ADMIN_TOKEN` expired — it lives for minutes | ask the developer for a fresh token |
 | `403 Forbidden` on `POST`/`PUT` | the admin user lacks `manage-clients` in **that** realm | grant `realm-management` → `manage-clients` on the target realm, or use a full `master` admin |
 | `409 Conflict` on `POST /clients` | the `clientId` is already taken — you are on Branch B, not A | switch to the read-merge-`PUT` in Step 3b |
 | `404` on `GET`/`PUT /clients/{id}` | you passed the human-readable `clientId` where the UUID belongs | resolve the UUID first (Step 2); `clientId` ≠ `id` |

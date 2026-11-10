@@ -37,14 +37,11 @@ stage below will fail in a more confusing way:
 
 ```bash
 BASE=http://localhost:8080/auth       # include the relative path if one is configured
-# Self-managed Keycloak: mint $ADMIN_TOKEN from the built-in admin-cli client in `master`
-# (skip if you already have a token). Does NOT apply to Phase Two hosted deployments — there
+# Self-managed Keycloak: $ADMIN_TOKEN is a `master` admin access token the developer gives you.
+# Does NOT apply to Phase Two hosted deployments — there
 # is no self-service admin REST credential of any kind there (confirmed with Phase Two).
 # Without MCP, use the dashboard instead; raw REST is a dead end here, not a fallback.
-ADMIN_TOKEN=$(curl -s -X POST "$BASE/realms/master/protocol/openid-connect/token" \
-  -d client_id=admin-cli -d grant_type=password \
-  -d username=<admin-user> -d password=<admin-password> \
-  | jq -r .access_token)
+ADMIN_TOKEN=<admin-access-token>   # from the developer, never their password — SKILL.md "Admin token"
 H="Authorization: Bearer $ADMIN_TOKEN"
 REALM=<realm>
 
@@ -311,7 +308,7 @@ Two client-side details that otherwise cost an afternoon:
 - Keycloak sets `AUTH_SESSION_ID` and `KC_RESTART` as `Secure; SameSite=None`. Browsers send
   them over `http://localhost` anyway (loopback is a secure context); most HTTP client libraries
   will not, and every form POST then returns `400` *"Cookie not found."* Clear the flag on each
-  response (`cookie.secure = False` in Python `requests`).
+  response (`cookie.secure = False` on the Python cookie jar).
 - A user who has **never** federated and one who **already** has a federated identity are sent
   onward differently (an offered link versus an immediate redirect with `login_hint`). Test
   both, or a check passes on the first login and fails on the second.
