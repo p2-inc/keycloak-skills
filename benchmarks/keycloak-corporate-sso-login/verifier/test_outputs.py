@@ -151,11 +151,14 @@ def _follow_to_redirect_uri(session, location, redirect_uri, limit=8):
 def _route_to_customer_idp(session, identified, limit=5):
     """Follow the SSO route to wherever it lands.
 
-    Keycloak takes two different shapes here, both legitimate, so both are
-    followed rather than only the one that happens to appear first:
-      * a user not yet federated gets a page offering the provider as a link;
-      * a user already federated gets a 302 straight at the broker endpoint,
-        carrying a login_hint.
+    Two shapes are followed rather than only the one that happens to appear
+    first:
+      * a redirect straight at the broker endpoint - what Keycloak 26.8 sends
+        for a domain routed with auto-redirect, federated user or not;
+      * a page offering the provider as a link - Keycloak 26.7 and older for a
+        user not yet federated, and 26.8 beside the password field when the
+        domain is not routed with auto-redirect (which the password-field test
+        rejects on its own).
     Either way the broker endpoint then redirects on to the customer's IdP.
     """
     location = identified.headers.get("Location", "")

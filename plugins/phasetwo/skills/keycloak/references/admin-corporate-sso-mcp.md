@@ -36,10 +36,10 @@ MCP tools below will work.
 | Purpose | Tool |
 |---|---|
 | Identify caller / realm | `whoAmI` |
-| Create the customer's organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below |
+| Create the customer's organization **in the deployment's realm** | `createDeploymentOrganization` — **not** `createOrganization`, see below. **Pass the customer's email domain in `domains`**: that is the list discovery matches, and no MCP tool adds one later |
 | Find an existing one | `listDeploymentOrganizations` |
 | Create the corporate IdP | `createOidcIdp` / `createSamlIdp` |
-| **Link the IdP to the organization** | `linkIdentityProviderToOrganization` — **pass `domains`**, or routing stays dead |
+| **Link the IdP to the organization** | `linkIdentityProviderToOrganization` — pass the same `domains` (see below) |
 | See what flows exist | `listAuthenticationFlows` |
 | Bind the flow | `bindRealmAuthenticationFlow` / `bindClientAuthenticationFlow` |
 | Confirm bindings | `getAuthenticationBindings` |
@@ -76,31 +76,41 @@ Capture **`deploymentId`** and **`deploymentRealm`** and reuse them on every cal
 
 ## The hard prerequisite — establish this first
 
-**Discovery matches on the IdP's own domain list, written when you link it.** The
-domains you pass to `linkIdentityProviderToOrganization` land on the IdP as the config key
-`home.idp.discovery.domains`, and that is what the discoverer compares the typed address
-against. So the first question is:
+**Discovery matches on the organization's own domain list.** The discoverer finds the
+organization whose `domains` hold the domain of the typed address, then forwards to the IdP
+linked to that organization. So the first question is:
 
-> **"Is the company modelled as an organization in this realm, and is the IdP linked to it
-> *with the domains passed on the link*?"**
+> **"Is the company modelled as an organization in this realm, holding the customer's email
+> domain, and is the IdP linked to it?"**
 
 Two corollaries that save a long debugging session:
 
-- **Domain verification is irrelevant to routing.** Verified domains feed a different, optional
-  authenticator (`ext-auth-org-id-verifier`). An unverified domain routes perfectly well.
-- **Adding a domain to the organization does not route anything.** The organization's `domains`
-  and the link's `domains` are separate lists; only the latter drives discovery. Pass the
-  domains to `linkIdentityProviderToOrganization` even if the org already lists them.
+- **Domain verification is irrelevant to routing** unless the discovery execution's config sets
+  `requireVerifiedDomain` to `true`. It defaults to `false`, and the bundled assets leave it
+  off. An unverified domain routes perfectly well.
+- **The link's `domains` do not route anything on their own.** `linkIdentityProviderToOrganization`
+  writes them to the IdP as `home.idp.discovery.domains`. Discovery reads that only when the realm
+  allows several IdPs per organization (`_providerConfig.orgs.config.multipleIdps`), and then only
+  to choose among them. An organization created without the domain routes nobody, even when the
+  link carries it. Pass the domain to `createDeploymentOrganization` first; repeating it on the
+  link costs nothing.
 
-Three things must all be true, and each fails silently on its own:
+Measured on Phase Two's Keycloak 26.8.2 image (keycloak-orgs 0.196), all with unverified
+domains:
+
+- An org without domains, linked with `domains`, did not route.
+- Adding the domain to that org made it route.
+- An org holding the domain, linked without `domains`, routed.
+
+Two things must both be true, and each fails silently on its own. The flow in the next section
+must also be bound.
 
 | Missing | Symptom |
 |---|---|
-| The organization does not hold the customer's email domain | Discovery has nothing to match |
-| The domain is present but **not verified** | Discovery never matches that domain |
+| The organization does not hold the customer's email domain | Discovery has nothing to match, even if the link carried the domain |
 | The IdP is created but **not linked** to the organization | The provider works, but the login page just shows an SSO button to everybody — no routing |
 
-The third is the one that gets skipped: **creating an IdP does not associate it with any
+The second is the one that gets skipped: **creating an IdP does not associate it with any
 organization.** `linkIdentityProviderToOrganization` takes the `orgId`, the `idpAlias`, and the
 organization's email `domains`. Without that call, Home IdP Discovery will never find the IdP
 for that domain, no matter how correct everything else is.
@@ -115,8 +125,8 @@ to a value derived from the domain and the organization's ID, and only flips `ve
 once that DNS record is found. **This is a Phase Two-managed process, not something this skill (or
 any MCP tool) triggers.** Use `listDeploymentOrganizationDomains` to check a domain's current status and get
 the `recordKey`/`recordValue` it needs, then direct the customer to Phase Two's own process for
-getting it verified — don't look for (or improvise) a way to verify it yourself, and don't treat
-an added-but-unverified domain as ready for discovery.
+getting it verified. Don't look for, or improvise, a way to verify it yourself. Verification is
+not a prerequisite for this intent: an unverified domain routes with the bundled flows.
 
 ## Which flow to bind
 
@@ -175,10 +185,11 @@ Then bind: `bindRealmAuthenticationFlow(bindingType="browser", flowAlias="homeId
 flow-binding intent in this router). Binding alone does nothing if the prerequisite above is not
 satisfied.
 
-**A custom flow is always required here** — unlike Keycloak's own native Organizations feature
-(which Phase Two does not use, see above), this extension's IdP discovery is an authenticator you
-author into a flow, not something the stock `browser` flow does automatically once organizations
-exist. Don't assume domain routing "just works" once the organization/domain/link pieces are in
+**A custom flow is always required here.** Keycloak's own native Organizations feature (which
+Phase Two does not use, see above) routes from the stock `browser` flow once each domain is
+configured for it. Since Keycloak 26.8, that means the org domain's `identityProviderAlias` with
+`autoRedirect`. This extension's IdP discovery is different: it is an authenticator you author
+into a flow. Don't assume domain routing "just works" once the organization/domain/link pieces are in
 place — the flow still has to be authored and bound.
 
 ## Verify by logging in, not by reading configuration
@@ -188,7 +199,7 @@ behaviour. Perform a real login twice:
 
 | Submit on the login page | Expect |
 |---|---|
-| an address at the customer's verified domain | **no password field**; the browser is sent to the customer's IdP |
+| an address at the customer's domain | **no password field**; the browser is sent to the customer's IdP |
 | an address at any other domain | **a password field**, and password login still completes |
 
 The second row is not optional. It is what distinguishes correct domain discovery from a
@@ -267,9 +278,8 @@ intent matches").
 | Symptom | Cause |
 |---|---|
 | Matched domain still shows the password form | `forwardToLinkedIdp` left at its `false` default, or the IdP is not linked to the organization |
-| Matched domain gets neither password nor route | Linked without `domains`, so the IdP is hidden but unroutable — re-link passing the domains |
+| A domain never routes although the IdP is linked | The organization does not hold that domain; the link's `domains` alone do not route. `createDeploymentOrganization` sets domains only at creation, and no MCP tool edits them later. Report that gap and stop: the fix is `PUT /realms/{realm}/orgs/{org-id}` with the domain added, which the user runs |
 | SSO button shown to everyone, nothing routes | Provider created but not linked to an organization |
-| Domain never matches | The domains were added to the organization but not passed on the link (verification is not the cause) |
 | Everyone gets forwarded to the provider | An identity-provider-redirector execution in the bound flow |
 | A required MCP tool is missing | Report it and stop; do not switch to REST unsolicited |
 | `400` "Cookie not found" while scripting | `Secure` cookies not sent over http by the client |

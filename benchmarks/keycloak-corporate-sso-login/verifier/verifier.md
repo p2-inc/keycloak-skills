@@ -38,10 +38,11 @@ rather than of the realm:
   anyway over `http://localhost`, which it treats as a secure context; `requests` will
   not, and every form POST then fails as `cookie_not_found`. The helper clears the flag to
   reproduce browser behaviour.
-- The SSO route takes two legitimate shapes. A user not yet federated is shown a page
-  offering the provider as a link; a user already federated gets a `302` straight at the
-  broker endpoint carrying a `login_hint`. The helper follows both, so results do not
-  depend on whether a given account has logged in before.
+- On the pinned Keycloak (26.8.2), a correctly routed address gets a `303` straight at the
+  broker endpoint whether or not that account has federated before. The helper also follows
+  a provider link on the page: Keycloak 26.7 and older offered a not-yet-federated user only
+  that link, and 26.8 shows it as a button beside the password field when the domain is
+  not routed with auto-redirect. Test 1 rejects that second case on its own.
 
 Both corporate accounts are exercised throughout, so a configuration that happens to work
 for one hardcoded user does not pass.
@@ -72,9 +73,24 @@ What each test establishes:
    The customer operates that realm.
 7. `test_only_the_expected_realms_exist` — exactly `master`, `acme` and `contoso-idp`.
 
-Reward is all-or-nothing: `1` when every test passes, `0` otherwise. Notably, brokering the
-provider correctly but omitting the domain link scores `0` on tests 1–4 while passing 5–7;
-forwarding everyone with a redirector scores `0` on test 5.
+Reward is all-or-nothing: `1` when every test passes, `0` otherwise. Measured on Keycloak
+26.8.2, each in a fresh container:
+
+| Configuration | Fails |
+|---|---|
+| Untouched fixture | tests 1–4 |
+| Organizations on, organization holds the domain, provider linked, domain not routed (the pre-26.8 recipe) | test 1 |
+| Domain routed to the provider without auto-redirect | test 1 |
+| Provider never linked to the organization, so the domain cannot be routed to it | test 1 |
+| Pre-26.8 routing keys (`kc.org.domain`, `kc.org.broker.redirect.mode.email-matches`) on the provider's config | test 1 |
+| The oracle's configuration, then organization support switched off | tests 1–4 |
+| An identity-provider-redirector execution in a custom browser flow | tests 1–5 |
+| The oracle's configuration with the domain left unverified | nothing (reward 1) |
+
+In the four "test 1" rows the login page still offers the provider as a button beside
+the password field, so tests 2–4 follow it and pass. Test 1 is what rejects them.
+Whether the domain is marked `verified` changes nothing: Keycloak does not consult the
+flag when routing.
 
 Artifacts copied to `/logs/verifier/`: `output.txt` (full pytest output), `ctrf.json`,
 `services-readiness.txt`, `federated-users.txt`, and the rendered identity-first pages as

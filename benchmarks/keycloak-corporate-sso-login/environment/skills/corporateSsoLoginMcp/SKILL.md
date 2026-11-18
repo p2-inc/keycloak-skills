@@ -9,7 +9,7 @@ description: >-
   "redirect to my corporate IdP", "authenticate to my corporate IdP", "home realm discovery",
   "IdP discovery by email domain", "onboard an enterprise customer's SSO", or "associate a
   corporate IdP with organization login" — even if they only say "corporate SSO". Covers the
-  organization + verified-domain + linked-IdP mechanism that performs the discovery, the
+  organization + domain + linked-IdP mechanism that performs the discovery, the
   `homeIdp` / `homeIdp with orgs-check` flows and the `forwardToLinkedIdp=true` setting the
   redirect depends on, why an identity-provider-redirector execution is the wrong answer, and
   how to verify the routing by actually logging in. Not user federation
@@ -85,16 +85,18 @@ Capture **`deploymentId`** and **`deploymentRealm`** and reuse them on every cal
 email domain and forwards to *that organization's linked IdP*. There is no standalone
 domain-to-IdP setting anywhere. So the first question is:
 
-> **"Is the company modelled as an organization in this realm, with a verified email domain,
-> and is the IdP linked to it?"**
+> **"Is the company modelled as an organization in this realm, holding the customer's email
+> domain, and is the IdP linked to it?"**
 
-Three things must all be true, and each fails silently on its own:
+Two things must both be true, and each fails silently on its own:
 
 | Missing | Symptom |
 |---|---|
 | The organization does not hold the customer's email domain | Discovery has nothing to match |
-| The domain is present but **not verified** | Discovery never matches that domain |
 | The IdP is created but **not linked** to the organization | The provider works, but the login page just shows an SSO button to everybody — no routing |
+
+Whether the domain is verified does not matter for routing: an unverified domain routes the same
+(measured on Phase Two's Keycloak 26.8.2 image and on stock 26.0.7 and 26.8.2).
 
 The third is the one that gets skipped: **creating an IdP does not associate it with any
 organization.** `linkIdentityProviderToOrganization` takes the `orgId`, the `idpAlias`, and the
@@ -131,7 +133,7 @@ behaviour. Have the user (or a script) perform a real login twice:
 
 | Submit on the login page | Expect |
 |---|---|
-| an address at the customer's verified domain | **no password field**; the browser is sent to the customer's IdP |
+| an address at the customer's domain | **no password field**; the browser is sent to the customer's IdP |
 | an address at any other domain | **a password field**, and password login still completes |
 
 The second row is not optional. It is what distinguishes correct domain discovery from a
@@ -162,10 +164,11 @@ email addresses reproduces some of the behaviour while being the opposite of fed
 - **The redirect URI the customer must whitelist** is
   `{base}/realms/{realm}/broker/{alias}/endpoint`. It contains the alias, so choose the alias
   *before* asking them to whitelist anything.
-- **`hideOnLogin`** — tempting, to keep one customer's button off a shared login page.
-  Measured: setting it true removes the route for the **matched** domain too, leaving those
-  users with no password field *and* no way forward. Leave it visible unless you have verified
-  the matched-domain path still works.
+- **`hideOnLogin`** — linking on Phase Two sets it to `true`, and routing still works. Measured on
+  Phase Two's 26.8.2 image: a matching address gets a 303 straight to the customer's IdP. On stock
+  Keycloak 26.8 with the domain routed and auto-redirect on, it doesn't affect the routed domain
+  either. The old advice to leave it visible came from 26.7 and older, where the button was a
+  first-time user's only route.
 - **`syncMode`** — `IMPORT` copies profile fields on first login only; `FORCE` refreshes them
   on every login, usually right when the customer's directory is authoritative.
 - **First broker login** — the default flow reviews the profile when fields are missing and can
@@ -185,20 +188,23 @@ organization may log in at all", that is a different mechanism with a significan
 |---|---|
 | Matched domain still shows the password form | `forwardToLinkedIdp` left at its `false` default, or the IdP is not linked to the organization |
 | SSO button shown to everyone, nothing routes | Provider created but not linked to an organization |
-| Domain never matches | The organization's domain is not marked verified |
+| Domain never matches | The organization does not hold the domain |
 | Everyone gets forwarded to the provider | An identity-provider-redirector execution in the bound flow |
-| Matched domain gets neither password nor route | `hideOnLogin` is true on the provider |
 | A required MCP tool is missing | Report it and stop; do not switch to REST unsolicited |
 | `400` "Cookie not found" while scripting | `Secure` cookies not sent over http by the client |
 | `invalid_redirect_uri` at the customer's provider | They whitelisted a different alias than the one created |
 
 ## Appendix — non-Phase Two realms
 
-Stock Keycloak 26 has the same mechanism under a different name: the `organization` feature
-flag, a realm `organizationsEnabled` switch, `POST /admin/realms/{realm}/organizations` with
-`domains:[{name,verified:true}]`, and
+Stock Keycloak has the same idea under a different name: a realm `organizationsEnabled`
+switch, `POST /admin/realms/{realm}/organizations` with `domains:[{name}]`,
 `POST /admin/realms/{realm}/organizations/{orgId}/identity-providers` (body is a bare JSON
-string holding the alias). The built-in `browser` flow then routes without any custom flow.
-Note the redirect there is not silent for a first-time user — they are shown the provider as a
-link. Use this only when the user has confirmed there is no Phase Two deployment and no MCP
-server; otherwise the tools above are the supported path.
+string holding the alias), and, on Keycloak 26.8 and later, the domain routed to that IdP. To
+route it, set `identityProviderAlias` and `autoRedirect: true` on the domain entry and `PUT` the
+organization back. Do that after the link: before it, the PUT is refused with a 400. The
+built-in `browser` flow then redirects a matching address without any custom flow. On 26.7 and
+older the routing lived on the IdP's config instead (`kc.org.domain`,
+`kc.org.broker.redirect.mode.email-matches`). 26.8 accepts those keys and silently drops them,
+so check `GET /admin/serverinfo` before following older guidance. Use this only when the user
+has confirmed there is no Phase Two deployment and no MCP server; otherwise the tools above are
+the supported path.

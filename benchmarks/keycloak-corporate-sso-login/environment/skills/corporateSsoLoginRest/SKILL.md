@@ -8,9 +8,9 @@ description: >-
   customer", "let our customer log in with their company account", "log in with my company's SSO
   automatically", "redirect to my corporate IdP", "authenticate to my corporate IdP", "home realm
   discovery", "IdP discovery by email domain", "onboard an enterprise customer's SSO" — even if
-  they only say "corporate SSO". Covers the organization + verified-domain + linked-IdP mechanism
-  that performs the discovery, why an identity-provider-redirector execution is the wrong answer,
-  and how to verify the routing by actually logging in.
+  they only say "corporate SSO". Covers the organization + linked-IdP + routed-domain mechanism
+  that performs the discovery (Keycloak 26.8+), why an identity-provider-redirector execution is
+  the wrong answer, and how to verify the routing by actually logging in.
 ---
 
 <!-- Copyright 2026 Phase Two, Inc. -->
@@ -44,13 +44,24 @@ REALM=<realm>
 
 Keycloak has exactly one built-in way to route by email domain, and it lives in the
 **organizations** feature, not the authentication-flow editor where someone would look for it.
-Three things must all be true, and each fails silently on its own:
+Four things must all be true, and each fails silently on its own:
 
 | Missing | Symptom |
 |---|---|
 | The realm's organization support isn't switched on | No domain-based routing exists at all |
-| An organization doesn't hold the customer's email domain, **verified** | Discovery has nothing to match (an unverified domain is stored happily and never matches) |
-| The IdP is created but **not linked** to the organization | The provider works, but the login page just shows an SSO button to everybody — no routing |
+| No organization holds the customer's email domain | Discovery has nothing to match |
+| The IdP is created but **not linked** to the organization | The domain cannot be routed to it (Stage 5 is refused with a 400) |
+| The domain is not routed to the IdP **with auto-redirect** | The customer's staff get your password form with an SSO button beside it |
+
+**Check the server version first** (`GET $BASE/admin/serverinfo` → `.systemInfo.version`).
+Keycloak 26.8.0 moved routing onto the organization's domain
+([upgrading guide](https://www.keycloak.org/docs/latest/upgrading/index.html), "Organization
+identity providers now support many-to-many linking"). Guidance written for 26.7 and older sets
+`kc.org.domain` and `kc.org.broker.redirect.mode.email-matches` on the IdP's config instead. 26.8
+accepts that write and silently drops both keys.
+
+Whether a domain is marked `verified` does not affect any of this. Measured on 26.0.7 and
+26.8.2: an unverified domain routes exactly like a verified one.
 
 ## Stage 1 — Switch on organization support (a realm-representation PUT)
 
@@ -98,7 +109,7 @@ curl -s -X POST "$BASE/admin/realms/$REALM/identity-provider/instances" -H "$H" 
 `trustEmail: true` matters here: without it, a brokered user is asked to verify an email the
 customer already verified, stalling first login.
 
-## Stage 3 — Create the organization, with a verified domain
+## Stage 3 — Create the organization, holding the customer's domain
 
 ```bash
 curl -s -X POST "$BASE/admin/realms/$REALM/organizations" -H "$H" \
@@ -107,7 +118,7 @@ curl -s -X POST "$BASE/admin/realms/$REALM/organizations" -H "$H" \
     "alias": "<org-name>",
     "enabled": true,
     "description": "<Customer> - federated enterprise customer",
-    "domains": [{"name": "<customer-email-domain>", "verified": true}]
+    "domains": [{"name": "<customer-email-domain>"}]
   }'
 
 # Get the org's id - the next step needs it.
@@ -115,10 +126,11 @@ curl -s "$BASE/admin/realms/$REALM/organizations" -H "$H" \
   | jq -r --arg n "<org-name>" '.[] | select(.name==$n) | .id'
 ```
 
-**`verified: true` is not optional.** An unverified domain is accepted without complaint and
-silently never matches during discovery — there is no error to tip you off.
+Don't put `identityProviderAlias` on the domain yet. Routing a domain to an IdP the
+organization isn't linked to is refused with a 400 ("Identity provider '…' is not associated with
+organization …"), so routing is Stage 5, after the link.
 
-## Stage 4 — Link the IdP to the organization — the step that gets skipped
+## Stage 4 — Link the IdP to the organization
 
 ```bash
 # The body is a bare JSON STRING holding the provider alias, not an object.
@@ -130,20 +142,44 @@ curl -s "$BASE/admin/realms/$REALM/organizations/<org-id>/identity-providers" -H
   | jq -r '.[].alias'
 ```
 
-**Creating an IdP does not associate it with any organization.** Without this call, discovery
-will never find the IdP for that domain no matter how correct everything else is — the provider
-just sits there, visible as a generic SSO button to everyone, routing nobody.
+**Creating an IdP does not associate it with any organization.** Without this call the domain
+cannot be routed to it. On 26.8 the link alone routes nobody either: Stage 5 is what switches
+routing on.
+
+## Stage 5 — Route the domain to the IdP, with auto-redirect — the step that gets skipped
+
+Since Keycloak 26.8 each organization domain carries its own routing: `identityProviderAlias`
+(which linked IdP handles that domain) and `autoRedirect` (send the user there without showing a
+form). There is no per-domain endpoint. Change the domain inside the organization representation
+and `PUT` the whole organization back:
+
+```bash
+curl -s "$BASE/admin/realms/$REALM/organizations/<org-id>" -H "$H" \
+  | jq --arg d "<customer-email-domain>" --arg a "<idp-alias>" \
+      '(.domains[] | select(.name == $d)) += {identityProviderAlias: $a, autoRedirect: true}' \
+  | curl -s -X PUT "$BASE/admin/realms/$REALM/organizations/<org-id>" -H "$H" \
+      -H 'Content-Type: application/json' --data-binary @-
+
+# Read it back.
+curl -s "$BASE/admin/realms/$REALM/organizations/<org-id>" -H "$H" | jq '.domains'
+```
+
+You need both fields. With `identityProviderAlias` and no `autoRedirect`, the IdP only appears as a
+button beside your password form. With `autoRedirect` and no `identityProviderAlias`, nothing
+happens at all.
 
 ## Do you need a custom flow at all?
 
-**Often not**: once organizations are enabled and an IdP is linked to a verified-domain
-organization, the realm's default built-in `browser` flow already performs Home IdP Discovery —
-no flow authoring or binding required. Confirm this by testing (below) before assuming you need
-more.
+**No, on Keycloak 26.8+.** Once the domain is routed with auto-redirect, the realm's default
+built-in `browser` flow sends a matching address straight to the IdP. A returning user who has
+already federated is redirected the same way. You don't author or bind any flow. Confirm by
+testing (below) before assuming you need more.
 
-If the default flow on this deployment does *not* already discover by organization (older
-versions, a customized default flow), or if you specifically want "with orgs-check" behavior (the
-user is also treated as an organization member, not just redirected), author a custom flow from
+The custom flows below are for Phase Two deployments only. They use `ext-auth-home-idp-discovery`,
+an authenticator from Phase Two's `keycloak-orgs` extension, which stock Keycloak does not ship.
+If the default flow on such a deployment does *not* already discover by organization (a
+customized default flow), or if you specifically want "with orgs-check" behavior (the user is
+also treated as an organization member, not just redirected), author a custom flow from
 [`assets/home-idp.partial-import.json`](assets/home-idp.partial-import.json) or
 [`assets/home-idp-with-orgs-check.partial-import.json`](assets/home-idp-with-orgs-check.partial-import.json).
 **Both assets set `forwardToLinkedIdp=true`** — the authenticator's factory default is `false`,
@@ -167,7 +203,7 @@ is behaviour. Perform a real login twice:
 
 | Submit on the login page | Expect |
 |---|---|
-| an address at the customer's verified domain | **no password field**; the browser is sent to the customer's IdP |
+| an address at the customer's domain | **no password field**; the browser is sent to the customer's IdP |
 | an address at any other domain | **a password field**, and password login still completes |
 
 The second row is not optional — it's what distinguishes correct domain discovery from a
@@ -188,9 +224,10 @@ Two client-side details that otherwise cost an afternoon:
   them over `http://localhost` anyway (loopback is a secure context); most HTTP client libraries
   will not, and every form POST then returns `400` *"Cookie not found."* Clear the flag on each
   response (`cookie.secure = False` in Python `requests`).
-- A user who has **never** federated and one who **already** has a federated identity are sent
-  onward differently (an offered link versus an immediate redirect with `login_hint`). Test
-  both, or a check passes on the first login and fails on the second.
+- Test both a user who has **never** federated and one who **already** has a federated identity.
+  On 26.8 with auto-redirect both get an immediate redirect. On 26.7 and older the first-time
+  user was offered a link instead, and a check could pass on the first login and fail on the
+  second.
 
 Afterwards, a correctly federated user has a non-empty federated identity and **no** password
 credential in your realm — hand-creating a local account with a matching email reproduces some
@@ -201,10 +238,11 @@ of the behavior while being the opposite of federation.
 - **The redirect URI the customer must whitelist** is
   `{base}/realms/{realm}/broker/{alias}/endpoint` — it contains the alias, so choose the alias
   *before* asking them to whitelist anything.
-- **`hideOnLogin`** — tempting, to keep one customer's button off a shared login page. Measured:
-  setting it true removes the route for the **matched** domain too, leaving those users with no
-  password field *and* no way forward. Leave it visible unless you've verified the matched-domain
-  path still works.
+- **`hideOnLogin`** — keeps the customer's button off the login page your own staff see. On 26.8
+  with the domain routed and auto-redirect on, it does not affect the routed domain. Measured: a
+  matching address still gets a 303 to the broker, and an internal user's password page loses
+  the button. On 26.7 and older it removed the only route a first-time user had, so don't carry
+  that advice forward.
 - **`syncMode`** — `IMPORT` copies profile fields on first login only; `FORCE` refreshes them on
   every login, usually right when the customer's directory is authoritative.
 
@@ -218,11 +256,11 @@ in at all" is a different, related mechanism not covered here.
 
 | Symptom | Cause |
 | --- | --- |
-| Matched domain still shows the password form | `forwardToLinkedIdp` left at its `false` default (custom-flow path), or the IdP is not linked to the organization |
-| SSO button shown to everyone, nothing routes | Provider created but not linked to an organization |
-| Domain never matches | The organization's domain is not marked `verified` |
+| Matched domain shows the password form with an SSO button beside it | The domain is not routed: no `identityProviderAlias`, or `autoRedirect` is false (Stage 5) |
+| `400` "Identity provider '…' is not associated with organization …" when routing the domain | The IdP is not linked to that organization yet (Stage 4 first) |
+| `kc.org.domain` / `kc.org.broker.redirect.mode.email-matches` set on the IdP, then gone | Keycloak 26.8 moved routing to the domain and drops those keys. Use Stage 5 |
+| Matched domain still shows the password form (custom-flow path, Phase Two only) | `forwardToLinkedIdp` left at its `false` default |
 | Everyone gets forwarded to the provider | An identity-provider-redirector execution in the bound flow |
-| Matched domain gets neither password nor route | `hideOnLogin` is true on the provider |
 | `400` "Cookie not found" while scripting | `Secure` cookies not sent over http by the client |
 | `invalid_redirect_uri` at the customer's provider | They whitelisted a different alias than the one created |
 | `organizationsEnabled` doesn't stick | A realm PUT omitting fields resets them — re-fetch and re-PUT the full representation |

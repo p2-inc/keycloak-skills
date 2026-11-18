@@ -32,6 +32,10 @@ Two consequences that trip up anyone who reaches for the native API first:
 - There is **no `organizationsEnabled` realm switch**. That flag belongs to the native feature.
   Setting it does nothing for this extension; the extension is on as soon as the jar is deployed.
 
+Keycloak 26.8 moved the *native* feature's domain routing onto the organization's domain
+(`identityProviderAlias`, `autoRedirect`). None of that applies to this extension. This path was
+re-verified, unchanged, on Phase Two's 26.8.2 image.
+
 Confirm it's installed before anything else — a 404 here means the jar is missing, and every
 stage below will fail in a more confusing way:
 
@@ -47,26 +51,37 @@ REALM=<realm>
 curl -s -o /dev/null -w '%{http_code}\n' "$BASE/realms/$REALM/orgs" -H "$H"   # expect 200
 ```
 
-## The mechanism: an org-linked IdP carrying its own domain list
+## The mechanism: the organization's domains, and the IdP linked to it
 
-Routing is done by the **`ext-auth-home-idp-discovery`** authenticator. It matches the domain of
-the address typed on the login page against the **IdP's** config key
-`home.idp.discovery.domains` — set for you when you link the IdP to an organization.
+Routing is done by the **`ext-auth-home-idp-discovery`** authenticator. It takes the domain of
+the address typed on the login page and finds the organization whose **own domain list** holds
+it. It then forwards to that organization's linked, enabled IdP: the IdP whose config key
+`home.idp.discovery.org` names the org, which linking sets for you.
 
 This is the single most misunderstood part of the feature:
 
-> **Discovery does not read the organization's domain list, and does not care whether a domain is
-> verified.** The org's verified domains are used by a *different*, optional authenticator
-> (`ext-auth-org-id-verifier`, post-login only). Adding a domain to the org but not to the link
-> leaves routing dead with nothing to indicate why.
+> **Discovery reads the organization's domain list, not the link's.** The `domains` sent when
+> linking land on the IdP as `home.idp.discovery.domains`. Discovery reads that list only when
+> the realm allows several IdPs per organization (`_providerConfig.orgs.config.multipleIdps`), and
+> then only to choose among them. An organization that does not hold the domain routes nobody,
+> whatever the link carried. Verification does not matter either, unless the discovery
+> execution's own config sets `requireVerifiedDomain` to `true`. It defaults to `false`, and the
+> bundled assets leave it off.
+
+Measured on Phase Two's Keycloak 26.8.2 image (keycloak-orgs 0.196), all with unverified
+domains:
+
+- An org without domains, linked with `domains`, did not route.
+- Adding the domain to that org made it route.
+- An org holding the domain, linked without `domains`, routed.
 
 Three things must all be true, and each fails silently on its own:
 
 | Missing | Symptom |
 |---|---|
 | No `ext-auth-home-idp-discovery` execution in the bound browser flow | No domain-based routing exists at all |
-| The IdP is created but **not linked** to an organization | The provider exists but routes nobody |
-| The link carried no `domains` | The IdP is linked and hidden — matched users get no route *and* no button |
+| The organization does not hold the customer's email domain | Nothing matches, even if the link carried the domain |
+| The IdP is created but **not linked** to the organization | The organization has no IdP to forward to |
 
 ## Stage 1 — Broker the customer's identity provider
 
@@ -128,9 +143,12 @@ Jackson flattens the objects' keys and values into the string set, the call retu
 Created**, and the org ends up holding garbage domains like
 `["acme.example", "name", "true", "verified"]`.
 
-## Stage 3 — Link the IdP to the organization, with the routing domains
+**These are the domains discovery matches.** Put the customer's email domain here. Passing it only
+on the link in Stage 3 routes nobody.
 
-This is the call that actually switches routing on:
+## Stage 3 — Link the IdP to the organization
+
+This is the call that gives the organization an IdP to route to:
 
 ```bash
 curl -s -X POST "$BASE/realms/$REALM/orgs/<org-id>/idps/link" \
@@ -141,9 +159,9 @@ curl -s -X POST "$BASE/realms/$REALM/orgs/<org-id>/idps/link" \
     "post_broker_flow": "post org broker login"
   }'
 
-# Verify the link took, and that the routing domains landed on the IdP.
+# Verify the link took: home.idp.discovery.org is the org id.
 curl -s "$BASE/admin/realms/$REALM/identity-provider/instances/<idp-alias>" -H "$H" \
-  | jq '.config["home.idp.discovery.domains"], .config["home.idp.discovery.org"], .hideOnLogin'
+  | jq '.config["home.idp.discovery.org"], .config["home.idp.discovery.domains"], .hideOnLogin'
 ```
 
 Note the **`/link` suffix** and the **snake_case body keys** — `post_broker_flow` and `sync_mode`,
@@ -151,8 +169,10 @@ not their camelCase Java names. `POST .../idps` *without* `/link` is a different
 **creates** a new org-owned IdP from a full `IdentityProviderRepresentation`; it will not adopt
 one that already exists, and it rejects a bare alias string.
 
-`domains` on the link is what writes `home.idp.discovery.domains`. **Omit it and routing never
-happens** — the IdP is linked and hidden, so matched users see neither a redirect nor a button.
+`domains` on the link writes `home.idp.discovery.domains` on the IdP. Discovery reads that list
+only when the realm allows several IdPs per organization
+(`_providerConfig.orgs.config.multipleIdps`); otherwise it has no effect. Passing the same domain
+as the org costs nothing, and routing keeps working if multiple IdPs are switched on later.
 
 Only `alias` is required. The other three have defaults worth knowing:
 
@@ -160,7 +180,7 @@ Only `alias` is required. The other three have defaults worth knowing:
 |---|---|
 | `sync_mode` | `FORCE` (realm attribute `_providerConfig.orgs.defaults.syncMode` overrides) |
 | `post_broker_flow` | `post org broker login` (realm attribute `…defaults.postBrokerFlow` overrides) |
-| `domains` | none written — routing stays dead |
+| `domains` | none written; this only matters when the realm allows multiple IdPs per org |
 
 **Creating an IdP does not associate it with any organization.** Without this call, discovery
 will never find the IdP for that domain no matter how correct everything else is.
@@ -176,10 +196,11 @@ will never find the IdP for that domain no matter how correct everything else is
   (`_providerConfig.orgs.config.sharedIdps`), **other IdPs owned by that org are unlinked** —
   one active IdP per org is the default.
 
-## Stage 4 — Domain verification (optional, and not what routing uses)
+## Stage 4 — Domain verification (optional; routing ignores it by default)
 
-Verification exists for the `ext-auth-org-id-verifier` authenticator's `requireVerifiedDomain`
-option, not for discovery. Skip this stage unless you're adding that check.
+Verification matters only where a `requireVerifiedDomain` option is switched on. That option
+exists on the discovery execution's config (off by default, and off in the bundled assets) and
+on the `ext-auth-org-id-verifier` authenticator. Skip this stage unless you turn one on.
 
 It is a **DNS TXT challenge**, not a boolean you can set:
 
@@ -362,7 +383,7 @@ in at all" is a different, related mechanism — see the `admin:org-restrict-log
 | Matched domain still shows the password form | `auth-password-form` ordered **before** `ext-auth-home-idp-discovery`, no discovery execution in the bound flow at all, or `forwardToLinkedIdp` left at its `false` default |
 | Everything looks configured but no domain ever routes | Execution order — read it back with `GET .../flows/{alias}/executions` before believing the console |
 | Users with a live session get re-prompted for login | `auth-cookie` is not first in the top-level flow |
-| Matched domain gets neither password nor route | The IdP was linked without `domains`, so it is hidden but unroutable |
+| A domain never routes although the IdP is linked | The organization does not hold that domain. The link's `domains` alone do not route. Add the domain to the org: `GET /realms/{realm}/orgs/{org-id}`, add it to `domains`, `PUT` the org back |
 | `404` "No IdP found with alias" on link | The IdP alias doesn't exist yet — create it first (Stage 1) |
 | `400` "Cannot link disabled IdP" | The IdP has `enabled: false` |
 | Linking a second IdP silently disables the first | Default one-IdP-per-org; enable `_providerConfig.orgs.config.sharedIdps` / `multipleIdps` |

@@ -52,7 +52,7 @@ RUN case "${TARGETARCH}" in \
 ENV JAVA_HOME=/opt/java21
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
-ENV KEYCLOAK_VERSION=26.0.7
+ENV KEYCLOAK_VERSION=26.8.2
 RUN curl -fsSL "https://github.com/keycloak/keycloak/releases/download/${KEYCLOAK_VERSION}/keycloak-${KEYCLOAK_VERSION}.tar.gz" -o /tmp/keycloak.tar.gz && \
     tar -xzf /tmp/keycloak.tar.gz -C /opt && \
     mv "/opt/keycloak-${KEYCLOAK_VERSION}" /opt/keycloak && \

@@ -9,14 +9,26 @@
 email the user typed, send them there, and leave everyone else on the password
 form. Brokering the provider is the straightforward part. Selecting it *by email
 domain* has exactly one vanilla mechanism, and it is not in the authentication
-flow editor:
+flow editor. On Keycloak 26.8, which this task pins:
 
   1. The realm's organization support has to be switched on.
-  2. An organization has to hold the customer's email domain, marked *verified*.
-     An unverified domain is stored happily and never matches.
-  3. The identity provider has to be linked to that organization. Without the
-     link the provider still works, but the login page just shows an SSO button
-     to every visitor - there is no domain-based routing at all.
+  2. An organization has to hold the customer's email domain.
+  3. The identity provider has to be linked to that organization.
+  4. The organization's domain has to be routed to that provider, with
+     auto-redirect on: `identityProviderAlias` and `autoRedirect: true` on the
+     domain entry, set with a PUT of the organization *after* step 3 (routing a
+     domain to a provider the organization is not linked to is a 400).
+
+Steps 1-3 alone are the pre-26.8 recipe. On 26.8 they leave a Contoso address on
+Acme's username/password form with an SSO button beside it, and so does a domain
+routed without auto-redirect. Keycloak 26.8.0 moved routing from the identity
+provider (config keys `kc.org.domain` and `kc.org.broker.redirect.mode.email-matches`,
+which 26.8 now silently drops on write) to the domain entity (keycloak/keycloak
+PR #52401), and stopped showing a separate provider-only page to an unknown user
+whose domain matches an organization (CVE-2026-4633, keycloak/keycloak PR #52695).
+
+The domain's `verified` flag is not consulted by any of this: an unverified domain
+routes identically on 26.0.7 and 26.8.2 (measured), so the oracle does not set it.
 
 The obvious-looking alternative, an identity-provider-redirector execution in a
 custom browser flow, forwards *everyone* to the provider and so breaks password
@@ -42,6 +54,7 @@ CORP_USERNAME = "jvega@contoso.example"
 CORP_PASSWORD = "C0nt0so!Pass"
 INTERNAL_USERNAME = "dana@acme-internal.example"
 INTERNAL_PASSWORD = "Ac1me!Internal"
+CUSTOMER_AUTH_PATH = "/realms/contoso-idp/protocol/openid-connect/auth"
 TIMEOUT = 30
 
 
@@ -129,7 +142,11 @@ def create_identity_provider(base_url, headers, realm, idp):
 
 
 def create_organization_with_domain(base_url, headers, realm, domain):
-    """The domain has to be marked verified, or discovery never matches it."""
+    """The organization claims Contoso's email domain.
+
+    Routing for the domain cannot be set here: it names the identity provider,
+    which has to be linked to the organization first.
+    """
     resp = requests.post(
         f"{base_url}/admin/realms/{realm}/organizations",
         headers=headers,
@@ -138,7 +155,7 @@ def create_organization_with_domain(base_url, headers, realm, domain):
             "alias": ORG_NAME,
             "enabled": True,
             "description": "Contoso Ltd - federated enterprise customer",
-            "domains": [{"name": domain, "verified": True}],
+            "domains": [{"name": domain}],
         },
         timeout=TIMEOUT,
     )
@@ -155,9 +172,11 @@ def create_organization_with_domain(base_url, headers, realm, domain):
 
 
 def link_idp_to_organization(base_url, headers, realm, org_id):
-    """The link is what turns a plain broker into domain-based routing.
+    """Make the provider one of the organization's identity providers.
 
-    The body is a bare JSON string holding the provider alias, not an object.
+    Required before the domain can be routed to it. On its own it routes nobody
+    on 26.8. The body is a bare JSON string holding the provider alias, not an
+    object.
     """
     resp = requests.post(
         f"{base_url}/admin/realms/{realm}/organizations/{org_id}/identity-providers",
@@ -175,6 +194,35 @@ def link_idp_to_organization(base_url, headers, realm, org_id):
     linked.raise_for_status()
     if IDP_ALIAS not in {i.get("alias") for i in linked.json()}:
         raise RuntimeError(f"{IDP_ALIAS} is not linked to the organization")
+
+
+def route_domain_to_identity_provider(base_url, headers, realm, org_id, domain):
+    """Route the domain to the provider, with auto-redirect: the step that routes.
+
+    Since Keycloak 26.8 routing lives on the organization's domain entry. There
+    is no per-domain endpoint; the domain list is replaced by a PUT of the whole
+    organization. `identityProviderAlias` without `autoRedirect` only offers the
+    provider as a button beside the password form, and `autoRedirect` without
+    `identityProviderAlias` does nothing.
+    """
+    url = f"{base_url}/admin/realms/{realm}/organizations/{org_id}"
+    current = requests.get(url, headers=headers, timeout=TIMEOUT)
+    current.raise_for_status()
+    representation = current.json()
+    matches = [d for d in representation.get("domains", []) if d.get("name") == domain]
+    if len(matches) != 1:
+        raise RuntimeError(f"the organization does not hold {domain}")
+    matches[0]["identityProviderAlias"] = IDP_ALIAS
+    matches[0]["autoRedirect"] = True
+
+    resp = requests.put(url, headers=headers, json=representation, timeout=TIMEOUT)
+    resp.raise_for_status()
+
+    check = requests.get(url, headers=headers, timeout=TIMEOUT)
+    check.raise_for_status()
+    routed = [d for d in check.json().get("domains", []) if d.get("name") == domain]
+    if not routed or routed[0].get("identityProviderAlias") != IDP_ALIAS or not routed[0].get("autoRedirect"):
+        raise RuntimeError(f"{domain} is not routed to {IDP_ALIAS} with auto-redirect: {routed}")
 
 
 # --- the browser flow, driven headlessly -----------------------------------
@@ -225,7 +273,12 @@ def _follow_to_redirect_uri(session, location, redirect_uri, limit=8):
 
 
 def corporate_login(base_url, realm, client_id, redirect_uri):
-    """Type a Contoso email, expect to be routed out to Contoso, log in there."""
+    """Type a Contoso email, expect to be sent out to Contoso, log in there.
+
+    With the domain routed and auto-redirect on, submitting the address answers
+    with a redirect to acme's broker endpoint, which redirects on to Contoso.
+    No page is shown in between.
+    """
     state = "oracle-corp"
     session = requests.Session()
     page = session.get(
@@ -243,15 +296,20 @@ def corporate_login(base_url, realm, client_id, redirect_uri):
     if 'type="password"' in (identified.text or ""):
         raise RuntimeError("a Contoso address was asked for an Acme password")
 
-    link = re.search(r'href="([^"]*?/broker/[^"]*?/login[^"]*)"', identified.text or "")
     location = identified.headers.get("Location", "")
-    if link:
-        url = link.group(1).replace("&amp;", "&")
-        url = url if url.startswith("http") else f"http://localhost:8080{url}"
-        hop = session.get(url, timeout=TIMEOUT, allow_redirects=False)
+    if f"/broker/{IDP_ALIAS}/login" not in location:
+        raise RuntimeError(
+            f"a Contoso address was not redirected to the {IDP_ALIAS} broker "
+            f"(status {identified.status_code}, Location {location[:200]!r})"
+        )
+    for _ in range(5):
+        if CUSTOMER_AUTH_PATH in location:
+            break
+        target = location if location.startswith("http") else f"http://localhost:8080{location}"
+        hop = session.get(target, timeout=TIMEOUT, allow_redirects=False)
         _relax_cookies(session)
         location = hop.headers.get("Location", "")
-    if "/realms/contoso-idp/protocol/openid-connect/auth" not in location:
+    if CUSTOMER_AUTH_PATH not in location:
         raise RuntimeError(f"was not routed to the customer's IdP; went to {location[:200]}")
 
     corp_page = session.get(location, timeout=TIMEOUT)
@@ -337,6 +395,7 @@ def main():
     create_identity_provider(base_url, headers, realm, idp)
     org_id = create_organization_with_domain(base_url, headers, realm, idp["email_domain"])
     link_idp_to_organization(base_url, headers, realm, org_id)
+    route_domain_to_identity_provider(base_url, headers, realm, org_id, idp["email_domain"])
 
     corporate_login(base_url, realm, client_id, redirect_uri)
     internal_login(base_url, realm, client_id, redirect_uri)

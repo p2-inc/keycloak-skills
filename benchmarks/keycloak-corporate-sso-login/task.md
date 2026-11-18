@@ -1,5 +1,15 @@
 ---
 schema_version: '1.3'
+# Keycloak is pinned to 26.8.2 (ENV KEYCLOAK_VERSION in environment/Dockerfile).
+# Until 2026-11-18 this task ran 26.0.7, and results from that version are not
+# comparable with results from this one. Keycloak 26.8.0 moved organization
+# domain routing off the identity provider's config and onto the organization's
+# domain (keycloak/keycloak PR #52401). It also stopped showing an unknown user
+# at an organization's domain a page that offered only the provider, and shows
+# the generic password form instead (CVE-2026-4633, keycloak/keycloak PR
+# #52695). The 26.0.7 oracle relied on that page. Measured: it passes on 26.7.5
+# and fails on 26.8.0 and 26.8.2. See the 26.8.0 upgrading guide, "Organization
+# identity providers now support many-to-many linking".
 metadata:
   author_name: Razvan Tufisi
   author_email: rtufisi@phasetwo.io
@@ -13,10 +23,15 @@ metadata:
     way to select a provider by email domain, and it is not in the
     authentication-flow editor where someone would look for it - it needs the
     realm's organization support switched on, an organization holding the
-    domain as a *verified* domain, and the identity provider linked to that
-    organization. Configure the provider without that link and the login page
-    simply shows an SSO button to everybody; mark the domain unverified and
-    discovery silently never matches. A redirector execution in a custom flow,
+    domain, the identity provider linked to that organization, and then the
+    organization's domain itself routed to that provider with auto-redirect
+    on. That last step exists only since Keycloak 26.8, and most published
+    guidance still describes the older shape. Stop after linking the provider,
+    or route the domain without auto-redirect, and a Contoso address lands on
+    Acme's password form with an SSO button beside it. Set the pre-26.8
+    routing keys on the provider's config (kc.org.domain,
+    kc.org.broker.redirect.mode.email-matches) and the server accepts the
+    write and silently drops them. A redirector execution in a custom flow,
     the obvious-looking answer, sends every user to the provider and breaks
     password login for internal staff.
   category: cybersecurity
