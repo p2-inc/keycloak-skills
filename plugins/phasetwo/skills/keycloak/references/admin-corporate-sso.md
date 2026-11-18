@@ -68,7 +68,7 @@ This is the single most misunderstood part of the feature:
 > execution's own config sets `requireVerifiedDomain` to `true`. It defaults to `false`, and the
 > bundled assets leave it off.
 
-Measured on Phase Two's Keycloak 26.8.2 image (keycloak-orgs 0.196), all with unverified
+Measured on Phase Two's Keycloak 26.8.2 image (keycloak-orgs 0.199), all with unverified
 domains:
 
 - An org without domains, linked with `domains`, did not route.
@@ -144,7 +144,11 @@ Created**, and the org ends up holding garbage domains like
 `["acme.example", "name", "true", "verified"]`.
 
 **These are the domains discovery matches.** Put the customer's email domain here. Passing it only
-on the link in Stage 3 routes nobody.
+on the link in Stage 3 routes nobody. Since keycloak-orgs 0.199 they also gate first login: the
+realm's `first broker login` flow carries a REQUIRED `ext-auth-org-domain-fbl-verifier`
+(GHSA-gvcc-4vw2-6wvr), so a first login through an IdP linked to an organization stops on "Valid
+identity email domain not found." unless the email the IdP sends is at one of that organization's
+domains.
 
 ## Stage 3 — Link the IdP to the organization
 
@@ -223,8 +227,12 @@ must be authored and bound. Author it from
 [`../assets/home-idp.partial-import.json`](../assets/home-idp.partial-import.json) or
 [`../assets/home-idp-with-orgs-check.partial-import.json`](../assets/home-idp-with-orgs-check.partial-import.json)
 (the latter also treats the user as an organization member rather than only redirecting).
-**Both assets set `forwardToLinkedIdp=true`** — the authenticator's factory default is `false`,
-which silently prevents any redirect for a user who already has a federated identity.
+Both assets set `forwardToLinkedIdp=true`. It decides only whether discovery consults the user's
+existing federated links. When it is on, a provider the user is already linked to wins over the
+first provider their domain matches, and a linked user is forwarded to it even when their domain
+matches no organization. With one provider per organization, and users at the organization's
+domains, it changes nothing: measured on Phase Two's 26.8.2 image (keycloak-orgs 0.199),
+first-time and returning users were forwarded alike at its default of `false`.
 
 **Keycloak's `partialImport` endpoint does not work for authentication flows** — it has no
 handler for them, so an `authenticationFlows` array is silently ignored (HTTP 200, nothing
@@ -243,8 +251,7 @@ hash-prefixes the created alias, so read the real name back rather than assuming
 ### Execution order is part of the configuration — the manual path loses it
 
 Every execution here is `ALTERNATIVE`, which means **the first one that can answer wins and the
-rest never run**. Order is not cosmetic; it *is* the behaviour. The two orderings below look
-equally plausible in the admin console and only one works:
+rest never run**. Order is not cosmetic; it *is* the behaviour. Build it in the asset's order:
 
 | `homeIdp` (top level) | `homeIdp forms` (sub-flow) |
 |---|---|
@@ -253,14 +260,11 @@ equally plausible in the admin console and only one works:
 | 3. `identity-provider-redirector` — ALTERNATIVE | |
 | 4. `homeIdp forms` (sub-flow) — ALTERNATIVE | |
 
-Two inversions are easy to produce and both fail silently:
-
-- **`auth-password-form` before `ext-auth-home-idp-discovery`.** The password form always
-  succeeds, so discovery never executes and **no domain is ever routed**. The realm looks fully
-  configured and behaves as if the extension weren't installed. This is the single most common
-  way this intent is built wrong.
-- **`auth-cookie` last instead of first.** Users with a live SSO session get re-prompted
-  instead of resuming.
+- **`auth-cookie` last instead of first** fails silently: users with a live SSO session get
+  re-prompted instead of resuming.
+- **`auth-password-form` before `ext-auth-home-idp-discovery`** still routes. The password form
+  is skipped until someone has been identified, so discovery's username form comes first either
+  way (measured on Phase Two's 26.8.2 image). Keep the asset's order anyway.
 
 **`POST .../executions/execution` and `.../executions/flow` append.** When the body omits
 `priority`, the server assigns `last sibling's priority + 1`, so the order is simply the order
@@ -380,8 +384,7 @@ in at all" is a different, related mechanism — see the `admin:org-restrict-log
 | `404` on `/realms/{realm}/orgs` | The `keycloak-orgs` extension is not deployed |
 | `400` "Unrecognized field" creating an org | Native-orgs payload — drop `alias`, `enabled`, `description` |
 | Org created `201` but domains are nonsense strings | `domains` was sent as objects; it is an array of plain strings |
-| Matched domain still shows the password form | `auth-password-form` ordered **before** `ext-auth-home-idp-discovery`, no discovery execution in the bound flow at all, or `forwardToLinkedIdp` left at its `false` default |
-| Everything looks configured but no domain ever routes | Execution order — read it back with `GET .../flows/{alias}/executions` before believing the console |
+| Matched domain still shows the password form | No `ext-auth-home-idp-discovery` execution in the flow in effect: the stock `browser` flow has none. Read back the realm's `browserFlow` (or the client's `authenticationFlowBindingOverrides`), then `GET .../flows/{alias}/executions`, before believing the console |
 | Users with a live session get re-prompted for login | `auth-cookie` is not first in the top-level flow |
 | A domain never routes although the IdP is linked | The organization does not hold that domain. The link's `domains` alone do not route. Add the domain to the org: `GET /realms/{realm}/orgs/{org-id}`, add it to `domains`, `PUT` the org back |
 | `404` "No IdP found with alias" on link | The IdP alias doesn't exist yet — create it first (Stage 1) |

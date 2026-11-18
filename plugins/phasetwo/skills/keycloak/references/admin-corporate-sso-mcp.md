@@ -95,12 +95,18 @@ Two corollaries that save a long debugging session:
   link carries it. Pass the domain to `createDeploymentOrganization` first; repeating it on the
   link costs nothing.
 
-Measured on Phase Two's Keycloak 26.8.2 image (keycloak-orgs 0.196), all with unverified
+Measured on Phase Two's Keycloak 26.8.2 image (keycloak-orgs 0.199), all with unverified
 domains:
 
 - An org without domains, linked with `domains`, did not route.
 - Adding the domain to that org made it route.
 - An org holding the domain, linked without `domains`, routed.
+
+Since keycloak-orgs 0.199 the organization's domains also gate first login: the realm's
+`first broker login` flow carries a REQUIRED `ext-auth-org-domain-fbl-verifier`
+(GHSA-gvcc-4vw2-6wvr), so a first login through an IdP linked to an organization stops on "Valid
+identity email domain not found." unless the email the IdP sends is at one of that organization's
+domains.
 
 Two things must both be true, and each fails silently on its own. The flow in the next section
 must also be bound.
@@ -168,9 +174,12 @@ Note the atomic-import path hash-prefixes the created alias, so read the real na
 than assuming the asset's name — the manual-sequence path does not have this issue, since you
 choose the alias yourself.
 
-**Both assets deliberately set `forwardToLinkedIdp=true`.** The authenticator's factory default
-is `false`, which silently prevents any redirect at all — the single most likely cause of "I
-configured everything and it still shows the password form".
+Both assets set `forwardToLinkedIdp=true`. It decides only whether discovery consults the user's
+existing federated links. When it is on, a provider the user is already linked to wins over the
+first provider their domain matches, and a linked user is forwarded to it even when their domain
+matches no organization. With one provider per organization, and users at the organization's
+domains, it changes nothing: measured on Phase Two's 26.8.2 image (keycloak-orgs 0.199),
+first-time and returning users were forwarded alike at its default of `false`.
 
 **Not the same as `Org Browser Flow by Org Name`**
 ([`../assets/org-browser-flow-by-org-name.partial-import.json`](../assets/org-browser-flow-by-org-name.partial-import.json)).
@@ -277,7 +286,7 @@ intent matches").
 
 | Symptom | Cause |
 |---|---|
-| Matched domain still shows the password form | `forwardToLinkedIdp` left at its `false` default, or the IdP is not linked to the organization |
+| Matched domain still shows the password form | No `ext-auth-home-idp-discovery` execution in the flow in effect: the stock `browser` flow has none. Check `getAuthenticationBindings`, then the bound flow's executions with `listFlowExecutions` |
 | A domain never routes although the IdP is linked | The organization does not hold that domain; the link's `domains` alone do not route. `createDeploymentOrganization` sets domains only at creation, and no MCP tool edits them later. Report that gap and stop: the fix is `PUT /realms/{realm}/orgs/{org-id}` with the domain added, which the user runs |
 | SSO button shown to everyone, nothing routes | Provider created but not linked to an organization |
 | Everyone gets forwarded to the provider | An identity-provider-redirector execution in the bound flow |
