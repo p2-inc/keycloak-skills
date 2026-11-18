@@ -1,15 +1,21 @@
 ---
 schema_version: '1.3'
-# Keycloak is pinned to 26.8.2 (ENV KEYCLOAK_VERSION in environment/Dockerfile).
-# Until 2026-11-18 this task ran 26.0.7, and results from that version are not
-# comparable with results from this one. Keycloak 26.8.0 moved organization
-# domain routing off the identity provider's config and onto the organization's
-# domain (keycloak/keycloak PR #52401). It also stopped showing an unknown user
-# at an organization's domain a page that offered only the provider, and shows
-# the generic password form instead (CVE-2026-4633, keycloak/keycloak PR
-# #52695). The 26.0.7 oracle relied on that page. Measured: it passes on 26.7.5
-# and fails on 26.8.0 and 26.8.2. See the 26.8.0 upgrading guide, "Organization
-# identity providers now support many-to-many linking".
+# Runs Phase Two's Keycloak image: quay.io/phasetwo/phasetwo-keycloak build
+# 26.8.2.1794965685, pinned by digest in environment/Dockerfile. It bundles
+# keycloak-orgs 0.199 and keycloak-atomic-auth-flows 0.4. Keycloak's native
+# organizations are switched off (KC_FEATURES_DISABLED=organization), as on
+# every Phase Two deployment. So the task exercises the path the shipped
+# admin:corporate-sso references teach: a keycloak-orgs organization holding the
+# domain (/realms/acme/orgs), the provider linked to it (.../idps/link), and the
+# homeIdp browser flow with ext-auth-home-idp-discovery, imported through
+# keycloak-atomic-auth-flows.
+#
+# Results are comparable only with other runs on this image. Until 2026-11-18
+# the task ran stock upstream Keycloak with native organizations: 26.0.7, then
+# 26.8.2 (keycloak-skills PR #48). Native organizations, which Phase Two never
+# enables, route from the stock browser flow, so no flow had to be authored; on
+# 26.8 the organization's domain also had to be routed to the provider with
+# auto-redirect. Here the native API returns 404, and routing needs a flow.
 metadata:
   author_name: Razvan Tufisi
   author_email: rtufisi@phasetwo.io
@@ -19,21 +25,22 @@ metadata:
     is recognising what "corporate SSO" means mechanically: route a user to an
     external identity provider chosen from the domain of the email they typed,
     while everyone else still gets a password form. Brokering an OIDC provider
-    is the easy half. The hard half is that vanilla Keycloak has exactly one
-    way to select a provider by email domain, and it is not in the
-    authentication-flow editor where someone would look for it - it needs the
-    realm's organization support switched on, an organization holding the
-    domain, the identity provider linked to that organization, and then the
-    organization's domain itself routed to that provider with auto-redirect
-    on. That last step exists only since Keycloak 26.8, and most published
-    guidance still describes the older shape. Stop after linking the provider,
-    or route the domain without auto-redirect, and a Contoso address lands on
-    Acme's password form with an SSO button beside it. Set the pre-26.8
-    routing keys on the provider's config (kc.org.domain,
-    kc.org.broker.redirect.mode.email-matches) and the server accepts the
-    write and silently drops them. A redirector execution in a custom flow,
-    the obvious-looking answer, sends every user to the provider and breaks
-    password login for internal staff.
+    is the easy half. On Phase Two's Keycloak the hard half takes three more
+    pieces, from the keycloak-orgs extension, and none of them reports that it
+    is missing. An organization has to hold the customer's email domain, and
+    organizations live at /realms/{realm}/orgs: Keycloak's own organizations
+    API, the one its documentation describes, is switched off here and returns
+    404. The provider has to be linked to that organization. And the realm has
+    to be bound to a browser flow that runs ext-auth-home-idp-discovery. The
+    stock browser flow discovers nothing, so a realm that stops after the link
+    shows Contoso staff a plain password form, with no button either, because
+    linking hides the provider. Discovery matches the organization's own
+    domains, so a domain passed only when linking the provider routes nobody.
+    Keycloak's partialImport answers a flow with 200 OK and creates nothing;
+    the flow has to be built execution by execution or through the
+    keycloak-atomic-auth-flows import endpoint. A redirector execution in a
+    custom flow, the obvious-looking answer, sends every user to the provider
+    and breaks password login for internal staff.
   category: cybersecurity
   secondary_category: software-engineering
   subcategory: identity-access-management
@@ -65,6 +72,8 @@ sandbox:
   memory_mb: 4096
   storage_mb: 10240
   # The keycloak-MCP-server jar runs in-container against the acme realm below.
+  # Its deployment-scoped tools (organizations, linking, flow import) reach acme
+  # through environment/deployment_token_proxy.py, as in the other MCP tasks.
   # The bearer token is a fixture, not a secret: it is signed with a private key
   # baked into environment/acme-realm.json (a deliberately fixed, non-random
   # signing key, so every container boot publishes the same JWKS and this same

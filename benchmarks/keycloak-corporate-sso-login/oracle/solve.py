@@ -7,38 +7,51 @@
 
 "Corporate SSO login" means: pick an identity provider from the domain of the
 email the user typed, send them there, and leave everyone else on the password
-form. Brokering the provider is the straightforward part. Selecting it *by email
-domain* has exactly one vanilla mechanism, and it is not in the authentication
-flow editor. On Keycloak 26.8, which this task pins:
+form. This task runs Phase Two's Keycloak image, so the oracle takes the path the
+shipped `admin:corporate-sso` references teach, through two extensions the image
+bundles (keycloak-orgs and keycloak-atomic-auth-flows):
 
-  1. The realm's organization support has to be switched on.
-  2. An organization has to hold the customer's email domain.
-  3. The identity provider has to be linked to that organization.
-  4. The organization's domain has to be routed to that provider, with
-     auto-redirect on: `identityProviderAlias` and `autoRedirect: true` on the
-     domain entry, set with a PUT of the organization *after* step 3 (routing a
-     domain to a provider the organization is not linked to is a 400).
+  1. Broker Contoso's OIDC provider (stock Admin REST).
+  2. Create an organization that holds Contoso's email domain:
+     POST /realms/acme/orgs. That is keycloak-orgs. Keycloak's native
+     /admin/realms/acme/organizations does not exist here: native organizations
+     are switched off, as on every Phase Two deployment.
+  3. Link the provider to that organization:
+     POST /realms/acme/orgs/{id}/idps/link.
+  4. Author the `homeIdp` browser flow from the skill's asset and bind it
+     realm-wide, in one call: POST /admin/realms/acme/authentication-flow/import
+     with home-idp.partial-import.json, minus `ifResourceExists` (a
+     partialImport field the import endpoint rejects), plus `browserFlowBinding`.
 
-Steps 1-3 alone are the pre-26.8 recipe. On 26.8 they leave a Contoso address on
-Acme's username/password form with an SSO button beside it, and so does a domain
-routed without auto-redirect. Keycloak 26.8.0 moved routing from the identity
-provider (config keys `kc.org.domain` and `kc.org.broker.redirect.mode.email-matches`,
-which 26.8 now silently drops on write) to the domain entity (keycloak/keycloak
-PR #52401), and stopped showing a separate provider-only page to an unknown user
-whose domain matches an organization (CVE-2026-4633, keycloak/keycloak PR #52695).
+The flow's `ext-auth-home-idp-discovery` execution asks for the email address,
+finds the organization whose own domain list holds its domain, and forwards to
+the provider linked to that organization. Every other address falls through to
+`auth-password-form`.
 
-The domain's `verified` flag is not consulted by any of this: an unverified domain
-routes identically on 26.0.7 and 26.8.2 (measured), so the oracle does not set it.
+Discovery reads the organization's domains, not the `domains` sent on the link.
+Those land on the provider as `home.idp.discovery.domains` and matter only when
+the realm allows several providers per organization. The oracle sends the domain
+on both, as the reference does. Neither is verified: discovery ignores
+verification unless the execution's config sets `requireVerifiedDomain`, and the
+asset does not. The asset also sets `forwardToLinkedIdp=true`, which only lets a
+user's existing federated links take precedence. With one provider per
+organization it changes nothing: at its default of false, a returning user is
+still forwarded (measured).
 
 The obvious-looking alternative, an identity-provider-redirector execution in a
 custom browser flow, forwards *everyone* to the provider and so breaks password
 login for internal staff.
 
-Finishes by driving both logins end to end the way the verifier does, so a realm
+Finishes by driving the logins end to end the way the verifier does, so a realm
 that is configured but does not actually route anyone fails here rather than
-looking like a passing oracle.
+looking like a passing oracle. The corporate login runs twice for the same
+person, because discovery looks a returning user up before it routes them.
+
+The functions are importable, so a negative scenario can replay these steps
+with one change.
 """
 
+import json
 import pathlib
 import re
 import sys
@@ -48,6 +61,8 @@ import requests
 
 CREDS_PATH = "/root/admin_credentials.txt"
 IDP_DETAILS_PATH = "/root/corporate_idp_details.txt"
+# A verbatim copy of plugins/phasetwo/skills/keycloak/assets/home-idp.partial-import.json.
+FLOW_ASSET_PATH = pathlib.Path(__file__).parent / "home-idp.partial-import.json"
 IDP_ALIAS = "contoso-sso"
 ORG_NAME = "contoso"
 CORP_USERNAME = "jvega@contoso.example"
@@ -55,6 +70,7 @@ CORP_PASSWORD = "C0nt0so!Pass"
 INTERNAL_USERNAME = "dana@acme-internal.example"
 INTERNAL_PASSWORD = "Ac1me!Internal"
 CUSTOMER_AUTH_PATH = "/realms/contoso-idp/protocol/openid-connect/auth"
+DISCOVERY_AUTHENTICATOR = "ext-auth-home-idp-discovery"
 TIMEOUT = 30
 
 
@@ -84,31 +100,12 @@ def get_admin_token(base_url, admin_realm, username, password):
     return resp.json()["access_token"]
 
 
-def enable_organizations(base_url, headers, realm):
-    """Organization support is a realm switch, off by default."""
-    current = requests.get(
-        f"{base_url}/admin/realms/{realm}", headers=headers, timeout=TIMEOUT
-    )
-    current.raise_for_status()
-    representation = current.json()
-    representation["organizationsEnabled"] = True
-    resp = requests.put(
-        f"{base_url}/admin/realms/{realm}",
-        headers=headers,
-        json=representation,
-        timeout=TIMEOUT,
-    )
-    resp.raise_for_status()
-
-    check = requests.get(
-        f"{base_url}/admin/realms/{realm}", headers=headers, timeout=TIMEOUT
-    ).json()
-    if not check.get("organizationsEnabled"):
-        raise RuntimeError("organizationsEnabled did not stick on the realm")
-
-
 def create_identity_provider(base_url, headers, realm, idp):
-    """Broker Contoso's OIDC provider using the credentials they issued."""
+    """Broker Contoso's OIDC provider using the credentials they issued.
+
+    `syncMode` and `postBrokerLoginFlowAlias` are left out: linking the provider
+    to the organization (step 3) overwrites both.
+    """
     resp = requests.post(
         f"{base_url}/admin/realms/{realm}/identity-provider/instances",
         headers=headers,
@@ -132,7 +129,6 @@ def create_identity_provider(base_url, headers, realm, idp):
                 "jwksUrl": idp["jwks_uri"],
                 "issuer": idp["issuer"],
                 "defaultScope": idp["scopes"],
-                "syncMode": "IMPORT",
                 "useJwksUrl": "true",
             },
         },
@@ -141,88 +137,130 @@ def create_identity_provider(base_url, headers, realm, idp):
     resp.raise_for_status()
 
 
-def create_organization_with_domain(base_url, headers, realm, domain):
-    """The organization claims Contoso's email domain.
+def create_organization(base_url, headers, realm, domains):
+    """Create the organization in keycloak-orgs, holding Contoso's email domain.
 
-    Routing for the domain cannot be set here: it names the identity provider,
-    which has to be linked to the organization first.
+    These are the domains discovery matches. The representation takes `domains`
+    as plain strings; the native shape `[{"name": ...}]` is still answered 201,
+    with the objects' keys and values flattened into garbage domains, so the
+    domains are read back rather than trusted. `alias`, `enabled` and
+    `description` do not exist here and are rejected with a 400.
     """
+    body = {"name": ORG_NAME, "displayName": "Contoso Ltd"}
+    if domains:
+        body["domains"] = list(domains)
     resp = requests.post(
-        f"{base_url}/admin/realms/{realm}/organizations",
-        headers=headers,
-        json={
-            "name": ORG_NAME,
-            "alias": ORG_NAME,
-            "enabled": True,
-            "description": "Contoso Ltd - federated enterprise customer",
-            "domains": [{"name": domain}],
-        },
-        timeout=TIMEOUT,
+        f"{base_url}/realms/{realm}/orgs", headers=headers, json=body, timeout=TIMEOUT
     )
     resp.raise_for_status()
 
-    listing = requests.get(
-        f"{base_url}/admin/realms/{realm}/organizations", headers=headers, timeout=TIMEOUT
+    org_id = resp.headers.get("Location", "").rstrip("/").rsplit("/", 1)[-1]
+    if not org_id or org_id == "orgs":
+        listing = requests.get(
+            f"{base_url}/realms/{realm}/orgs", headers=headers, timeout=TIMEOUT
+        )
+        listing.raise_for_status()
+        matches = [o for o in listing.json() if o.get("name") == ORG_NAME]
+        if len(matches) != 1:
+            raise RuntimeError(f"expected one {ORG_NAME} organization, found {len(matches)}")
+        org_id = matches[0]["id"]
+
+    org = requests.get(
+        f"{base_url}/realms/{realm}/orgs/{org_id}", headers=headers, timeout=TIMEOUT
     )
-    listing.raise_for_status()
-    matches = [o for o in listing.json() if o.get("name") == ORG_NAME]
-    if len(matches) != 1:
-        raise RuntimeError(f"expected one {ORG_NAME} organization, found {len(matches)}")
-    return matches[0]["id"]
+    org.raise_for_status()
+    held = sorted(org.json().get("domains") or [])
+    if held != sorted(domains or []):
+        raise RuntimeError(f"the organization holds {held}, expected {sorted(domains or [])}")
+    return org_id
 
 
-def link_idp_to_organization(base_url, headers, realm, org_id):
-    """Make the provider one of the organization's identity providers.
+def link_idp_to_organization(base_url, headers, realm, org_id, domains):
+    """Make the provider the organization's identity provider.
 
-    Required before the domain can be routed to it. On its own it routes nobody
-    on 26.8. The body is a bare JSON string holding the provider alias, not an
-    object.
+    Note the `/link` suffix: `POST .../idps` without it creates a new provider
+    owned by the organization instead of adopting an existing one. Linking sets
+    `home.idp.discovery.org` on the provider to the organization's id, which is
+    how discovery gets from the organization to the provider. It also forces
+    `hideOnLogin` to true: the provider is reached by domain, not by a button.
     """
+    body = {"alias": IDP_ALIAS}
+    if domains:
+        body["domains"] = list(domains)
     resp = requests.post(
-        f"{base_url}/admin/realms/{realm}/organizations/{org_id}/identity-providers",
-        headers={**headers, "Content-Type": "application/json"},
-        data=f'"{IDP_ALIAS}"',
+        f"{base_url}/realms/{realm}/orgs/{org_id}/idps/link",
+        headers=headers,
+        json=body,
         timeout=TIMEOUT,
     )
     resp.raise_for_status()
 
     linked = requests.get(
-        f"{base_url}/admin/realms/{realm}/organizations/{org_id}/identity-providers",
+        f"{base_url}/admin/realms/{realm}/identity-provider/instances/{IDP_ALIAS}",
         headers=headers,
         timeout=TIMEOUT,
     )
     linked.raise_for_status()
-    if IDP_ALIAS not in {i.get("alias") for i in linked.json()}:
-        raise RuntimeError(f"{IDP_ALIAS} is not linked to the organization")
+    owner = (linked.json().get("config") or {}).get("home.idp.discovery.org")
+    if owner != org_id:
+        raise RuntimeError(
+            f"{IDP_ALIAS} is not linked to the organization: home.idp.discovery.org={owner!r}"
+        )
 
 
-def route_domain_to_identity_provider(base_url, headers, realm, org_id, domain):
-    """Route the domain to the provider, with auto-redirect: the step that routes.
+def load_flow_asset():
+    return json.loads(FLOW_ASSET_PATH.read_text())
 
-    Since Keycloak 26.8 routing lives on the organization's domain entry. There
-    is no per-domain endpoint; the domain list is replaced by a PUT of the whole
-    organization. `identityProviderAlias` without `autoRedirect` only offers the
-    provider as a button beside the password form, and `autoRedirect` without
-    `identityProviderAlias` does nothing.
+
+def import_and_bind_flow(base_url, headers, realm, asset):
+    """Author the asset's flow and bind it as the realm's browser flow, in one call.
+
+    Keycloak's own partialImport endpoint is not an option: it has no handler for
+    authentication flows and ignores them (200 OK, nothing created). The
+    keycloak-atomic-auth-flows endpoint authors the flow and applies the binding
+    together. It hash-prefixes the aliases it creates, including the binding
+    value, so the binding names the asset's own alias and the real one is read
+    back afterwards.
     """
-    url = f"{base_url}/admin/realms/{realm}/organizations/{org_id}"
-    current = requests.get(url, headers=headers, timeout=TIMEOUT)
-    current.raise_for_status()
-    representation = current.json()
-    matches = [d for d in representation.get("domains", []) if d.get("name") == domain]
-    if len(matches) != 1:
-        raise RuntimeError(f"the organization does not hold {domain}")
-    matches[0]["identityProviderAlias"] = IDP_ALIAS
-    matches[0]["autoRedirect"] = True
+    payload = dict(asset)
+    # A partialImport field; the import endpoint rejects unknown fields with a 400.
+    payload.pop("ifResourceExists", None)
+    top_level = [f for f in payload["authenticationFlows"] if f.get("topLevel")]
+    if len(top_level) != 1:
+        raise RuntimeError(f"expected one top-level flow in the asset, found {len(top_level)}")
+    payload["browserFlowBinding"] = top_level[0]["alias"]
 
-    resp = requests.put(url, headers=headers, json=representation, timeout=TIMEOUT)
+    resp = requests.post(
+        f"{base_url}/admin/realms/{realm}/authentication-flow/import",
+        headers=headers,
+        json=payload,
+        timeout=TIMEOUT,
+    )
+    if resp.status_code == 404:
+        raise RuntimeError(
+            "the keycloak-atomic-auth-flows extension is not installed "
+            "(404 from /authentication-flow/import)"
+        )
     resp.raise_for_status()
 
-    check = requests.get(url, headers=headers, timeout=TIMEOUT)
-    check.raise_for_status()
-    routed = [d for d in check.json().get("domains", []) if d.get("name") == domain]
-    if not routed or routed[0].get("identityProviderAlias") != IDP_ALIAS or not routed[0].get("autoRedirect"):
-        raise RuntimeError(f"{domain} is not routed to {IDP_ALIAS} with auto-redirect: {routed}")
+    bound = requests.get(
+        f"{base_url}/admin/realms/{realm}", headers=headers, timeout=TIMEOUT
+    ).json().get("browserFlow")
+    if not bound or bound == "browser":
+        raise RuntimeError(f"browserFlow was not bound to the imported flow (got {bound!r})")
+    return bound
+
+
+def bound_flow_has_discovery(base_url, headers, realm, flow_alias):
+    """True when the bound flow runs ext-auth-home-idp-discovery anywhere in it."""
+    resp = requests.get(
+        f"{base_url}/admin/realms/{realm}/authentication/flows/"
+        f"{urllib.parse.quote(flow_alias, safe='')}/executions",
+        headers=headers,
+        timeout=TIMEOUT,
+    )
+    resp.raise_for_status()
+    return any(e.get("providerId") == DISCOVERY_AUTHENTICATOR for e in resp.json())
 
 
 # --- the browser flow, driven headlessly -----------------------------------
@@ -272,14 +310,15 @@ def _follow_to_redirect_uri(session, location, redirect_uri, limit=8):
     return None
 
 
-def corporate_login(base_url, realm, client_id, redirect_uri):
+def corporate_login(base_url, realm, client_id, redirect_uri, state):
     """Type a Contoso email, expect to be sent out to Contoso, log in there.
 
-    With the domain routed and auto-redirect on, submitting the address answers
-    with a redirect to acme's broker endpoint, which redirects on to Contoso.
-    No page is shown in between.
+    Discovery answers the submitted address with a 303 straight to Contoso's
+    authorization endpoint, whose `redirect_uri` is acme's broker endpoint for
+    the linked provider. No page is shown in between, whether or not the person
+    has federated before. (Native organizations went through acme's
+    /broker/{alias}/login first; that hop is followed too if it appears.)
     """
-    state = "oracle-corp"
     session = requests.Session()
     page = session.get(
         _authorization_url(base_url, realm, client_id, redirect_uri, state), timeout=TIMEOUT
@@ -294,13 +333,13 @@ def corporate_login(base_url, realm, client_id, redirect_uri):
     )
     _relax_cookies(session)
     if 'type="password"' in (identified.text or ""):
-        raise RuntimeError("a Contoso address was asked for an Acme password")
+        raise RuntimeError(f"a Contoso address was asked for an Acme password ({state})")
 
     location = identified.headers.get("Location", "")
-    if f"/broker/{IDP_ALIAS}/login" not in location:
+    if identified.status_code not in (302, 303) or not location:
         raise RuntimeError(
-            f"a Contoso address was not redirected to the {IDP_ALIAS} broker "
-            f"(status {identified.status_code}, Location {location[:200]!r})"
+            f"a Contoso address was not redirected ({state}): status "
+            f"{identified.status_code}, Location {location[:200]!r}"
         )
     for _ in range(5):
         if CUSTOMER_AUTH_PATH in location:
@@ -311,6 +350,14 @@ def corporate_login(base_url, realm, client_id, redirect_uri):
         location = hop.headers.get("Location", "")
     if CUSTOMER_AUTH_PATH not in location:
         raise RuntimeError(f"was not routed to the customer's IdP; went to {location[:200]}")
+    comes_back_to = urllib.parse.parse_qs(urllib.parse.urlparse(location).query).get(
+        "redirect_uri", [""]
+    )[0]
+    if not comes_back_to.endswith(f"/realms/{realm}/broker/{IDP_ALIAS}/endpoint"):
+        raise RuntimeError(
+            f"routed to the customer's IdP, but not through {IDP_ALIAS}: "
+            f"redirect_uri={comes_back_to!r}"
+        )
 
     corp_page = session.get(location, timeout=TIMEOUT)
     _relax_cookies(session)
@@ -326,7 +373,7 @@ def corporate_login(base_url, realm, client_id, redirect_uri):
         session, returned.headers.get("Location", ""), redirect_uri
     )
     if not final:
-        raise RuntimeError("the corporate login never came back to the application")
+        raise RuntimeError(f"the corporate login never came back to the application ({state})")
     query = urllib.parse.parse_qs(urllib.parse.urlparse(final).query)
     if "code" not in query:
         raise RuntimeError(f"no authorization code returned: {final[:200]}")
@@ -375,35 +422,48 @@ def internal_login(base_url, realm, client_id, redirect_uri):
         raise RuntimeError(f"no authorization code for the internal login: {final[:200]}")
 
 
-def main():
+def setup():
+    """Read the task's settings and get an admin token. Returns (context, headers)."""
     creds = load_settings(CREDS_PATH)
     idp = load_settings(IDP_DETAILS_PATH)
-    base_url = creds["keycloak_base_url"].rstrip("/")
-    realm = creds["target_realm"]
-    client_id = creds["app_client_id"]
-    redirect_uri = creds["app_redirect_uri"]
-
-    admin_token = get_admin_token(
-        base_url,
+    context = {
+        "base_url": creds["keycloak_base_url"].rstrip("/"),
+        "realm": creds["target_realm"],
+        "client_id": creds["app_client_id"],
+        "redirect_uri": creds["app_redirect_uri"],
+        "domain": idp["email_domain"],
+        "idp": idp,
+    }
+    token = get_admin_token(
+        context["base_url"],
         creds["admin_realm"],
         creds["admin_username"],
         creds["admin_password"],
     )
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    return context, {"Authorization": f"Bearer {token}"}
 
-    enable_organizations(base_url, headers, realm)
-    create_identity_provider(base_url, headers, realm, idp)
-    org_id = create_organization_with_domain(base_url, headers, realm, idp["email_domain"])
-    link_idp_to_organization(base_url, headers, realm, org_id)
-    route_domain_to_identity_provider(base_url, headers, realm, org_id, idp["email_domain"])
 
-    corporate_login(base_url, realm, client_id, redirect_uri)
-    internal_login(base_url, realm, client_id, redirect_uri)
+def main():
+    ctx, headers = setup()
+    base_url, realm = ctx["base_url"], ctx["realm"]
+
+    create_identity_provider(base_url, headers, realm, ctx["idp"])
+    org_id = create_organization(base_url, headers, realm, [ctx["domain"]])
+    link_idp_to_organization(base_url, headers, realm, org_id, [ctx["domain"]])
+    flow = import_and_bind_flow(base_url, headers, realm, load_flow_asset())
+    if not bound_flow_has_discovery(base_url, headers, realm, flow):
+        raise RuntimeError(f"the bound flow {flow!r} has no {DISCOVERY_AUTHENTICATOR} execution")
+    print(f"bound browser flow: {flow!r}")
+
+    login = (base_url, realm, ctx["client_id"], ctx["redirect_uri"])
+    corporate_login(*login, state="oracle-corp-first")
+    corporate_login(*login, state="oracle-corp-returning")
+    internal_login(*login)
 
     print(
         "oracle self-check passed: a contoso.example address is routed to the "
-        "customer's IdP and returns with a code, and an internal address still "
-        "logs in with its password"
+        "customer's IdP and returns with a code, on its first login and again "
+        "once federated, and an internal address still logs in with its password"
     )
 
 

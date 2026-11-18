@@ -3,18 +3,26 @@
 # Copyright 2026 Phase Two, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-# Launches Keycloak and the MCP server, then hands straight over to the
-# container's command. It deliberately does not block on readiness: the sandbox
-# runs commands via exec regardless of what this script is doing, so gating here
-# would buy nothing. Callers wait via /usr/local/bin/wait-for-services instead.
+# Launches Keycloak, the deployment-token proxy and the MCP server, then hands
+# straight over to the container's command. It deliberately does not block on
+# readiness: the sandbox runs commands via exec regardless of what this script is
+# doing, so gating here would buy nothing. Callers wait via
+# /usr/local/bin/wait-for-services instead.
+#
+# No --features=organization here: Keycloak's native organizations stay off
+# (KC_FEATURES_DISABLED=organization in the Dockerfile), as on every Phase Two
+# deployment. Organizations come from the keycloak-orgs extension in the image.
 set -m
 
 /opt/keycloak/bin/kc.sh start-dev \
   --http-port=8080 \
   --http-relative-path=/auth \
-  --features=organization \
   --import-realm \
   > /var/log/keycloak.log 2>&1 &
+
+# The deployment-token proxy sits between the MCP server and Keycloak - see the
+# Dockerfile for why. It forwards to Keycloak, so it can start immediately.
+python3 /opt/mcp/deployment_token_proxy.py > /var/log/deployment-token-proxy.log 2>&1 &
 
 # The MCP server fetches JWKS from Keycloak, so it has to come up after Keycloak
 # is actually serving - backgrounded as its own subshell so this script still
@@ -25,9 +33,18 @@ set -m
       >/dev/null 2>&1 && break
     sleep 2
   done
+  # -Dquarkus.management.port: phasetwo-keycloak runs its own Quarkus management
+  # interface on :9000 (KC_HEALTH_ENABLED/KC_METRICS_ENABLED are on in the base
+  # image), and this MCP server is also Quarkus - co-located in one container
+  # they collide and the MCP server dies with
+  #   IllegalStateException: Unable to start the management interface on 0.0.0.0:9000
+  #   Caused by: java.net.BindException: Address already in use
+  # which surfaces only as "services did not become ready within 180s" from
+  # wait-for-services, because /mcp never answers. Set with -D on THIS jvm, not as an env
+  # var: QUARKUS_MANAGEMENT_PORT would move BOTH apps and reproduce the clash.
   # Absent on a public build (no MCP_IMAGE passed) - skip rather than crash.
   [ -f /opt/mcp-app/quarkus-run.jar ] || exit 0
-  /opt/java21/bin/java -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
+  java -Dquarkus.management.port=9001 -jar /opt/mcp-app/quarkus-run.jar > /var/log/mcp-server.log 2>&1
 ) &
 
 exec "$@"

@@ -38,11 +38,12 @@ rather than of the realm:
   anyway over `http://localhost`, which it treats as a secure context; `requests` will
   not, and every form POST then fails as `cookie_not_found`. The helper clears the flag to
   reproduce browser behaviour.
-- On the pinned Keycloak (26.8.2), a correctly routed address gets a `303` straight at the
-  broker endpoint whether or not that account has federated before. The helper also follows
-  a provider link on the page: Keycloak 26.7 and older offered a not-yet-federated user only
-  that link, and 26.8 shows it as a button beside the password field when the domain is
-  not routed with auto-redirect. Test 1 rejects that second case on its own.
+- On the pinned image (Phase Two's Keycloak 26.8.2 with keycloak-orgs 0.199), discovery
+  answers a correctly routed address with a `303` straight to the customer's authorization
+  endpoint, whether or not that account has federated before. The helper also follows a
+  redirect to acme's broker endpoint and a provider link on the page. Those are the shapes
+  Keycloak's native organizations produced when this task ran stock Keycloak, and a link
+  beside a password field is still rejected by test 1 on its own.
 
 Both corporate accounts are exercised throughout, so a configuration that happens to work
 for one hardcoded user does not pass.
@@ -73,24 +74,37 @@ What each test establishes:
    The customer operates that realm.
 7. `test_only_the_expected_realms_exist` — exactly `master`, `acme` and `contoso-idp`.
 
-Reward is all-or-nothing: `1` when every test passes, `0` otherwise. Measured on Keycloak
-26.8.2, each in a fresh container:
+Reward is all-or-nothing: `1` when every test passes, `0` otherwise. Measured on the
+pinned image (build `26.8.2.1794965685`), each in a fresh container:
 
 | Configuration | Fails |
 |---|---|
 | Untouched fixture | tests 1–4 |
-| Organizations on, organization holds the domain, provider linked, domain not routed (the pre-26.8 recipe) | test 1 |
-| Domain routed to the provider without auto-redirect | test 1 |
-| Provider never linked to the organization, so the domain cannot be routed to it | test 1 |
-| Pre-26.8 routing keys (`kc.org.domain`, `kc.org.broker.redirect.mode.email-matches`) on the provider's config | test 1 |
-| The oracle's configuration, then organization support switched off | tests 1–4 |
-| An identity-provider-redirector execution in a custom browser flow | tests 1–5 |
-| The oracle's configuration with the domain left unverified | nothing (reward 1) |
+| Organization holds the domain and the provider is linked, but no discovery flow is bound (the stock browser flow stays) | tests 1–4 |
+| The organization holds no domains; the domain is sent only when linking the provider | tests 2–4 |
+| The provider is never linked to the organization | tests 2–4 |
+| An identity-provider-redirector execution with `defaultProvider` in a custom browser flow, no organization | tests 1–5 |
+| `auth-password-form` ordered before `ext-auth-home-idp-discovery` in the forms sub-flow | nothing (reward 1) |
+| The discovery execution without its config, so `forwardToLinkedIdp` stays `false` | nothing (reward 1) |
 
-In the four "test 1" rows the login page still offers the provider as a button beside
-the password field, so tests 2–4 follow it and pass. Test 1 is what rejects them.
-Whether the domain is marked `verified` changes nothing: Keycloak does not consult the
-flag when routing.
+With no discovery flow bound, a Contoso address gets the stock username-and-password
+form, and linking has hidden the provider's button, so there is no route at all. In the
+two "tests 2–4" rows discovery runs and matches nothing, and a Contoso address gets a
+`400` "Invalid username or password." page. That page has no password field, so test 1
+passes; test 2 is what rejects them.
+
+The two reward-1 rows are not verifier gaps: in both, the logins the verifier drives really
+do work. `auth-password-form` is skipped until someone has been identified, so discovery's
+username form still comes first. `forwardToLinkedIdp` only lets a user's existing federated links
+take precedence over the organization's providers, which changes nothing with one provider
+per organization: after the verifier had federated both Contoso users, both were still
+forwarded at its default. The domain is never verified either (verification is a DNS TXT
+challenge); discovery does not consult it unless the execution's config sets
+`requireVerifiedDomain`.
+
+Keycloak's native organizations are switched off on this image, as on every Phase Two
+deployment, so `/admin/realms/acme/organizations` returns 404 and the native recipe
+cannot be applied at all.
 
 Artifacts copied to `/logs/verifier/`: `output.txt` (full pytest output), `ctrf.json`,
 `services-readiness.txt`, `federated-users.txt`, and the rendered identity-first pages as
