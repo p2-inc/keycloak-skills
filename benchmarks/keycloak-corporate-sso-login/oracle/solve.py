@@ -34,8 +34,8 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
-IDP_DETAILS_PATH = "/root/corporate_idp_details.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
+IDP_DETAILS_PATH = "/opt/task/corporate_idp_details.txt"
 IDP_ALIAS = "contoso-sso"
 ORG_NAME = "contoso"
 CORP_USERNAME = "jvega@contoso.example"

@@ -28,7 +28,7 @@ import urllib.request
 
 import pytest
 
-ADMIN_CREDS_PATH = "/root/admin_credentials.txt"
+ADMIN_CREDS_PATH = "/opt/task/admin_credentials.txt"
 CAPTURE_DIR = "/var/mail-capture"
 ARTIFACT_DIR = pathlib.Path("/logs/verifier")
 TIMEOUT = 30

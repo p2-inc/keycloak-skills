@@ -176,7 +176,9 @@ benchmarks/<task-name>/
 1. Author `task.md` with the SkillsBench schema (`schema_version`, `metadata` block including
    `difficulty`/`difficulty_explanation`/`category`/`tags`, `verifier`/`agent`/`sandbox` config).
 2. Build `environment/` — a `Dockerfile` plus any fixtures (realm JSON, credentials files with
-   **sandbox-only dummy values**, mail-capture servers, etc.). If the task needs a large prebuilt
+   **sandbox-only dummy values**, mail-capture servers, etc.). COPY any file `task.md` tells the
+   agent to read into `/opt/task/`, never `/root/` — the agent isn't root (see the gotcha under
+   [Running it](#running-it)). If the task needs a large prebuilt
    binary (e.g. an internal MCP server jar), **pull it from a registry in a multi-stage Docker
    build, pinned by digest** — don't commit the binary. Example from this repo's own Dockerfiles:
    ```dockerfile
@@ -245,6 +247,39 @@ bench eval run --tasks-dir benchmarks/<task-name> \
 Compare `with-skill` vs `no-skill`, and MCP-tooling vs REST-tooling variants, by pointing
 `--skills-dir` at different standalone skill folders and diffing the resulting `summary.json`
 (`reward`, `total_cost_usd`, `total_tool_calls`, `elapsed_sec`).
+
+**Known gotcha: the agent is not root, but the oracle and verifier are.** `bench eval run` runs
+the agent as an unprivileged `agent` user with no sudo (`--sandbox-user` defaults to `agent`),
+while benchflow always runs `oracle/solve.sh` and the verifier as root. So step 2 cannot catch a
+file the agent can't read: the oracle reads it and scores 1.0 anyway. Every task here used to COPY its
+credentials into `/root/`, which is mode 700 in both base images the tasks build on, and 43 of the
+93 agent runs recorded locally by November 2026 hit `EACCES` / `Permission denied` on them. Weaker
+models then stop and ask for the credentials (reward 0); stronger ones dig the admin password out
+of the environment. Either way the score stops measuring the skill.
+
+- Put every file `task.md` points the agent at in a root-owned, world-readable directory outside
+  `/root`, and point `task.md`, the oracle and the verifier at that same path:
+  ```dockerfile
+  COPY admin_credentials.txt /opt/task/admin_credentials.txt
+  RUN chmod 755 /opt/task && chmod 644 /opt/task/*
+  ```
+  Not `COPY --chmod=644`: BuildKit applies that mode to the `/opt/task` directory it creates as
+  well, and nobody but root can enter a directory without the `x` bit. The oracle passes either
+  way, so check as a non-root user:
+  `docker run --rm --user 4242:4242 --entrypoint cat <image> /opt/task/admin_credentials.txt`
+  (give the group too: a bare `--user 4242` runs as gid 0, which can read root-group files the
+  agent can't).
+- Not `/home/agent` or the `WORKDIR`: benchflow `chown`s both to the agent at runtime, so the agent
+  could rewrite a file the verifier trusts (`admin_credentials.txt` carries the
+  `keycloak_base_url` the verifier calls).
+- Don't work around it with `--sandbox-user null` (or `none`). That runs the agent as root with no
+  path lockdown, and benchflow copies `oracle/` into every container at `/oracle`, so the agent can
+  read the reference solution. Agents do look: one that hit the `EACCES` went straight to
+  `ls -la /oracle`.
+- Before trusting a paid run, check that its reads succeeded:
+  ```bash
+  grep -rl --include=acp_trajectory.jsonl -E 'EACCES|Permission denied' benchmarks/<task-name>/jobs-local-<variant>/
+  ```
 
 **Known local-Docker gotcha**: `claude-agent-acp` enforces an egress firewall (`iptables`) inside
 the sandbox container for no-network tasks, which fails with `Permission denied (you must be

@@ -73,10 +73,10 @@ Acme's head of IT has asked for one thing:
 
 Contoso Ltd is Acme's first enterprise customer. Contoso's staff should reach Acme's portal by signing in with their own company credentials, at their own identity provider — Acme never holds their passwords. Acme's own internal staff must keep signing in with the passwords they already have.
 
-A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 - Realm `acme` is Acme's own realm. It has one browser application registered, the public client `acme-portal`, whose redirect URI is `http://localhost:9999/callback`. It also has one internal account, `dana` / `dana@acme-internal.example`, who signs in with a password.
-- Realm `contoso-idp` stands in for Contoso's identity provider, which Contoso operates. The federation details their IT team supplied — endpoints, client ID, client secret, and the email domain their staff use — are in `/root/corporate_idp_details.txt`. Treat that realm as belonging to the customer: do not change anything inside it.
+- Realm `contoso-idp` stands in for Contoso's identity provider, which Contoso operates. The federation details their IT team supplied — endpoints, client ID, client secret, and the email domain their staff use — are in `/opt/task/corporate_idp_details.txt`. Treat that realm as belonging to the customer: do not change anything inside it.
 
 Configure the `acme` realm so that all of the following hold, in a browser authorization-code login against `acme-portal`:
 

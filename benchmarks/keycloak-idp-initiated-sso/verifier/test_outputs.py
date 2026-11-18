@@ -37,7 +37,7 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from mock_idp import VENDORS, deliver_tile, delivered_audiences, tile_endpoint  # noqa: E402
 
-ADMIN_CREDS_PATH = "/root/admin_credentials.txt"
+ADMIN_CREDS_PATH = "/opt/task/admin_credentials.txt"
 ARTIFACT_DIR = pathlib.Path("/logs/verifier")
 TIMEOUT = 30
 

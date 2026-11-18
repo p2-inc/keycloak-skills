@@ -44,7 +44,7 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
 FLOW_ASSET_PATH = pathlib.Path(__file__).parent / "org-browser-flow-by-org-name.partial-import.json"
 ORG_NAME = "engineering"
 FLOW_ALIAS = "Org Browser Flow by Org Name"

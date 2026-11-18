@@ -68,7 +68,7 @@ Acme's security team has a new requirement:
 
 > "Only engineering staff should be able to sign in to the internal tools portal."
 
-A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 Realm `acme` has one browser application registered, the public client `acme-portal`, whose redirect URI is `http://localhost:9999/callback`. It has two staff accounts, both already able to log in with a password:
 

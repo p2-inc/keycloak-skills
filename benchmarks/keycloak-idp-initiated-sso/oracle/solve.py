@@ -50,7 +50,7 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from mock_idp import VENDORS, deliver_tile, tile_endpoint  # noqa: E402
 
-CREDS_PATH = "/root/admin_credentials.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
 TIMEOUT = 30
 
 PORTAL_URL_NAME = "acme-portal-tile"

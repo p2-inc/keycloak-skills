@@ -95,8 +95,11 @@ COPY acme-realm.json /opt/keycloak/data/import/acme-realm.json
 COPY keycloak-magic-link.jar /opt/keycloak/providers/keycloak-magic-link.jar
 
 # Admin credentials, and connection details for the local mail-capture server.
-COPY admin_credentials.txt /root/admin_credentials.txt
-COPY mail_server_details.txt /root/mail_server_details.txt
+# /opt/task, not /root or /home/agent: bench runs the agent as a non-root user, so it must be
+# able to read these, but not rewrite them (the oracle and verifier read the same files).
+COPY admin_credentials.txt /opt/task/admin_credentials.txt
+COPY mail_server_details.txt /opt/task/mail_server_details.txt
+RUN chmod 755 /opt/task && chmod 644 /opt/task/*
 
 # The mail capture server itself - fixed infrastructure, not something to configure.
 COPY mail_capture_server.py /opt/mail/mail_capture_server.py

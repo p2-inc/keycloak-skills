@@ -53,7 +53,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-CREDS_PATH = "/root/admin_credentials.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
 CAPTURE_DIR = "/var/mail-capture"
 FLOW = "email-otp-flow"
 SUBFLOW = "Email OTP forms"

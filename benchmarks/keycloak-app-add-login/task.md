@@ -77,7 +77,7 @@ sign in against Acme's own Keycloak.
 
 A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`. It
 starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it
-answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 The app lives at `/app/frontend` - a Vite + React + TypeScript skeleton with no authentication code
 in it. Its dependencies are already installed in `node_modules` and **the sandbox has no network**,

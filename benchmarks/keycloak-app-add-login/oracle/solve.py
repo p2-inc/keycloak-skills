@@ -55,7 +55,7 @@ def _req(method, url, token=None, data=None, form=False):
 
 def admin_token():
     creds = {}
-    with open("/root/admin_credentials.txt") as fh:
+    with open("/opt/task/admin_credentials.txt") as fh:
         for line in fh:
             if ":" in line:
                 k, _, v = line.partition(":")

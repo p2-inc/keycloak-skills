@@ -31,8 +31,8 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
-IDP_DETAILS_PATH = "/root/contoso_idp_details.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
+IDP_DETAILS_PATH = "/opt/task/contoso_idp_details.txt"
 
 IDP_ALIAS = "contoso-sso"
 CONTOSO_REALM = "contoso-idp"

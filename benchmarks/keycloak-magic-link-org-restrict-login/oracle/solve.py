@@ -58,7 +58,7 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
 FLOW_ASSET_PATH = pathlib.Path(__file__).parent / "select-organization-magic-link.partial-import.json"
 ORG_NAME = "engineering"
 FLOW_ALIAS = "Select organization magic link"

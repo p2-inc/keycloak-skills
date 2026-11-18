@@ -26,7 +26,7 @@ import urllib.parse
 import pytest
 import requests
 
-ADMIN_CREDS_PATH = "/root/admin_credentials.txt"
+ADMIN_CREDS_PATH = "/opt/task/admin_credentials.txt"
 ARTIFACT_DIR = pathlib.Path("/logs/verifier")
 PARTNER_REALM = "partner-idp"
 IDP_USERNAME = "jordan"

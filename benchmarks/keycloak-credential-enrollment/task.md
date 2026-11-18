@@ -72,7 +72,7 @@ Acme is rolling out two-factor authentication. The brief from their IT lead:
 
 > "Everyone moves to an authenticator app. Priya can sort hers out next time she signs in. Marcus just joined and hasn't got any way to sign in yet, so whatever he needs has to be sent to him — and nobody on my team is picking a credential on his behalf. Dana's in the same boat except we've never confirmed her address is really hers, and I'm not having enrollment links go out to an address we haven't checked. Anyone who joins from here on should get asked automatically."
 
-A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme` with a public browser client, `acme-portal`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme` with a public browser client, `acme-portal`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 The two staff accounts differ in a way that matters:
 
@@ -80,7 +80,7 @@ The two staff accounts differ in a way that matters:
 - `marcus` (`marcus@acme.example`) has no credentials of any kind, and his address is verified.
 - `dana` (`dana@acme.example`) has no credentials either, but her address has **not** been verified.
 
-There is no real mail provider here. A local mail-capture server accepts whatever a realm sends and writes each message to `/var/mail-capture/` as one JSON file per message — connection details are in `/root/mail_server_details.txt`.
+There is no real mail provider here. A local mail-capture server accepts whatever a realm sends and writes each message to `/var/mail-capture/` as one JSON file per message — connection details are in `/opt/task/mail_server_details.txt`.
 
 Configure the `acme` realm so that all of the following hold:
 

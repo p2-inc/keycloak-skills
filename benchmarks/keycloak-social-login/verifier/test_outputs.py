@@ -17,8 +17,8 @@ import urllib.parse
 import pytest
 import requests
 
-ADMIN_CREDS_PATH = "/root/admin_credentials.txt"
-GITHUB_DETAILS_PATH = "/root/github_oauth_app_details.txt"
+ADMIN_CREDS_PATH = "/opt/task/admin_credentials.txt"
+GITHUB_DETAILS_PATH = "/opt/task/github_oauth_app_details.txt"
 TIMEOUT = 30
 
 # Claim/field names an agent might reach for by copying a standard-OIDC
@@ -177,7 +177,7 @@ def test_kc_idp_hint_redirects_to_github_with_the_right_client_id(config, admin_
     assert query.get("client_id") == [config["github_client_id"]], (
         f"the redirect's client_id was {query.get('client_id')}, expected the fixture "
         f"GitHub OAuth App's client ID {config['github_client_id']!r}; the credentials "
-        "from /root/github_oauth_app_details.txt were not wired into the identity provider"
+        "from /opt/task/github_oauth_app_details.txt were not wired into the identity provider"
     )
     return query
 

@@ -204,6 +204,18 @@ Each of these cost a wasted run and initially looked like the skill or the model
   deployment); BusyBox `setpriv` lacks `--reuid`, so the harness falls back to a **login shell**
   that resets the environment and drops the API key — surfacing only as an opaque auth error.
   Install `findutils` and `util-linux-bins`.
+- **The agent is not root; the oracle and verifier are.** benchflow runs the agent as an
+  unprivileged `agent` user, but `oracle/solve.sh` and the verifier as root. Every task here told
+  the agent its admin credentials were in `/root/admin_credentials.txt`, which only root can read,
+  and the oracle kept scoring 1.0. 43 of 93 recorded agent runs hit `EACCES` on those files. It
+  read as a capability gap: in one sweep Haiku 4.5 ended 5 runs within 14 tool calls by asking an
+  absent user for the credentials (reward 0, all in skill arms), while Sonnet 5 found
+  `KC_BOOTSTRAP_ADMIN_PASSWORD` in the environment and passed. Put task inputs in a root-owned,
+  world-readable directory (`/opt/task/`), and grep trajectories for `EACCES` before trusting a
+  score. Running the agent as root (`--sandbox-user null`) is not the fix: it also unlocks
+  `/oracle`, where benchflow keeps the reference solution. Prove the fix as a non-root user, too:
+  the first version used `COPY --chmod=644`, which BuildKit also applied to the directory it
+  created, so the agent still could not read anything — while all 18 oracles scored 1.0.
 - **Test-port collisions with unrelated long-lived containers** produce "N tests skipped" that
   reads as real failure. Move the test ports; don't kill someone else's containers.
 - **`Secure`-flagged cookies + scripted HTTP.** Browsers send `Secure` cookies over

@@ -22,7 +22,7 @@ import urllib.parse
 import pytest
 import requests
 
-ADMIN_CREDS_PATH = "/root/admin_credentials.txt"
+ADMIN_CREDS_PATH = "/opt/task/admin_credentials.txt"
 CAPTURE_DIR = pathlib.Path("/var/mail-capture")
 ARTIFACT_DIR = pathlib.Path("/logs/verifier")
 TIMEOUT = 30

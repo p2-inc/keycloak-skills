@@ -102,9 +102,12 @@ COPY acme-realm.json /opt/keycloak/data/import/acme-realm.json
 COPY partner-idp-realm.json /opt/keycloak/data/import/partner-idp-realm.json
 
 # Admin credentials.
-COPY admin_credentials.txt /root/admin_credentials.txt
+# /opt/task, not /root or /home/agent: bench runs the agent as a non-root user, so it must be
+# able to read these, but not rewrite them (the oracle and verifier read the same files).
+COPY admin_credentials.txt /opt/task/admin_credentials.txt
 # The federation details the partner's IT team handed over.
-COPY partner_idp_details.txt /root/partner_idp_details.txt
+COPY partner_idp_details.txt /opt/task/partner_idp_details.txt
+RUN chmod 755 /opt/task && chmod 644 /opt/task/*
 
 # The real Keycloak MCP server (Quarkus), pulled from the mcp-app build stage
 # above. Present in BOTH the with-skill and no-skill arms: it is environment,

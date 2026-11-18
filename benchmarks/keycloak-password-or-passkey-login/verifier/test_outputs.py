@@ -41,8 +41,8 @@ import pytest
 import requests
 from playwright.sync_api import sync_playwright
 
-ADMIN_CREDS_PATH = "/root/admin_credentials.txt"
-STAFF_CREDS_PATH = "/root/staff_credentials.txt"
+ADMIN_CREDS_PATH = "/opt/task/admin_credentials.txt"
+STAFF_CREDS_PATH = "/opt/task/staff_credentials.txt"
 CAPTURE_DIR = pathlib.Path("/var/mail-capture")
 ARTIFACT_DIR = pathlib.Path("/logs/verifier")
 TIMEOUT = 30

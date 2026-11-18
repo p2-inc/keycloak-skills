@@ -98,7 +98,7 @@ Now Acme wants **portal tiles**:
 A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the
 container and takes a few seconds to come up; `wait-for-services` blocks until it answers.
 Admin REST API credentials, and both applications' URLs, are in
-`/root/admin_credentials.txt`.
+`/opt/task/admin_credentials.txt`.
 
 Wire realm `acme` so that, for an unsolicited SAML response arriving from either provider:
 

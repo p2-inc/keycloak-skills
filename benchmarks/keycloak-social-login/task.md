@@ -76,12 +76,12 @@ company's own enterprise identity provider.
 
 A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`. It
 starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it
-answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 - Realm `acme` has one public browser client, `acme-portal`, whose redirect URI is
   `http://localhost:9999/callback`. It has no identity providers configured yet.
 - Acme's engineering team already registered a GitHub OAuth App and handed over the Client ID and
-  Client Secret in `/root/github_oauth_app_details.txt`.
+  Client Secret in `/opt/task/github_oauth_app_details.txt`.
 
 Configure the `acme` realm so that:
 

@@ -68,10 +68,10 @@ Acme has just onboarded Partner Industries as a federated customer.
 
 > "Partner staff sign in with their own company account. But our app serves several teams, and a person should only get in when they actually belong to the team the app is asking for."
 
-A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 - Realm `acme` is Acme's own realm. It has one browser application registered, the public client `acme-portal`, whose redirect URI is `http://localhost:9999/callback`. It has no organizations and no identity provider yet.
-- Realm `partner-idp` stands in for Partner Industries' own identity provider, which they operate. It holds one staff account, `jordan` / `P4rtner!Pass`. The federation details their IT team supplied — endpoints, client ID, client secret — are in `/root/partner_idp_details.txt`. Treat that realm as belonging to the customer: do not change anything inside it.
+- Realm `partner-idp` stands in for Partner Industries' own identity provider, which they operate. It holds one staff account, `jordan` / `P4rtner!Pass`. The federation details their IT team supplied — endpoints, client ID, client secret — are in `/opt/task/partner_idp_details.txt`. Treat that realm as belonging to the customer: do not change anything inside it.
 
 Acme's portal sends the team it wants as `account_hint=<team>` on the authorization request, and forces the partner provider with `kc_idp_hint=<your idp alias>`.
 

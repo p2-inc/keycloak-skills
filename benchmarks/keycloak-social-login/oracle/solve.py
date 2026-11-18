@@ -55,8 +55,8 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
-GITHUB_DETAILS_PATH = "/root/github_oauth_app_details.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
+GITHUB_DETAILS_PATH = "/opt/task/github_oauth_app_details.txt"
 ALIAS = "github"
 TIMEOUT = 30
 

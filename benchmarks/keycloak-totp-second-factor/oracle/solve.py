@@ -42,7 +42,7 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
 FLOW_ALIAS = "TOTP-second-factor"
 SUB_ALIAS = "TOTP-second-factor forms"
 TIMEOUT = 30

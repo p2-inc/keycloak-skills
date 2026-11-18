@@ -20,8 +20,8 @@ import urllib.parse
 import pytest
 import requests
 
-ADMIN_CREDS_PATH = "/root/admin_credentials.txt"
-IDP_DETAILS_PATH = "/root/corporate_idp_details.txt"
+ADMIN_CREDS_PATH = "/opt/task/admin_credentials.txt"
+IDP_DETAILS_PATH = "/opt/task/corporate_idp_details.txt"
 CUSTOMER_REALM = "contoso-idp"
 ARTIFACT_DIR = pathlib.Path("/logs/verifier")
 TIMEOUT = 30

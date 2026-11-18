@@ -39,8 +39,8 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
-IDP_DETAILS_PATH = "/root/partner_idp_details.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
+IDP_DETAILS_PATH = "/opt/task/partner_idp_details.txt"
 FLOW_ASSET_PATH = pathlib.Path(__file__).parent / "post-org-broker-login-select-organization.partial-import.json"
 
 IDP_ALIAS = "partner-sso"

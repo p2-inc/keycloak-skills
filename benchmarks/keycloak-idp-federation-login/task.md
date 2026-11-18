@@ -76,10 +76,10 @@ identity provider — a plain login button on Acme's login page.
 > nothing to do with organizations or teams, and we're not routing people there by
 > email domain. Just a normal 'log in with Contoso' button."
 
-A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 - Realm `acme` is Acme's own realm. It has one browser application registered, the public client `acme-portal`, whose redirect URI is `http://localhost:9999/callback`. It has no identity provider yet.
-- Realm `contoso-idp` stands in for Contoso's own identity provider, which Contoso operates — treat it as belonging to a separate company; do not change anything inside it. It holds two staff accounts who are otherwise unrelated to each other, `taylor` and `morgan`. The federation details Contoso's IT team supplied — endpoints, client ID, client secret — are in `/root/contoso_idp_details.txt`, along with both staff members' credentials.
+- Realm `contoso-idp` stands in for Contoso's own identity provider, which Contoso operates — treat it as belonging to a separate company; do not change anything inside it. It holds two staff accounts who are otherwise unrelated to each other, `taylor` and `morgan`. The federation details Contoso's IT team supplied — endpoints, client ID, client secret — are in `/opt/task/contoso_idp_details.txt`, along with both staff members' credentials.
 
 Configure the `acme` realm so that, for a browser authorization-code login against `acme-portal`:
 

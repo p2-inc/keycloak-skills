@@ -66,7 +66,7 @@ Acme's security team wants TOTP-based two-factor authentication for the internal
 
 A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`.
 It starts with the container and takes a few seconds to come up; `wait-for-services` blocks
-until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 Realm `acme` has one browser application registered, the public client `acme-portal`, whose
 redirect URI is `http://localhost:9999/callback`. It has two staff accounts, each with a

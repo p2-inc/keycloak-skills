@@ -68,9 +68,9 @@ Acme's staff portal is getting passkeys:
 
 > "Username and password with a passkey option. Staff who've set up a passkey should be able to sign in with just that. Everyone else keeps signing in with their password exactly as today — nobody gets locked out or asked for a second thing. One login page, either method."
 
-A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme` with two staff accounts (`priya`, `marcus`) who currently sign in with a password and have no passkey, and a public browser client, `acme-portal`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`; the two staff accounts' existing passwords are in `/root/staff_credentials.txt`.
+A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme` with two staff accounts (`priya`, `marcus`) who currently sign in with a password and have no passkey, and a public browser client, `acme-portal`. It starts with the container and takes a few seconds to come up; `wait-for-services` blocks until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`; the two staff accounts' existing passwords are in `/opt/task/staff_credentials.txt`.
 
-There is no real mail provider here. A local mail-capture server accepts whatever a realm sends and writes each message to `/var/mail-capture/` — connection details are in `/root/mail_server_details.txt`.
+There is no real mail provider here. A local mail-capture server accepts whatever a realm sends and writes each message to `/var/mail-capture/` — connection details are in `/opt/task/mail_server_details.txt`.
 
 A headless Chromium browser with WebAuthn support is available at `/root/.cache/ms-playwright` (installed via the `playwright` Python package already present) — anything actually exercising a passkey ceremony (registering one, authenticating with one) needs a browser that can respond to the WebAuthn API, not a plain HTTP client.
 

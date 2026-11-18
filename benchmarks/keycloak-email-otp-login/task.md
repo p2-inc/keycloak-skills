@@ -72,7 +72,7 @@ Acme's support team is drowning in password resets. IT's answer:
 
 A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`.
 It starts with the container and takes a few seconds to come up; `wait-for-services` blocks
-until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 Realm `acme` has one browser application registered, the public client `acme-portal`, whose
 redirect URI is `http://localhost:9999/callback`. It has two staff accounts, both with a
@@ -84,7 +84,7 @@ verified email address on file:
 Both currently have passwords, which is exactly what IT wants to stop relying on. There is no
 real mail provider here - a local mail-capture server accepts whatever the realm sends and
 writes each message to `/var/mail-capture/`; connection details are in
-`/root/mail_server_details.txt`.
+`/opt/task/mail_server_details.txt`.
 
 Configure the `acme` realm so that all of the following hold, for a browser
 authorization-code login against `acme-portal`:

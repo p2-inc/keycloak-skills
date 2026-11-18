@@ -72,7 +72,7 @@ Acme's security team wants step-up authentication for its internal tools:
 
 A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm named `acme`.
 It starts with the container and takes a few seconds to come up; `wait-for-services` blocks
-until it answers. Admin REST API credentials are in `/root/admin_credentials.txt`.
+until it answers. Admin REST API credentials are in `/opt/task/admin_credentials.txt`.
 
 Realm `acme` has two public clients already registered:
 

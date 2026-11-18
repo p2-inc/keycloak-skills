@@ -36,7 +36,7 @@ import urllib.parse
 
 import requests
 
-CREDS_PATH = "/root/admin_credentials.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
 FLOW_ALIAS = "magic link"
 CAPTURE_DIR = "/var/mail-capture"
 KNOWN_EMAIL = "priya@acme.example"

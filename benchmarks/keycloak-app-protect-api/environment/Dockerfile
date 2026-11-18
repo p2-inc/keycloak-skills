@@ -54,7 +54,10 @@ RUN mkdir -p /app /home/agent/.claude /home/agent/.codex /home/agent/.opencode /
     chmod -R 777 /home/agent /logs
 
 # Admin credentials for the co-located Keycloak.
-COPY admin_credentials.txt /root/admin_credentials.txt
+# /opt/task, not /root or /home/agent: bench runs the agent as a non-root user, so it must be
+# able to read these, but not rewrite them (the oracle and verifier read the same files).
+COPY admin_credentials.txt /opt/task/admin_credentials.txt
+RUN chmod 755 /opt/task && chmod 644 /opt/task/*
 
 # The Spring Boot app the agent protects. The local Maven repository is populated HERE,
 # at build time, because the sandbox runs the agent with no network: `mvn` cannot

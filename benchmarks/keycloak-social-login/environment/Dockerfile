@@ -82,8 +82,11 @@ COPY acme-realm.json /opt/keycloak/data/import/acme-realm.json
 
 # Admin credentials, and the GitHub OAuth App details Acme's engineering team
 # handed over (fixture client ID/secret, not real GitHub-issued values).
-COPY admin_credentials.txt /root/admin_credentials.txt
-COPY github_oauth_app_details.txt /root/github_oauth_app_details.txt
+# /opt/task, not /root or /home/agent: bench runs the agent as a non-root user, so it must be
+# able to read these, but not rewrite them (the oracle and verifier read the same files).
+COPY admin_credentials.txt /opt/task/admin_credentials.txt
+COPY github_oauth_app_details.txt /opt/task/github_oauth_app_details.txt
+RUN chmod 755 /opt/task && chmod 644 /opt/task/*
 
 # The real Keycloak MCP server (Quarkus), pulled from the mcp-app build stage
 # above rather than vendored - avoids needing Maven + the full dependency tree

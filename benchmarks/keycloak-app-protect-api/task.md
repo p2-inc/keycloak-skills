@@ -74,7 +74,7 @@ The team wants it protected with bearer JWTs issued by Acme's own Keycloak.
 
 A Keycloak identity server runs at `http://localhost:8080/auth`. It starts with the
 container and takes a few seconds to come up; `wait-for-services` blocks until it answers.
-Admin REST API credentials are in `/root/admin_credentials.txt`. The server hosts more
+Admin REST API credentials are in `/opt/task/admin_credentials.txt`. The server hosts more
 than one realm; Acme's is `acme`.
 
 The API lives at `/app/api` - a Maven + Spring Boot project. It runs on port **8085**

@@ -64,7 +64,7 @@ import urllib.parse
 import requests
 from playwright.sync_api import sync_playwright
 
-CREDS_PATH = "/root/admin_credentials.txt"
+CREDS_PATH = "/opt/task/admin_credentials.txt"
 FLOW_ALIAS = "Passwordless-or-magic-link"
 SUB_ALIAS = "Passwordless-or-magic-link passwordless-or-password forms"
 CAPTURE_DIR = "/var/mail-capture"
