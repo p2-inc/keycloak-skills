@@ -56,6 +56,11 @@ RUN curl -fsSL "https://github.com/keycloak/keycloak/releases/download/${KEYCLOA
     mv "/opt/keycloak-${KEYCLOAK_VERSION}" /opt/keycloak && \
     rm /tmp/keycloak.tar.gz
 
+# Browsers go to a world-readable path, not the build user's ~/.cache: /root is 700 and
+# bench runs the agent as a non-root user. The ENV also points the oracle, the verifier
+# and the agent's own Playwright at it.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+
 # pytest is baked in because the sandbox runs with no network at verify time.
 # aiosmtpd backs the local outgoing-mail capture server. playwright drives a
 # real Chromium instance with a CDP virtual WebAuthn authenticator - both the

@@ -69,7 +69,7 @@ A Keycloak identity server runs at `http://localhost:8080/auth`, serving a realm
 
 There is no real mail provider here. A local mail-capture server accepts whatever a realm sends and writes each message to `/var/mail-capture/` — connection details are in `/opt/task/mail_server_details.txt`.
 
-A headless Chromium browser with WebAuthn support is available at `/root/.cache/ms-playwright` (installed via the `playwright` Python package already present) — anything actually exercising a passkey ceremony (registering one, authenticating with one) needs a browser that can respond to the WebAuthn API, not a plain HTTP client.
+A headless Chromium browser with WebAuthn support is available at `/opt/ms-playwright` (installed via the `playwright` Python package already present) — anything actually exercising a passkey ceremony (registering one, authenticating with one) needs a browser that can respond to the WebAuthn API, not a plain HTTP client.
 
 Configure the `acme` realm so that all of the following hold, for a browser authorization-code login against `acme-portal`:
 

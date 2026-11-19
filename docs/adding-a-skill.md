@@ -269,6 +269,9 @@ of the environment. Either way the score stops measuring the skill.
   `docker run --rm --user 4242:4242 --entrypoint cat <image> /opt/task/admin_credentials.txt`
   (give the group too: a bare `--user 4242` runs as gid 0, which can read root-group files the
   agent can't).
+- The same goes for tools installed at build time. `playwright install` puts its browsers in the
+  building user's home (`/root/.cache/ms-playwright`) unless you set
+  `ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright` before it.
 - Not `/home/agent` or the `WORKDIR`: benchflow `chown`s both to the agent at runtime, so the agent
   could rewrite a file the verifier trusts (`admin_credentials.txt` carries the
   `keycloak_base_url` the verifier calls).

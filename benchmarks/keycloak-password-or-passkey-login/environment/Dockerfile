@@ -57,6 +57,11 @@ RUN curl -fsSL "https://github.com/keycloak/keycloak/releases/download/${KEYCLOA
     mv "/opt/keycloak-${KEYCLOAK_VERSION}" /opt/keycloak && \
     rm /tmp/keycloak.tar.gz
 
+# Browsers go to a world-readable path, not the build user's ~/.cache: /root is 700 and
+# bench runs the agent as a non-root user. The ENV also points the oracle, the verifier
+# and the agent's own Playwright at it.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+
 # pytest is baked in because the sandbox runs with no network at verify time.
 # aiosmtpd backs the local outgoing-mail capture server. playwright drives a
 # real Chromium instance with a CDP virtual WebAuthn authenticator - both the
@@ -91,9 +96,6 @@ COPY admin_credentials.txt /opt/task/admin_credentials.txt
 COPY staff_credentials.txt /opt/task/staff_credentials.txt
 COPY mail_server_details.txt /opt/task/mail_server_details.txt
 RUN chmod 755 /opt/task && chmod 644 /opt/task/*
-# /root itself stays traversable but unlistable (711) for one reason only: task.md points
-# the agent at the Playwright browsers under /root/.cache/ms-playwright.
-RUN chmod 711 /root
 
 # The mail capture server itself - fixed infrastructure, not something to configure.
 COPY mail_capture_server.py /opt/mail/mail_capture_server.py
