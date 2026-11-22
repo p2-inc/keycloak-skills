@@ -19,6 +19,7 @@ anything.
 | Works locally, breaks in Docker/Kubernetes | `localhost` vs container hostname in the issuer | see "Two hostnames" below |
 | Intermittent `token expired` across hosts | clock drift | check NTP before widening skew tolerance |
 | Redirect loop between app and Keycloak | the app doesn't recognise its own callback, so it restarts login | check the callback route is registered and reachable |
+| `Invalid parameter: redirect_uri` after a Keycloak upgrade, on a URI that is registered | the redirect URI carries OIDC response parameters (`code`, `state`, `session_state`, `iss`, …) | see "Response parameters inside the redirect URI" below |
 
 ---
 
@@ -39,6 +40,15 @@ what the app sent — compare it to what is registered rather than to what you e
 
 Wildcards (`https://app.example.com/*`) work but widen the client. Fine for local development;
 avoid in production, and never `*` alone.
+
+### Response parameters inside the redirect URI
+
+Newer Keycloak patch releases reject a `redirect_uri` that already contains OIDC response parameters, with `400 Invalid parameter: redirect_uri`, before any matching against the registered URIs — so no registration or wildcard fixes it:
+
+- **Query string**: from **26.6.5** and **26.7.0** ([keycloak#49430](https://github.com/keycloak/keycloak/issues/49430), fixed by [keycloak#49959](https://github.com/keycloak/keycloak/pull/49959)). The rejected names are `code`, `state`, `session_state`, `iss`, `error`, `error_description`, `id_token`, `access_token`, `token_type`, `expires_in`, `response`, `kc_action` and `kc_action_status`.
+- **Fragment** as well: from **26.6.7** and **26.7.3** ([keycloak#51909](https://github.com/keycloak/keycloak/pull/51909)).
+
+Every 26.8.x release has both checks. A library starting its own login builds a clean redirect URI, so this usually bites when app code re-authorizes with `redirect_uri = window.location.href` while the URL still carries an authorization response the library didn't start and so never consumed — a login initiated by a link from elsewhere, for example. Strip the response parameters from the URL (query and fragment) before starting a new authorization request.
 
 ## CORS on the token endpoint
 

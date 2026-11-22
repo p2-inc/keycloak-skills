@@ -12,7 +12,7 @@ description: >-
   admin, not passwordless/SSO setup — that is the `keycloak` skill.
 license: CC-BY-SA-4.0
 metadata:
-  version: '0.1.0'
+  version: '0.2.0'
   author: Phase Two <support@phasetwo.io>
 ---
 

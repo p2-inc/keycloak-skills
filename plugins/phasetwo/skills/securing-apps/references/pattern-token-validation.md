@@ -151,6 +151,33 @@ lets you set a "principal name" claim (Spring's `principalClaimName`, Quarkus's
 
 Storing `sub` as your local user key also survives a rename, which username-keyed rows do not.
 
+## DPoP-bound tokens
+
+A browser app can bind its access token to a key pair it holds (DPoP, RFC 9449; Keycloak supports it officially from 26.4, and `oidc-spa` turns it on with one option). The token then carries a `cnf.jkt` claim, the thumbprint of the client's public key, and every request arrives as:
+
+```
+Authorization: DPoP <access_token>
+DPoP: <proof JWT, signed by the client's key: htm, htu, iat, jti, ath>
+```
+
+A stolen token is useless without the private key, but only if every API that receives it checks the proof. The client side has **no per-host opt-out**: in `oidc-spa` v10 DPoP is on or off per client instance (`disableDPoP`), and when it's on every request carrying the token uses the `DPoP` scheme. So **every resource server that receives the token must be ready before the app enables it.** One unready API means 401s or CORS failures in production.
+
+An API is ready when:
+
+| Requirement | Why |
+|---|---|
+| It accepts `Authorization: DPoP <token>`, and accepts `typ: DPoP` on the token where it checks `typ` | most middleware only parses `Bearer` and rejects the rest |
+| It verifies the proof (RFC 9449 §4.3): `typ: dpop+jwt`, an asymmetric `alg`, a valid signature by the embedded `jwk`, `htm` and `htu` matching this request, a fresh `iat`, an unused `jti`, `ath` equal to the base64url SHA-256 of the access token, and the `jwk` thumbprint equal to the token's `cnf.jkt` | each check closes a replay or substitution path |
+| It **rejects a DPoP-bound token** (one with `cnf.jkt`) sent as `Bearer`, or sent with no proof | otherwise the binding protects nothing: a thief just downgrades the scheme |
+| It verifies each proof **once per request** | replay protection records the proof's `jti`. Authenticating twice within one request — a filter plus a sub-resource, or nested auth calls — makes the second check see a replay and fail with a 401 |
+| Its CORS preflight allows the `DPoP` request header | the browser won't send it otherwise. Keycloak's own endpoints already allow it; a custom CORS allowlist or an API gateway's `allow_headers` usually doesn't |
+| Any gateway in front understands DPoP | a gateway's built-in JWT authorizer typically only parses `Bearer`; it needs a custom authorizer, with caching off since every request carries a new proof |
+
+Two operational limits to plan for:
+
+- **Header size.** The proof adds roughly a kilobyte to every request, on top of an access token that may already be large (many roles or groups). API gateways enforce hard limits on the request line plus headers — around 10 KB on some managed gateways. Measure the worst-case user's request against every hop.
+- **Client clock skew.** Servers accept a proof only if its `iat` is within a short window of their own clock (Keycloak's default proof lifetime is 10 seconds, plus its allowed skew). A user whose device clock is minutes off fails every proof-checked request even though login worked. Log the rejection reason so this is diagnosable, and compare the proof's `iat` with the response's `Date` header.
+
 ## Never do these
 
 - Decode without verifying. `jwt.decode(token)` with verification disabled is not authentication;

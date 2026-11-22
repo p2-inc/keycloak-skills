@@ -46,10 +46,10 @@ their own wiring and role-converter. Writing it per framework is how three of th
 
 | File | Framework key | Library | Status |
 |---|---|---|---|
-| [`framework-react.md`](framework-react.md) | `react` | `oidc-spa` 10.2.11 | written |
+| [`framework-react.md`](framework-react.md) | `react` | `oidc-spa` 10.2.18 | written |
 | [`framework-angular.md`](framework-angular.md) | `angular` | `oidc-spa/angular` 10.2.11 | written |
 | [`framework-vue.md`](framework-vue.md) | `vue` | `keycloak-js` 26.2.4 | written |
-| [`framework-spa-js.md`](framework-spa-js.md) | `spa-js` | `oidc-spa` core 10.2.11 / `keycloak-js` 26.2.4 | written |
+| [`framework-spa-js.md`](framework-spa-js.md) | `spa-js` | `oidc-spa` core 10.2.18 / `keycloak-js` 26.2.4 | written |
 | [`framework-nextjs.md`](framework-nextjs.md) | `nextjs` | Auth.js (`next-auth` 5.0.0-beta.32) | written |
 
 `framework-vue.md` leads with `keycloak-js` rather than `oidc-spa` because **`oidc-spa` has no Vue
