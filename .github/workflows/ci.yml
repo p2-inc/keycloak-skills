@@ -62,3 +62,20 @@ jobs:
       # which blocks a release tag. --dry-run so nothing is created here.
       - name: Check release tag consistency
         run: claude plugin tag --dry-run plugins/phasetwo
+
+  registry:
+    name: Check registry manifest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # registry/server.json is otherwise only validated when the publish
+      # workflow runs. This catches a remote URL that disagrees with the plugin
+      # manifests, or a description over the registry's 100-character limit,
+      # before merge. Standard library only, so there is nothing to install.
+      - name: Check server.json against plugin manifests
+        run: python3 scripts/check-registry.py
